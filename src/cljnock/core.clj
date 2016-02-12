@@ -4,8 +4,21 @@
 (def no    1)
 (def crash "%nash")
 
+(defn noun [v]
+  (if (vector? v)
+    (let [c (count v)]
+      (assert (> c 1))
+      (let [p (noun (v 0))
+            q (noun (if (= c 2) (v 1) (subvec v 1)))]
+        [p q]))
+    (do
+      (assert (integer? v))
+      v)))
+
 (defn cell? [x]
   (and (vector? x) (= (count x) 2)))
+
+(def atom? (comp not vector?))
 
 (defn loob [bool]
   (if bool yes no))
@@ -19,17 +32,6 @@
         (catch ClassCastException e crash))
       (recur (cons (if (bit-test axe 0) 1 0) dir)
              (bit-shift-right axe 1)))))
-
-(defn noun [v]
-  (if (vector? v)
-    (let [c (count v)]
-      (assert (> c 1))
-      (let [p (noun (v 0))
-            q (noun (if (= c 2) (v 1) (subvec v 1)))]
-        [p q]))
-    (do
-      (assert (integer? v))
-      v)))
 
 (defn nock [sub fom]
   (let [[hed tal] fom
