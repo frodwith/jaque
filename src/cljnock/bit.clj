@@ -12,11 +12,13 @@
 (defn mix [a b] (.xor (biginteger a) (biginteger b)))
 
 (defn met [bloq blob]
-  (loop [blob blob
-         c 0]
-    (if (= blob 0)
-      c
-      (recur (rsh bloq 1 blob) (inc c)))))
+  (let [a  (biginteger blob)
+        ln (.bitLength a)
+        sh (unsigned-bit-shift-right ln bloq)
+        un (bit-shift-left sh bloq)]
+    (if (= un ln)
+      sh
+      (inc sh))))
 
 (defn end [bloq n x]
   (mod x (bex (* n (bex bloq)))))
