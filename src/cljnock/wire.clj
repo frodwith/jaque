@@ -36,15 +36,15 @@
        (let [m (assoc m a b)]
          (if (atom? a)
            (jam-atom a m)
-           (let [b (+ 2 b)
+           (let [b (+ b 2)
                  [pd qd rd] ($ (a 0) b m)
                  [pe qe re] ($ (a 1) (+ b pd) rd)]
-             [(+ 2 pd pe) (mix 1 (lsh 0 2 (cat 0 qd qe))) re])))
+             [(+ pd pe 2) (mix 1 (lsh 0 2 (cat 0 qd qe))) re])))
        (let [c (m a)]
          (if (and (atom? a) (<= (met 0 a) (met 0 c)))
            (jam-atom a m)
            (let [[p q] (mat c)]
-             [(+ 2 p) (mix 3 (lsh 0 2 q)) m])))))
+             [(+ p 2) (mix 3 (lsh 0 2 q)) m])))))
    a 0 {}) 1))
 
 (defn cue [a]
@@ -52,12 +52,12 @@
       (if (= 0 (cut 0 [b 1] a))
         (let [[pc qc] (rub (inc b) a)]
           [(inc pc) qc (assoc m b qc)])
-        (let [c (+ 2 b)]
+        (let [c (+ b 2)]
           (if (= 0 (cut 0 [(inc b) 1] a))
             (let [[pu qu ru] ($ c m)
                   [pv qv rv] ($ (+ pu c) ru)
                   w          [qu qv]]
-              [(+ 2 pu pv) w (assoc rv b w)])
+              [(+ pu pv 2) w (assoc rv b w)])
             (let [[pd qd] (rub c a)]
-              [(+ 2 pd) (m qd) m])))))
+              [(+ pd 2) (m qd) m])))))
    0 {}) 1))

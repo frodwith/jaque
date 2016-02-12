@@ -1,15 +1,15 @@
 (ns cljnock.bit
   (:refer-clojure :exclude [cat]))
 
-(defn bex [n] (bit-shift-left 1 n))
+(defn bex [n] (.shiftLeft (biginteger 1) n))
 
 (defn lsh [bloq n x]
-  (bit-shift-left x (* n (bex bloq))))
+  (.shiftLeft (biginteger x) (* n (bex bloq))))
 
 (defn rsh [bloq n x]
-  (unsigned-bit-shift-right x (* n (bex bloq))))
+  (.shiftRight (biginteger x) (* n (bex bloq))))
 
-(def mix bit-xor)
+(defn mix [a b] (.xor (biginteger a) (biginteger b)))
 
 (defn met [bloq blob]
   (loop [blob blob

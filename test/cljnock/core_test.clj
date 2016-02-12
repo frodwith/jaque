@@ -33,7 +33,7 @@
                      [15 (noun [50 60])]
                      [30 50]
                      [31 60]]]
-        (is (= (leg x p) q) p)))))
+        (is (= (leg x (noun p)) q) p)))))
 
 (deftest tutorial
   (testing "examples from nock tutorial"

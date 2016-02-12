@@ -1,8 +1,5 @@
-(ns cljnock.core)
-
-(def yes   0)
-(def no    1)
-(def crash "%nash")
+(ns cljnock.core
+  (:require [tuples.core :refer :all]))
 
 (defn noun [v]
   (if (vector? v)
@@ -10,15 +7,15 @@
       (assert (> c 1))
       (let [p (noun (v 0))
             q (noun (if (= c 2) (v 1) (subvec v 1)))]
-        [p q]))
-    (do
-      (assert (integer? v))
-      v)))
+        (tuple p q)))
+    (biginteger v)))
 
-(defn cell? [x]
-  (and (vector? x) (= (count x) 2)))
+(def yes   (noun 0))
+(def no    (noun 1))
+(def crash "%nash")
 
-(def atom? (comp not vector?))
+(def cell? tuple?)
+(def atom? (partial instance? java.math.BigInteger))
 
 (defn loob [bool]
   (if bool yes no))
@@ -30,8 +27,8 @@
       (try
         (reduce #(%1 %2) sub dir)
         (catch ClassCastException e crash))
-      (recur (cons (if (bit-test axe 0) 1 0) dir)
-             (bit-shift-right axe 1)))))
+      (recur (cons (if (.testBit axe 0) 1 0) dir)
+             (.shiftRight axe 1)))))
 
 (defn nock [sub fom]
   (let [[hed tal] fom
