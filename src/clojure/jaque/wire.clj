@@ -1,6 +1,6 @@
-(ns cljnock.wire
+(ns jaque.wire
   (:require [tuples.core :refer [tuple]])
-  (:require [cljnock.core :refer [atom?]]))
+  (:require [jaque.core :refer [atom?]]))
 
 (set! *warn-on-reflection* true)
 

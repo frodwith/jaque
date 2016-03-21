@@ -1,4 +1,4 @@
-(ns cljnock.core
+(ns jaque.core
   (:require [tuples.core :refer :all]))
 
 (defn noun [v]
