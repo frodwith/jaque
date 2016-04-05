@@ -9,6 +9,29 @@ public class Atom extends Number implements Comparable<Atom> {
 
     public static final Atom ZERO = malt(new int[]{0});
 
+    // Bytes should be in little-endian order.
+    public Atom(byte[] pill) {
+        int len  = pill.length;
+        int trim = len % 4;
+        if (trim > 0) {
+            int    nlen = len + (4-trim);
+            byte[] npil = new byte[nlen];
+            System.arraycopy(pill, 0, npil, 0, len);
+            pill = npil;
+            len = nlen;
+        }
+        size  = len / 4;
+        words = new int[size];
+        int i, b, w;
+        for (i = 0, b = 0; i < size; ++i) {
+            w =  (pill[b++] << 0)  & 0x000000FF;
+            w ^= (pill[b++] << 8)  & 0x0000FF00;
+            w ^= (pill[b++] << 16) & 0x00FF0000;
+            w ^= (pill[b++] << 24) & 0xFF000000;
+            words[i] = w;
+        }
+    }
+
     public Atom(int size, int[] words) {
         this.size = size;
         this.words = words;
