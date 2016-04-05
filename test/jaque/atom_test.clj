@@ -1,5 +1,5 @@
 (ns jaque.atom-test
-  (:import jaque.Atom)
+  (:import jaque.noun.Atom)
   (:refer-clojure :exclude [dec inc zero? cat])
   (:require [clojure.test :refer :all]
             [jaque.atom :refer :all]))

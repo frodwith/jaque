@@ -1,6 +1,6 @@
 (ns jaque.atom
   (:refer-clojure :exclude [zero? inc dec cat])
-  (:import jaque.Atom))
+  (:import jaque.noun.Atom))
 
 (set! *warn-on-reflection* true)
 

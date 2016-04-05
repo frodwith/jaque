@@ -1,8 +1,7 @@
-(ns cljnock.wire-test
-  (:refer-clojure :exclude [cat])
-  (:require [clojure.test :refer :all]
-            [cljnock.core :refer [noun]]
-            [cljnock.wire :refer :all]))
+(ns jaque.wire-test
+  (:require [jaque.noun :refer [noun]]
+            [jaque.wire :refer :all]
+            [clojure.test :refer :all]))
 
 (def cued-jammed [[     1    12]
                   [ [1 1]   817]
@@ -28,4 +27,4 @@
 (deftest cue-test
   (testing "cue"
     (doseq [[p q] cued-jammed]
-      (is (= (cue (noun q)) p) q))))
+      (is (= (cue (noun q)) (noun p)) q))))

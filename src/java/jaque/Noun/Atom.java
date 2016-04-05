@@ -1,4 +1,4 @@
-package jaque;
+package jaque.noun;
 
 import gnu.math.MPN;
 import java.util.Arrays;

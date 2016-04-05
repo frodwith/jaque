@@ -2,23 +2,22 @@
   (:require [jaque.atom :refer [lsh rsh mix
                                 cut end
                                 lot met bex]
-                        :as    a])
-  (:import jaque.Atom))
+                        :as    a]
+            [jaque.noun :refer [->Cell atom?]])
+  (:import [jaque.noun Atom Cell]))
 
 (set! *warn-on-reflection* true)
 
 (defn rub "length-decode"
-  [^Atom a ^Atom b]
-  (let [cl (lot (rsh 0 (.intValue a) b))]
-    (if (= 0 cl)
+  [a ^Atom b]
+  (let [c (lot (rsh 0 a b))]
+    (if (= 0 c)
       [1 a/zero]
-      (let [ca  (Atom. cl)
-            d   (a/add a (a/inc ca))
-            dcl (dec cl)
-            dca (Atom. dcl)
-            e   (a/add (bex dcl) (cut 0 d dcl b))]
-        [(a/add (a/add ca ca) e)
-         (cut 0 (a/add d dca) e b)]))))
+      (let [d  (+ 1 a c)
+            dc (dec c)
+            e  (a/add (bex dc) (cut 0 d dc b))
+            ei (.intValue e)]
+        [(+ ei c c) (cut 0 (+ d dc) ei b)]))))
 
 (defn mat "length-encode"
   [^Atom a]
@@ -27,81 +26,50 @@
     (let [b  (met 0 a)
           ba (Atom. b)
           c  (met 0 ba)
-          s  (+ b c)
+          s  (+ b c c)
           l  (bex c)
           r  (mix (end 0 (dec c) ba)
                   (lsh 0 (dec c) a))
           e (a/cat 0 l r)]
       [s e])))
 
-;(defn cat-bigs [^BigInteger a ^BigInteger b]
-;  (.xor (.shiftLeft b (.bitLength a)) a))
-;
-;(def bitmask (memoize (fn [n] (.subtract ^BigInteger (bex n) one))))
-;
-;(defn end [n ^BigInteger b] (.and b (bitmask n)))
-;(defn cut [off n ^BigInteger b] (end n (.shiftRight b off)))
-;
-;(defn mat [^BigInteger a]
-;  (let [b    (.bitLength a)
-;        bb   (biginteger b)
-;        c    (.bitLength bb)
-;        dc   (dec c)
-;        size (+ c c b)
-;
-;        ; we don't cat-bigs here because leading zeros
-;        catd (.xor (.shiftLeft a dc) (end dc bb))
-;        enc  (cat-bigs (bex c) catd)]
-;    [size enc]))
-;
-;(defn jam [a]
-;  (((fn f [^BigInteger it here where]
-;      (let [jatom (fn [m]
-;                    (let [[p q] (mat it)]
-;                      [(inc p) (.shiftLeft ^BigInteger q 1) m]))
-;            there (where it)]
-;        (if (nil? there)
-;          (let [where (assoc where it here)]
-;            (if (atom? it)
-;              (jatom where)
-;              (let [here          (+ here 2)
-;                    [p q]         it
-;                    [psz p where] (f p here where)
-;                    here          (+ here psz)
-;                    [qsz q where] (f q here where)
-;                    size          (+ 2 psz qsz)
-;                    encoded       (.xor (.shiftLeft ^BigInteger (cat-bigs p q)
-;                                                    2)
-;                                        one)]
-;                [size encoded where])))
-;          (if (and (atom? it) (<= (.bitLength it) (.bitLength (biginteger here))))
-;            (jatom where)
-;            (let [[p q] (mat there)]
-;              [(+ 2 p)
-;               (.xor (.shiftLeft ^BigInteger q 2) three)
-;               where])))))
-;    a zero {}) 1))
-;
-;(defn rub [a ^BigInteger b]
-;  (let [c (.getLowestSetBit (.shiftRight b a))]
-;    (if (< c 1)
-;      [1 zero]
-;      (let [d  (+ a c 1)
-;            dc (dec c)
-;            e  (.add ^BigInteger (bex dc) (cut d dc b))]
-;        [(+ c c e) (cut (+ d dc) e b)]))))
-;
-;(defn cue [^BigInteger a]
-;  (((fn f [here where]
-;      (if-not (.testBit a here)
-;        (let [[p q] (rub (inc here) a)]
-;          [(inc p) q (assoc where here q)])
-;        (let [there (+ 2 here)]
-;          (if (.testBit a (inc here))
-;            (let [[p q] (rub there a)]
-;              [(+ 2 p) (where q) where])
-;            (let [[usz u where] (f there where)
-;                  [vsz v where] (f (+ usz there) where)
-;                  w             (tuple u v)]
-;              [(+ 2 usz vsz) w (assoc where here w)])))))
-;    zero {}) 1))
+(defn cue "unpack atom to noun"
+  [^Atom a]
+  (let [go (fn $ [b m]
+             (if (a/zero? (cut 0 b 1 a))
+               (let [[pc qc] (rub (inc b) a)]
+                 [(inc pc) qc (assoc! m b qc)])
+               (let [c (+ 2 b)]
+                 (if (a/zero? (cut 0 (inc b) 1 a))
+                   (let [[pu qu ru] ($ c m)
+                         [pv qv rv] ($ (+ pu c) ru)
+                         w          (->Cell qu qv)]
+                     [(+ 2 pu pv) w (assoc! rv b w)])
+                   (let [[pd qd] (rub c a)]
+                     [(+ 2 pd) (m qd) m])))))
+        [p q r] (go 0 (transient {}))]
+    q))
+
+(def three (Atom. 3))
+
+(defn jam "pack"
+  [a]
+  (let [go (fn $ [a b m]
+             (let [c (m a)]
+               (if (nil? c)
+                 (let [m (assoc! m a b)]
+                   (if (atom? a)
+                     (let [[pd qd] (mat a)]
+                       [(inc pd) (lsh 0 1 qd) m])
+                     (let [b          (+ 2 b)
+                           [pd qd rd] ($ (.p ^Cell a) b m)
+                           [pe qe re] ($ (.q ^Cell a) (+ b pd) rd)]
+                       [(+ 2 pd pe) (mix a/one (lsh 0 2 (a/cat 0 qd qe))) re])))
+                 (let [c (Atom. ^long c)]
+                   (if (and (atom? a) (<= (met 0 a) (met 0 c)))
+                     (let [[pd qd] (mat a)]
+                       [(inc pd) (lsh 0 1 qd) m])
+                     (let [[pd qd] (mat (Atom. ^long c))]
+                       [(+ 2 pd) (mix three (lsh 0 2 qd)) m]))))))
+        [p q r] (go a 0 (transient {}))]
+    q))
