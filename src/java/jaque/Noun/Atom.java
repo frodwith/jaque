@@ -169,8 +169,24 @@ public class Atom extends Number implements Comparable<Atom> {
         return size == 1 && words[0] == 0;
     }
 
-    public int lot() {
-        return isZero() ? 0 : MPN.findLowestBit(words);
+    /* Finds the lowest significant bit in this atom
+     * higher than than the nth bit */
+    public int lot(long n) {
+        int i = (int) n / 32;
+        int b = (int) n % 32;
+        int m = (1 << b) - 1;
+        int l = words[i] & ~m; // mask off the low b bits
+
+
+        if (l != 0) {
+            return Integer.numberOfTrailingZeros(l) - b;
+        }
+
+        /* this will crash if the index goes out of bounds,
+         * which is the desired behavior. */
+        while (words[++i] == 0);
+
+        return Integer.numberOfTrailingZeros(words[i]) + (i << 5);
     }
 
     /* This section is stolen from c3 */

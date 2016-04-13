@@ -6,6 +6,11 @@
 
 (defn a [l] (Atom. l))
 
+(deftest lot-test
+  (testing "lot"
+    (is (= (lot 8 (Atom. "1100100000100011011110001000011010010000011100010" 2)) 5))
+    (is (= (lot 2 (Atom. 2r100011)) 3))))
+
 (deftest bex-test
   (testing "bex"
     (is (= (bex 4) (a 16)))

@@ -1,4 +1,5 @@
 (ns jaque.wire-test
+  (:import  jaque.noun.Atom)
   (:require [jaque.noun :refer [noun]]
             [jaque.wire :refer :all]
             [clojure.test :refer :all]))
@@ -6,7 +7,9 @@
 (def cued-jammed [[     1    12]
                   [ [1 1]   817]
                   [ [1 2]  4657]
-                  [[0 19] 39689]])
+                  [[0 19] 39689]
+                  [[[1 [13 14]] [[13 14] 1]]
+                   (Atom. "880218685981125")]])
 
 (deftest jam-test
   (testing "jam"

@@ -10,13 +10,13 @@
 
 (defn rub "length-decode"
   [a ^Atom b]
-  (let [c (lot (rsh 0 a b))]
+  (let [c (lot a b)]
     (if (= 0 c)
       [1 a/zero]
       (let [d  (+ 1 a c)
             dc (dec c)
             e  (a/add (bex dc) (cut 0 d dc b))
-            ei (.intValue e)]
+            ei (.longValue e)]
         [(+ ei c c) (cut 0 (+ d dc) ei b)]))))
 
 (defn mat "length-encode"
@@ -45,8 +45,11 @@
                          [pv qv rv] ($ (+ pu c) ru)
                          w          (->Cell qu qv)]
                      [(+ 2 pu pv) w (assoc! rv b w)])
-                   (let [[pd qd] (rub c a)]
-                     [(+ 2 pd) (m qd) m])))))
+                   (let [[pd qd] (rub c a)
+                         got     (m (.longValue ^Atom qd))]
+                     (if (nil? got)
+                       (throw (Exception. (format "No cached noun at index %s" qd)))
+                       [(+ 2 pd) got m]))))))
         [p q r] (go 0 (transient {}))]
     q))
 
