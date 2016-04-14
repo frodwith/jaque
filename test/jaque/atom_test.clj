@@ -4,12 +4,7 @@
   (:require [clojure.test :refer :all]
             [jaque.atom :refer :all]))
 
-(defn a [l] (Atom. l))
-
-(deftest lot-test
-  (testing "lot"
-    (is (= (lot 8 (Atom. "1100100000100011011110001000011010010000011100010" 2)) 5))
-    (is (= (lot 2 (Atom. 2r100011)) 3))))
+(defn a [l] (Atom/fromLong l))
 
 (deftest bex-test
   (testing "bex"
@@ -20,7 +15,10 @@
 (deftest lsh-test
   (testing "lsh"
     (is (= (lsh 0 1 (a 1)) (a 2)))
-    (is (= (lsh 3 1 (a 255)) (a 65280)))))
+    (is (= (lsh 3 1 (a 255)) (a 65280)))
+    (is (= (lsh 0 2 (a 2r100)) (a 2r10000)))
+    ; rsh accounts for the sign bit
+    (is (= (rsh 0 1 (lsh 3 8 one)) (inc (Atom/fromLong Long/MAX_VALUE))))))
 
 (deftest rsh-test
   (testing "rsh"
@@ -33,12 +31,6 @@
     (is (= (mix (a 2) (a 3)) one)
         (= (mix (a 2) (a 2)) zero))))
 
-(deftest lsh-test
-  (testing "lsh"
-    (is (= (lsh 0 2 (a 2r100)) (a 2r10000)))
-    ; rsh accounts for the sign bit
-    (is (= (rsh 0 1 (lsh 3 8 (Atom. 1))) (inc (Atom. Long/MAX_VALUE))))))
-
 (deftest met-test
   (testing "met"
     (is (= (met 0 (a 1)) 1))
@@ -50,8 +42,8 @@
 
 (deftest end-test
   (testing "end"
-    (is (= (end 0 3 (a 12)) (a 4)))
-    (is (= (end 1 3 (a 12)) (a 12)))))
+    (is (= (end 0 (a 3) (a 12)) (a 4)))
+    (is (= (end 1 (a 3) (a 12)) (a 12)))))
 
 (deftest cat-test
   (testing "cat"
@@ -63,9 +55,9 @@
 
 (deftest cut-test
   (testing "cut"
-    (is (= (cut 0 1 1 (a 2)) one))
-    (is (= (cut 0 2 1 (a 4)) one))
-    (is (= (cut 0 0 3 (a 0xf0d)) (a 5)))
-    (is (= (cut 0 0 6 (a 0xf0d)) (a 13)))
-    (is (= (cut 0 4 6 (a 0xf0d)) (a 0x30)))
-    (is (= (cut 0 3 6 (a 0xf0d)) (a 0x21)))))
+    (is (= (cut 0 (a 1) (a 1) (a 2)) one))
+    (is (= (cut 0 (a 2) (a 1) (a 4)) one))
+    (is (= (cut 0 (a 0) (a 3) (a 0xf0d)) (a 5)))
+    (is (= (cut 0 (a 0) (a 6) (a 0xf0d)) (a 13)))
+    (is (= (cut 0 (a 4) (a 6) (a 0xf0d)) (a 0x30)))
+    (is (= (cut 0 (a 3) (a 6) (a 0xf0d)) (a 0x21)))))

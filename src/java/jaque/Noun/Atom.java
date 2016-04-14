@@ -3,14 +3,44 @@ package jaque.noun;
 import gnu.math.MPN;
 import java.util.Arrays;
 
-public class Atom extends Number implements Comparable<Atom> {
-    public final int   size;
-    public final int[] words;
+public abstract class Atom extends Number implements Comparable<Atom> {
+    public static final int    MAX_FIXNUM = 255;
+    public static final Atom[] fix;
+    public static final Atom ZERO, ONE, TWO, THREE, TEN;
 
-    public static final Atom ZERO = malt(new int[]{0});
+    static {
+        fix = new DirectAtom[MAX_FIXNUM + 1];
+        for (int i = 0; i <= MAX_FIXNUM; ++i) {
+            fix[i] = new DirectAtom(i);
+        }
+        ZERO  = fix[0];
+        ONE   = fix[1];
+        TWO   = fix[2];
+        THREE = fix[3];
+        TEN   = fix[10];
+    }
+
+    public abstract int[] cloneWords();
+    public abstract int compareTo(Atom a);
+    public abstract int hashCode();
+    public abstract boolean isZero();
+    public abstract int[] words();
+    public abstract boolean isCat();
+
+    public static Atom fromLong(long l) {
+        if (l < MAX_FIXNUM) {
+            return fix[(int) l];
+        }
+        else if (l - Integer.MAX_VALUE <= 0) {
+            return new DirectAtom((int) l);
+        }
+        else {
+            return malt(new int[]{(int) l, (int) (l >>> 32)});
+        }
+    }
 
     // Bytes should be in little-endian order.
-    public Atom(byte[] pill) {
+    public static Atom fromPill(byte[] pill) {
         int len  = pill.length;
         int trim = len % 4;
         if (trim > 0) {
@@ -20,8 +50,8 @@ public class Atom extends Number implements Comparable<Atom> {
             pill = npil;
             len = nlen;
         }
-        size  = len / 4;
-        words = new int[size];
+        int   size  = len / 4;
+        int[] words = new int[size];
         int i, b, w;
         for (i = 0, b = 0; i < size; ++i) {
             w =  (pill[b++] << 0)  & 0x000000FF;
@@ -30,14 +60,11 @@ public class Atom extends Number implements Comparable<Atom> {
             w ^= (pill[b++] << 24) & 0xFF000000;
             words[i] = w;
         }
+
+        return malt(words);
     }
 
-    public Atom(int size, int[] words) {
-        this.size = size;
-        this.words = words;
-    }
-
-    public Atom(String s, int radix) {
+    public static Atom fromString(String s, int radix) {
         char[] car = s.toCharArray();
         int    len = car.length,
                cpw = MPN.chars_per_word(radix),
@@ -51,47 +78,44 @@ public class Atom extends Number implements Comparable<Atom> {
         }
 
         siz = MPN.set_str(wor, dig, len, radix);
-        size = siz;
-        words = wor;
+
+        return malt(wor);
     }
 
-    public Atom(String s) {
-        this(s, 10);
+    public static Atom fromString(String s) {
+        return fromString(s, 10);
     }
 
-    public Atom(long v) {
-        if (v > Integer.MAX_VALUE) {
-            words = new int[2];
-            words[1] = (int) (v >>> 32);
-            size = 2;
+    public static Atom malt(int[] w) {
+        int hi = 0;
+
+        for (int i = 0; i < w.length; ++i) {
+            if (w[i] != 0) {
+               hi = i;
+            }
         }
-        else {
-            words = new int[1];
-            size = 1;
+
+        if (hi == 0) {
+            return fromLong(w[0]);
         }
-        words[0] = (int) v;
+
+        if (hi+1 < w.length) {
+            w = Arrays.copyOfRange(w, 0, hi+1);
+        }
+
+        return new IndirectAtom(w);
     }
 
-    public byte byteValue() { return (byte) words[0]; }
-    public short shortValue() { return (short) words[0]; }
-    public int intValue() { return words[0]; }
-    public float floatValue() { return (float) words[0]; }
-    public double doubleValue() { return (double) words[0]; }
-    public long longValue() {
-        long v = words[0];
-        if (size > 1) {
-            v += words[1] << 32;
-        }
-        return v;
-    }
-
-    public String toString() {
-        return toString(10);
-    }
+    public byte byteValue() { return (byte) intValue(); }
+    public short shortValue() { return (short) intValue(); }
+    public float floatValue() { return (float) longValue(); }
+    public double doubleValue() { return (double) longValue(); }
 
     public String toString(int radix) {
-        int[] cur = words.clone();
-        int   len = size;
+        int[] cur  = cloneWords();
+        int   len  = cur.length,
+              size = len;
+
         StringBuffer buf = new StringBuffer();
         for(;;) {
             int dig = MPN.divmod_1(cur, cur, size, radix);
@@ -108,8 +132,8 @@ public class Atom extends Number implements Comparable<Atom> {
         return s.length() == 0 ? "0" : s;
     }
 
-    public int hashCode() {
-        return Arrays.hashCode(words);
+    public String toString() {
+        return toString(10);
     }
 
     public boolean equals(Object o) {
@@ -119,32 +143,30 @@ public class Atom extends Number implements Comparable<Atom> {
         return 0 == compareTo((Atom) o);
     }
 
-    public int compareTo(Atom b) {
-        return MPN.cmp(words, size, b.words, b.size);
-    }
-
     public class Square {
         int[] x;
         int[] y;
         int   len;
 
         public Square(Atom a, Atom b) {
-            if (a.size > b.size) {
-                len = a.size;
-                x   = a.words;
+            int[] aw = a.words(), bw = b.words();
+            int   as = aw.length, bs = bw.length;
+            if (as > bs) {
+                len = as;
+                x   = aw;
                 y   = new int[len];
-                System.arraycopy(b.words, 0, y, 0, b.size);
+                System.arraycopy(bw, 0, y, 0, bs);
             }
-            else if (a.size < b.size) {
-                len = b.size;
+            else if (as < bs) {
+                len = bs;
                 x   = new int[len];
-                y   = b.words;
-                System.arraycopy(a.words, 0, x, 0, a.size);
+                y   = bw;
+                System.arraycopy(aw, 0, x, 0, as);
             }
             else {
-                len = size;
-                x   = a.words;
-                y   = b.words;
+                len = as;
+                x   = aw;
+                y   = bw;
             }
         }
     }
@@ -152,9 +174,8 @@ public class Atom extends Number implements Comparable<Atom> {
     public Atom add(Atom b) {
         Square s   = new Square(this, b);
         int[] dst  = new int[s.len+1];
-        int   car  = MPN.add_n(dst, s.x, s.y, s.len);
-        dst[s.len] = car;
-        return new Atom(car > 0 ? s.len + 1 : s.len, dst);
+        dst[s.len] = MPN.add_n(dst, s.x, s.y, s.len);
+        return malt(dst);
     }
 
     public Atom sub(Atom b) {
@@ -165,31 +186,54 @@ public class Atom extends Number implements Comparable<Atom> {
         return malt(dst);
     }
 
-    public boolean isZero() {
-        return size == 1 && words[0] == 0;
-    }
+    /* This section is stolen from c3 */
 
-    /* Finds the lowest significant bit in this atom
-     * higher than than the nth bit */
-    public int lot(long n) {
-        int i = (int) n / 32;
-        int b = (int) n % 32;
-        int m = (1 << b) - 1;
-        int l = words[i] & ~m; // mask off the low b bits
+    public int met(byte a) {
+        int gal, daz;
 
+        assert a < 32;
 
-        if (l != 0) {
-            return Integer.numberOfTrailingZeros(l) - b;
+        if (isZero()) {
+            return 0;
         }
 
-        /* this will crash if the index goes out of bounds,
-         * which is the desired behavior. */
-        while (words[++i] == 0);
+        if (isCat()) {
+            gal = 0;
+            daz = intValue();
+        }
+        else {
+            IndirectAtom b = (IndirectAtom) this;
+            gal = b.words.length - 1;
+            daz = b.words[gal];
+        }
 
-        return Integer.numberOfTrailingZeros(words[i]) + (i << 5);
+        switch (a) {
+            case 0:
+            case 1:
+            case 2:
+                int col = 32 - Integer.numberOfLeadingZeros(daz),
+                    bif = col + (gal << 5);
+
+                return (bif + ((1 << a) - 1) >>> a);
+
+            case 3:
+                return (gal << 2)
+                    + ((daz >>> 24 != 0)
+                       ? 4
+                       : (daz >>> 16 != 0)
+                       ? 3
+                       : (daz >>> 8 != 0)
+                       ? 2
+                       : 1);
+
+            case 4:
+                return (gal << 1) + ((daz >>> 16 != 0) ? 2 : 1);
+
+            default:
+                int gow = a - 5;
+                return ((gal + 1) + ((1 << gow) - 1)) >>> gow;
+        }
     }
-
-    /* This section is stolen from c3 */
 
     public Atom lsh(byte a, int b) {
         int len = met(a);
@@ -219,10 +263,8 @@ public class Atom extends Number implements Comparable<Atom> {
     }
 
     public void chop(byte met, int fum, int wid, int tou, int[] dst) {
-        int   len = size, i;
-        int[] buf = words;
-
-        assert met < 32;
+        int[] buf = words();
+        int   len = buf.length, i;
 
         if (met < 5) {
             int san = 1 << met,
@@ -268,43 +310,6 @@ public class Atom extends Number implements Comparable<Atom> {
         return new int[((len << met) + 31) >>> 5];
     }
 
-    public static Atom malt(int[] w) {
-        return new Atom(w.length, w);
-    }
-
-    public int met(byte a) {
-        assert a < 32;
-        int gal = size - 1,
-            daz = words[gal];
-
-        switch (a) {
-            case 0:
-            case 1:
-            case 2:
-                int col = 32 - Integer.numberOfLeadingZeros(daz),
-                    bif = col + (gal << 5);
-
-                return (bif + ((1 << a) - 1) >>> a);
-
-            case 3:
-                return (gal << 2)
-                    + ((daz >>> 24 != 0)
-                       ? 4
-                       : (daz >>> 16 != 0)
-                       ? 3
-                       : (daz >>> 8 != 0)
-                       ? 2
-                       : 1);
-
-            case 4:
-                return (gal << 1) + ((daz >>> 16 != 0) ? 2 : 1);
-
-            default:
-                int gow = a - 5;
-                return ((gal + 1) + ((1 << gow) - 1)) >>> gow;
-        }
-    }
-
     public static Atom cat(byte a, Atom b, Atom c) {
         int lew = b.met(a),
             ler = c.met(a),
@@ -335,19 +340,26 @@ public class Atom extends Number implements Comparable<Atom> {
 
         chop(w, 0, lna, 0, sal);
 
+        int[] bw = b.words();
         for (int i = 0; i < lnb; ++i) {
-            sal[i] ^= b.words[i];
+            sal[i] ^= bw[i];
         }
 
         return malt(sal);
     }
 
-    public Atom end(byte a, int b) {
-        int len = met(a);
+    public Atom end(byte a, Atom ba) {
+        if (!ba.isCat()) {
+            return this;
+        }
 
-        if (0 == b) {
+        if (ba.isZero()) {
             return ZERO;
         }
+
+        int len = met(a),
+            b   = ba.intValue();
+
         if (b >= len) {
             return this;
         }
@@ -358,8 +370,17 @@ public class Atom extends Number implements Comparable<Atom> {
         return malt(sal);
     }
 
-    public Atom cut(byte a, int b, int c) {
-        int len = met(a);
+    public Atom cut(byte a, Atom ba, Atom ca) {
+        int len = met(a), b, c;
+
+        if (ba.isCat()) {
+            b = ba.intValue();
+        }
+        else {
+            return ZERO;
+        }
+
+        c = ca.isCat() ? ca.intValue() : Integer.MAX_VALUE;
 
         if ((0 == c) || (b >= len)) {
             return ZERO;

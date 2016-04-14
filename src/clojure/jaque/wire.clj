@@ -24,7 +24,7 @@
   (if (a/zero? a)
     [1 a/one]
     (let [b  (met 0 a)
-          ba (Atom. b)
+          ba (Atom/fromLong b)
           c  (met 0 ba)
           s  (+ b c c)
           l  (bex c)
@@ -53,8 +53,6 @@
         [p q r] (go 0 (transient {}))]
     q))
 
-(def three (Atom. 3))
-
 (defn jam "pack"
   [a]
   (let [go (fn $ [a b m]
@@ -68,11 +66,11 @@
                            [pd qd rd] ($ (.p ^Cell a) b m)
                            [pe qe re] ($ (.q ^Cell a) (+ b pd) rd)]
                        [(+ 2 pd pe) (mix a/one (lsh 0 2 (a/cat 0 qd qe))) re])))
-                 (let [c (Atom. ^long c)]
+                 (let [c (Atom/fromLong c)]
                    (if (and (atom? a) (<= (met 0 a) (met 0 c)))
                      (let [[pd qd] (mat a)]
                        [(inc pd) (lsh 0 1 qd) m])
-                     (let [[pd qd] (mat (Atom. ^long c))]
-                       [(+ 2 pd) (mix three (lsh 0 2 qd)) m]))))))
+                     (let [[pd qd] (mat (Atom/fromLong c))]
+                       [(+ 2 pd) (mix a/three (lsh 0 2 qd)) m]))))))
         [p q r] (go a 0 (transient {}))]
     q))

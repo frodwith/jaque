@@ -21,7 +21,7 @@
   (if (noun? a)
     a
     (if (number? a)
-      (Atom. (long a))
+      (Atom/fromLong (long a))
       (let [s (seq a)]
         (if s
           ((fn tr [a] 
