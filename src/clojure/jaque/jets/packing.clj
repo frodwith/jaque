@@ -1,4 +1,4 @@
-(ns jaque.wire
+(ns jaque.jets.packing
   (:require [jaque.atom :refer [lsh rsh mix
                                 cut end
                                 lot met bex]

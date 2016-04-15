@@ -28,7 +28,7 @@ public abstract class Atom extends Number implements Comparable<Atom> {
     public abstract boolean isCat();
 
     public static Atom fromLong(long l) {
-        if (l < MAX_FIXNUM) {
+        if (l >= 0 && l < MAX_FIXNUM) {
             return fix[(int) l];
         }
         else if (l - Integer.MAX_VALUE <= 0) {
@@ -235,35 +235,8 @@ public abstract class Atom extends Number implements Comparable<Atom> {
         }
     }
 
-    public Atom lsh(byte a, int b) {
-        int len = met(a);
-
-        if (0 == len) {
-            return ZERO;
-        }
-
-        int lus = b + len;
-        assert lus > len;
-
-        int[] sal = slaq(a, lus);
-        chop(a, 0, len, b, sal);
-        return malt(sal);
-    }
-
-    public Atom rsh(byte a, int b) {
-        int len = met(a);
-
-        if (b >= len) {
-            return ZERO;
-        }
-
-        int[] sal = slaq(a, len - b);
-        chop(a, b, len - b, 0, sal);
-        return malt(sal);
-    }
-
-    public void chop(byte met, int fum, int wid, int tou, int[] dst) {
-        int[] buf = words();
+    public static void chop(byte met, int fum, int wid, int tou, int[] dst, Atom src) {
+        int[] buf = src.words();
         int   len = buf.length, i;
 
         if (met < 5) {
@@ -308,95 +281,5 @@ public abstract class Atom extends Number implements Comparable<Atom> {
 
     public static int[] slaq(int met, int len) {
         return new int[((len << met) + 31) >>> 5];
-    }
-
-    public static Atom cat(byte a, Atom b, Atom c) {
-        int lew = b.met(a),
-            ler = c.met(a),
-            all = lew + ler;
-
-        if (0 == all) {
-            return ZERO;
-        }
-
-        int[] sal = slaq(a, all);
-        b.chop(a, 0, lew, 0, sal);
-        c.chop(a, 0, ler, lew, sal);
-
-        return malt(sal);
-    }
-
-    public Atom mix(Atom b) {
-        byte w = 5;
-        int lna = met(w),
-            lnb = b.met(w);
-
-        if (lna == 0 && lnb == 0) {
-            return ZERO;
-        }
-
-        int   len = Math.max(lna, lnb);
-        int[] sal = new int[len];
-
-        chop(w, 0, lna, 0, sal);
-
-        int[] bw = b.words();
-        for (int i = 0; i < lnb; ++i) {
-            sal[i] ^= bw[i];
-        }
-
-        return malt(sal);
-    }
-
-    public Atom end(byte a, Atom ba) {
-        if (!ba.isCat()) {
-            return this;
-        }
-
-        if (ba.isZero()) {
-            return ZERO;
-        }
-
-        int len = met(a),
-            b   = ba.intValue();
-
-        if (b >= len) {
-            return this;
-        }
-
-        int[] sal = slaq(a, b);
-        chop(a, 0, b, 0, sal);
-
-        return malt(sal);
-    }
-
-    public Atom cut(byte a, Atom ba, Atom ca) {
-        int len = met(a), b, c;
-
-        if (ba.isCat()) {
-            b = ba.intValue();
-        }
-        else {
-            return ZERO;
-        }
-
-        c = ca.isCat() ? ca.intValue() : Integer.MAX_VALUE;
-
-        if ((0 == c) || (b >= len)) {
-            return ZERO;
-        }
-
-        if (b + c > len) {
-            c = len - b;
-        }
-
-        if ((0 == b) && (c == len)) {
-            return this;
-        }
-
-        int[] sal = slaq(a, c);
-        chop(a, b, c, 0, sal);
-
-        return malt(sal);
     }
 }
