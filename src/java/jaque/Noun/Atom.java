@@ -2,6 +2,7 @@ package jaque.noun;
 
 import gnu.math.MPN;
 import java.util.Arrays;
+import java.util.Collections;
 
 public abstract class Atom extends Number implements Comparable<Atom> {
     public static final int    MAX_FIXNUM = 255;
@@ -37,6 +38,15 @@ public abstract class Atom extends Number implements Comparable<Atom> {
         else {
             return malt(new int[]{(int) l, (int) (l >>> 32)});
         }
+    }
+
+    public static Atom fromBigEndian(byte[] big) {
+        int i, j, len = big.length;
+        byte[] pill = new byte[len];
+        for (i = 0, j = len - 1; i < len; ++i, --j) {
+            pill[i] = big[j];
+        }
+        return fromPill(pill);
     }
 
     // Bytes should be in little-endian order.
@@ -234,6 +244,29 @@ public abstract class Atom extends Number implements Comparable<Atom> {
                 return ((gal + 1) + ((1 << gow) - 1)) >>> gow;
         }
     }
+
+    public static Atom mix(Atom a, Atom b) {
+        byte w = 5;
+        int lna = a.met(w),
+            lnb = b.met(w);
+
+        if (lna == 0 && lnb == 0) {
+            return ZERO;
+        }
+
+        int   len = Math.max(lna, lnb);
+        int[] sal = new int[len];
+
+        chop(w, 0, lna, 0, sal, a);
+
+        int[] bw = b.words();
+        for (int i = 0; i < lnb; ++i) {
+            sal[i] ^= bw[i];
+        }
+
+        return malt(sal);
+    }
+
 
     public static void chop(byte met, int fum, int wid, int tou, int[] dst, Atom src) {
         int[] buf = src.words();

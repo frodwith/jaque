@@ -1,34 +1,27 @@
-(ns jaque.core
-  (:require [tuples.core :refer :all]))
+(ns jaque.nock
+  (:refer-clojure :exclude [atom inc])
+  (:require [jaque.error :as e]
+            [jaque.noun :refer [atom noun?]]
+            [jaque.jets.math :refer [inc]])
 
-(defn noun [v]
-  (if (vector? v)
-    (let [c (count v)]
-      (assert (> c 1))
-      (let [p (noun (v 0))
-            q (noun (if (= c 2) (v 1) (subvec v 1)))]
-        (tuple p q)))
-    (biginteger v)))
-
-(def yes   (noun 0))
-(def no    (noun 1))
-(def crash "%nash")
-
-(def cell? tuple?)
-(def atom? (partial instance? java.math.BigInteger))
+(def yes   (atom 0))
+(def no    (atom 1))
 
 (defn loob [bool]
   (if bool yes no))
 
-(defn leg [sub axe]
+(defn leg [^Cell sub ^Atom axe]
   (loop [dir nil
          axe axe]
-    (if (< axe 2)
+    (if (lth axe (atom 2))
       (try
-        (reduce #(%1 %2) sub dir)
-        (catch ClassCastException e crash))
-      (recur (cons (if (.testBit axe 0) 1 0) dir)
-             (.shiftRight axe 1)))))
+        (reduce (fn [^Cell c dir] 
+                  (if (= dir 0)
+                    (.p c)
+                    (.q c))))
+        (catch ClassCastException ex (e/fail)))
+      (recur (cons (if (.isZero (cut (atom 0) (atom 1) (atom 0) axe)) 1 0)
+                   (rsh (atom 0) axe (atom 1)))))))
 
 (defn nock [sub fom]
   (let [[hed tal] fom
@@ -47,7 +40,7 @@
                   loob  (pro p)]
               (cond (= loob yes) (pro (q 0))
                     (= loob no)  (pro (q 1))
-                    :else        crash))
+                    :else        (e/fail)))
         7   (nock (pro (tal 0)) (tal 1))
         8   (nock [(pro (tal 0)) sub] (tal 1))
         9   (let [p (pro (tal 1))]
@@ -56,4 +49,4 @@
                    (if (cell? p)
                      (p 1)
                      q)))
-        crash))))
+        (e/fail)))))

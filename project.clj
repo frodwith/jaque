@@ -6,6 +6,7 @@
 ;                "-Dcom.sun.management.jmxremote.port=43210"]
   :source-paths      ["src/clojure"]
   :java-source-paths ["src/java"]
-  :dependencies [[primitive-math "0.1.3"]
-                 [criterium "0.4.4"]
-                 [org.clojure/clojure "1.8.0"]])
+  :dependencies [[org.clojure/clojure "1.8.0"]
+;                 [primitive-math "0.1.3"]
+;                 [criterium "0.4.4"]
+                 [slingshot "0.12.2"]])

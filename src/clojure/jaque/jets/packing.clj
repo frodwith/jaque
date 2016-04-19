@@ -1,56 +1,67 @@
 (ns jaque.jets.packing
-  (:require [jaque.atom :refer [lsh rsh mix
-                                cut end
-                                lot met bex]
-                        :as    a]
-            [jaque.noun :refer [->Cell atom?]])
-  (:import [jaque.noun Atom Cell]))
+  (:refer-clojure :exclude [inc dec cat atom])
+  (:use (jaque.jets bit-logic bit-surgery math))
+  (:require [jaque.error :as e]
+            [jaque.jets :refer [defj]]
+            [jaque.noun :refer [cell atom atom?]])
+  (:import (jaque.noun Atom Cell)))
 
-(set! *warn-on-reflection* true)
+(defj rub* [a b]
+  (let [m (add a (met (atom 0) b))
+        x (loop [x a]
+            (if (.isZero (cut (atom 0) x (atom 1) b))
+              (let [y (inc x)]
+                (if (gth x m)
+                  (e/exit)
+                  (recur y)))
+              x))]
+    (if (= x a)
+      (cell (atom 1) (atom 0))
+      (let [c (sub x a)
+            d (inc x)
+            x (dec c)
+            y (bex x)
+            z (cut (atom 0) d x b)
+            e (add y z)
+            w (add c c)
+            p (add w e)
+            z (add d x)
+            q (cut (atom 0) z e b)]
+        (cell p q)))))
 
-(defn rub "length-decode"
-  [a ^Atom b]
-  (let [c (lot a b)]
-    (if (= 0 c)
-      [1 a/zero]
-      (let [d  (+ 1 a c)
-            dc (dec c)
-            e  (a/add (bex dc) (cut 0 d dc b))
-            ei (.longValue e)]
-        [(+ ei c c) (cut 0 (+ d dc) ei b)]))))
+(defj mat* [a]
+  (if (.isZero a)
+    (cell (atom 1) (atom 1))
+    (let [b (met (atom 0) a)
+          c (met (atom 0) b)
+          u (dec c)
+          v (add c c)
+          w (bex c)
+          x (end (atom 0) u b)
+          y (lsh (atom 0) u a)
+          z (mix x y)
+          p (add v b)
+          q (cat (atom 0) w z)]
+      (cell p q))))
 
-(defn mat "length-encode"
-  [^Atom a]
-  (if (a/zero? a)
-    [1 a/one]
-    (let [b  (met 0 a)
-          ba (Atom/fromLong b)
-          c  (met 0 ba)
-          s  (+ b c c)
-          l  (bex c)
-          r  (mix (end 0 (dec c) ba)
-                  (lsh 0 (dec c) a))
-          e (a/cat 0 l r)]
-      [s e])))
-
-(defn cue "unpack atom to noun"
-  [^Atom a]
+(defj cue [a]
   (let [go (fn $ [b m]
-             (if (a/zero? (cut 0 b 1 a))
-               (let [[pc qc] (rub (inc b) a)]
-                 [(inc pc) qc (assoc! m b qc)])
-               (let [c (+ 2 b)]
-                 (if (a/zero? (cut 0 (inc b) 1 a))
+             (if (.isZero (cut (atom 0) b (atom 1) a))
+               (let [c  (rub (inc b) a)
+                     qc (.q c)] 
+                 [(inc (.p c)) qc (assoc! m b qc)])
+               (let [c (add (atom 2) b)]
+                 (if (.isZero (cut (atom 0) (inc b) (atom 1) a))
                    (let [[pu qu ru] ($ c m)
-                         [pv qv rv] ($ (+ pu c) ru)
-                         w          (->Cell qu qv)]
-                     [(+ 2 pu pv) w (assoc! rv b w)])
-                   (let [[pd qd] (rub c a)
-                         got     (m (.longValue ^Atom qd))]
+                         [pv qv rv] ($ (add pu c) ru)
+                         w          (cell qu qv)]
+                     [(add (atom 2) (add pu pv)) w (assoc! rv b w)])
+                   (let [d (rub c a)
+                         got     (m (.longValue ^Atom (.q d)))]
                      (if (nil? got)
-                       (throw (Exception. (format "No cached noun at index %s" qd)))
-                       [(+ 2 pd) got m]))))))
-        [p q r] (go 0 (transient {}))]
+                       (e/exit)
+                       [(add (atom 2) (.p d)) got m]))))))
+        [p q r] (go (atom 0) (transient {}))]
     q))
 
 (defn jam "pack"
@@ -60,17 +71,24 @@
                (if (nil? c)
                  (let [m (assoc! m a b)]
                    (if (atom? a)
-                     (let [[pd qd] (mat a)]
-                       [(inc pd) (lsh 0 1 qd) m])
-                     (let [b          (+ 2 b)
-                           [pd qd rd] ($ (.p ^Cell a) b m)
-                           [pe qe re] ($ (.q ^Cell a) (+ b pd) rd)]
-                       [(+ 2 pd pe) (mix a/one (lsh 0 2 (a/cat 0 qd qe))) re])))
-                 (let [c (Atom/fromLong c)]
-                   (if (and (atom? a) (<= (met 0 a) (met 0 c)))
-                     (let [[pd qd] (mat a)]
-                       [(inc pd) (lsh 0 1 qd) m])
-                     (let [[pd qd] (mat (Atom/fromLong c))]
-                       [(+ 2 pd) (mix a/three (lsh 0 2 qd)) m]))))))
-        [p q r] (go a 0 (transient {}))]
+                     (let [^Atom a a
+                           d (mat a)]
+                       [(inc (.p d)) (lsh (atom 0) (atom 1) (.q d)) m])
+                     (let [b          (add (atom 2) b)
+                           ^Cell a    a
+                           [pd qd rd] ($ (.p a) b m)
+                           [pe qe re] ($ (.q a) (add b pd) rd)]
+                       [(add (atom 2) (add pd pe))
+                        (mix (atom 1) (lsh (atom 0) (atom 2)
+                                           (cat (atom 0) qd qe)))
+                        re])))
+                 (let [^Atom c c]
+                   (if (and (atom? a) (<= (.met ^Atom a 0) (.met c 0)))
+                     (let [d (mat a)]
+                       [(inc (.p d)) (lsh (atom 0) (atom 1) (.q d)) m])
+                     (let [d (mat c)]
+                       [(add (atom 2) (.p d)) 
+                        (mix (atom 3) (lsh (atom 0) (atom 2) (.q d))) 
+                        m]))))))
+        [p q r] (go a (atom 0) (transient {}))]
     q))
