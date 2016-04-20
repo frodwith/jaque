@@ -56,8 +56,8 @@
                          [pv qv rv] ($ (add pu c) ru)
                          w          (cell qu qv)]
                      [(add a2 (add pu pv)) w (assoc! rv b w)])
-                   (let [d (rub c a)
-                         got     (m (.longValue ^Atom (.q d)))]
+                   (let [d   (rub c a)
+                         got (get m (.q d))]
                      (if (nil? got)
                        (e/exit)
                        [(add a2 (.p d)) got m]))))))
