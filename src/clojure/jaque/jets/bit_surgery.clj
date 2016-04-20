@@ -3,18 +3,18 @@
   (:import (jaque.noun Atom))
   (:require [jaque.error :as e]
             [jaque.jets :refer [defj bloq]]
-            [jaque.noun :refer [atom]]))
+            [jaque.noun :refer [atom a0 a1]]))
 
 (declare lsh)
 
-(defj bex [n] (lsh (atom 0) n (atom 1)))
+(defj bex [n] (lsh a0 n a1))
 (defj cat [a b c]
   (let [a   (bloq a)
         lew (.met b a)
         ler (.met c a)
         all (+ lew ler)]
     (if (= 0 all)
-      (atom 0)
+      a0
       (let [sal (Atom/slaq a all)]
         (Atom/chop a 0 lew 0   sal b)
         (Atom/chop a 0 ler lew sal c)
@@ -24,11 +24,11 @@
   (let [a   (bloq a)
         len (.met d a)]
     (if-not (.isCat b)
-      (atom 0)
+      a0
       (let [b (.intValue b)
             c (if (.isCat c) (.intValue c) (Integer/MAX_VALUE))]
         (if (or (= 0 c) (>= b len))
-          (atom 0)
+          a0
           (let [c (if (> (+ b c) len) (- len b) c)]
             (if (and (= 0 b) (= c len))
               d
@@ -40,7 +40,7 @@
   (if-not (.isCat b)
     c
     (if (.isZero b)
-      (atom 0)
+      a0
       (let [a   (bloq a)
             len (.met c a )
             b   (.intValue b)]
@@ -55,7 +55,7 @@
   (let [a   (bloq a)
         len (.met c a)]
     (if (= 0 len)
-      (atom 0)
+      a0
       (let [lus (+ b len)]
         (when-not (>= lus len) (e/fail))
         (let [sal (Atom/slaq a lus)]
@@ -71,7 +71,7 @@
   (let [a   (bloq a)
         len (.met c a)]
     (if (>= b len)
-      (atom 0)
+      a0
       (let [hep (- len b)
             sal (Atom/slaq a hep)]
         (Atom/chop a b hep 0 sal c)

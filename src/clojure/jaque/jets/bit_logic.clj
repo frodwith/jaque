@@ -1,5 +1,6 @@
 (ns jaque.jets.bit-logic
   (:import (jaque.noun Atom))
+  (:require [jaque.noun :refer [a0]])
   (:use [jaque.jets]))
 
 (defj mix [a b]
@@ -7,7 +8,7 @@
         lna (.met a w)
         lnb (.met b w)]
     (if (and (= 0 lna) (= 0 lnb))
-      (atom 0)
+      a0
       (let [len (Math/max lna lnb)
             sal (int-array len)
             bw  (.words b)]

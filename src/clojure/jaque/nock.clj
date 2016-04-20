@@ -1,11 +1,11 @@
 (ns jaque.nock
   (:refer-clojure :exclude [atom inc])
   (:require [jaque.error :as e]
-            [jaque.noun :refer [atom noun?]]
+            [jaque.noun :refer [atom noun? a0 a1 a2]]
             [jaque.jets.math :refer [inc]])
 
-(def yes   (atom 0))
-(def no    (atom 1))
+(def yes a0)
+(def no  a1)
 
 (defn loob [bool]
   (if bool yes no))
@@ -13,15 +13,15 @@
 (defn leg [^Cell sub ^Atom axe]
   (loop [dir nil
          axe axe]
-    (if (lth axe (atom 2))
+    (if (lth axe a2)
       (try
-        (reduce (fn [^Cell c dir] 
+        (reduce (fn [^Cell c dir]
                   (if (= dir 0)
                     (.p c)
                     (.q c))))
         (catch ClassCastException ex (e/fail)))
-      (recur (cons (if (.isZero (cut (atom 0) (atom 1) (atom 0) axe)) 1 0)
-                   (rsh (atom 0) axe (atom 1)))))))
+      (recur (cons (if (.isZero (cut a0 a1 a0 axe)) 1 0)
+                   (rsh a0 axe a1))))))
 
 (defn nock [sub fom]
   (let [[hed tal] fom
