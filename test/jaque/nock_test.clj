@@ -1,6 +1,9 @@
-(ns cljnock.core-test
+(ns jaque.nock-test
+  (:refer-clojure :exclude [atom])
   (:require [clojure.test :refer :all]
-            [cljnock.core :refer :all]))
+            [jaque.noun :refer :all]
+            [slingshot.slingshot :refer :all]
+            [jaque.nock :refer :all]))
 
 (deftest sugar
   (testing "vector->noun sugar"
@@ -10,30 +13,31 @@
                    [[[0 1 2] [3 4 5] [6 7 8]]
                     [[0 [1 2]] [[3 [4 5]] [6 [7 8]]]]]
                    ]]
-      (is (= (noun p) q) p))))
+      (is (= (noun p) (noun q)) p))))
 
-(deftest leg-test
-  (testing "tree-indexing (leg)"
+(deftest axis-test
+  (testing "tree-indexing (axis)"
     (let [x (noun [[10 20] [30 40 50 60]])]
       (doseq [[p q] [[0  x]
                      [1  x]
-                     [2  (x 0)]
-                     [3  (x 1)]
+                     [2  (.p x)]
+                     [3  (.q x)]
                      [4  10]
                      [5  20]
                      [6  30]
-                     [7  (noun [40 50 60])]
-                     [8  crash]
-                     [9  crash]
-                     [10 crash]
-                     [11 crash]
-                     [12 crash]
-                     [13 crash]
+                     [7  [40 50 60]]
+                     [8  :exit]
+                     [9  :exit]
+                     [10 :exit]
+                     [11 :exit]
+                     [12 :exit]
+                     [13 :exit]
                      [14 40]
-                     [15 (noun [50 60])]
+                     [15 [50 60]]
                      [30 50]
                      [31 60]]]
-        (is (= (leg x (noun p)) q) p)))))
+        (is (= (try+ (axis x (atom p)) (catch [:type :jaque.error/bail ] {:keys [bail-type]} bail-type))
+               (if (= q :exit) :exit (noun q))))))))
 
 (deftest tutorial
   (testing "examples from nock tutorial"
@@ -84,4 +88,4 @@
               41
               "decrement"]
              ]]
-            (is (= (nock (noun sub) (noun fom)) res) msg))))
+            (is (= ((phi (noun fom)) (noun sub)) (noun res)) msg))))

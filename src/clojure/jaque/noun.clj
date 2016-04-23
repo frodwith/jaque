@@ -24,6 +24,7 @@
 (defn cell ^Cell [& xs]
   ((fn $ [c xs]
      (cond (< c 2) (throw+ {:message "A cell must be at least two things."
+                            :count    c
                             :bad-cell xs})
            (= c 2) (->Cell (first xs) (second xs))
            :else   (->Cell (first xs) ($ (dec c) (rest xs)))))
@@ -43,5 +44,18 @@
         :else        (throw+ {:message "atom must be passed an integer or a string"
                               :bad-atom a})))
 
+(defn noun [v]
+  (cond (noun? v)   v
+        (integer? v) (atom v)
+        (vector? v)  (apply cell (map noun v))
+        :else        (throw+ {:message "bad argument to noun"
+                              :bad-noun v})))
+
 (doseq [i [0 1 2 3 10]]
   (intern *ns* (symbol (str "a" i)) (atom i)))
+
+(def yes a0)
+(def no  a1)
+
+(defn loob [bool]
+  (if bool yes no))
