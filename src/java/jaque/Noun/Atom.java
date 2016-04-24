@@ -40,13 +40,42 @@ public abstract class Atom extends Number implements Comparable<Atom> {
         }
     }
 
-    public static Atom fromBigEndian(byte[] big) {
-        int i, j, len = big.length;
-        byte[] pill = new byte[len];
+    public static byte[] reverseBytes(byte[] b) {
+        int i, j, len = b.length;
+        byte[] rev = new byte[len];
         for (i = 0, j = len - 1; i < len; ++i, --j) {
-            pill[i] = big[j];
+            rev[i] = b[j];
         }
-        return fromPill(pill);
+        return rev;
+    }
+
+    public byte[] toLittleEndian() {
+        int[]  wor = words();
+        int    len = wor.length,
+               bel = met((byte)3);
+        byte[] buf = new byte[bel];
+        int    w, i, b;
+        for (i = 0, b = 0;;) {
+            w = wor[i++];
+
+            buf[b++] = (byte) ((w & 0x000000FF) >>> 0);
+            if (b >= bel) break;
+
+            buf[b++] = (byte) ((w & 0x0000FF00) >>> 8);
+            if (b >= bel) break;
+
+            buf[b++] = (byte) ((w & 0x00FF0000) >>> 16);
+            if (b >= bel) break;
+
+            buf[b++] = (byte) ((w & 0xFF000000) >>> 24);
+            if (b >= bel) break;
+        }
+        return buf;
+    }
+
+    // Big-endian byte array (like BigInteger)
+    public byte[] toByteArray() {
+        return reverseBytes(toLittleEndian());
     }
 
     // Bytes should be in little-endian order.
@@ -73,6 +102,11 @@ public abstract class Atom extends Number implements Comparable<Atom> {
 
         return malt(words);
     }
+
+    public static Atom fromBigEndian(byte[] big) {
+        return fromPill(reverseBytes(big));
+    }
+
 
     public static Atom fromString(String s, int radix) {
         char[] car = s.toCharArray();

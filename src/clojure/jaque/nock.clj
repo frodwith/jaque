@@ -33,7 +33,7 @@
   (cond (cell? f)
           `(cell ~(daoqot (.p f)) ~(daoqot (.q f)))
         (atom? f)
-          `(atom ~(str f))
+          `(atom ~(read-string (str f)))
         (= f 'a)
           f
         :else

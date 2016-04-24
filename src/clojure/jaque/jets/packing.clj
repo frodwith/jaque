@@ -64,8 +64,7 @@
         [p q r] (go a0 (transient {}))]
     q))
 
-(defn jam "pack"
-  [a]
+(defj jam [a]
   (let [go (fn $ [a b m]
              (let [c (m a)]
                (if (nil? c)
