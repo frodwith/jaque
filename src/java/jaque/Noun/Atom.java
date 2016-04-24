@@ -8,6 +8,8 @@ public abstract class Atom extends Number implements Comparable<Atom> {
     public static final int    MAX_FIXNUM = 255;
     public static final Atom[] fix;
     public static final Atom ZERO, ONE, TWO, THREE, TEN;
+    public static final boolean BIG_ENDIAN = true;
+    public static final boolean LITTLE_ENDIAN = false;
 
     static {
         fix = new DirectAtom[MAX_FIXNUM + 1];
@@ -40,16 +42,13 @@ public abstract class Atom extends Number implements Comparable<Atom> {
         }
     }
 
-    public static byte[] reverseBytes(byte[] b) {
-        int i, j, len = b.length;
-        byte[] rev = new byte[len];
-        for (i = 0, j = len - 1; i < len; ++i, --j) {
-            rev[i] = b[j];
-        }
-        return rev;
+    /* Big endian is the default for toByteArray because that's what
+     * BigInteger does, so it's good to keep the same API. */
+    public byte[] toByteArray() {
+        return toByteArray(BIG_ENDIAN);
     }
 
-    public byte[] toLittleEndian() {
+    public byte[] toByteArray(boolean endian) {
         int[]  wor = words();
         int    len = wor.length,
                bel = met((byte)3);
@@ -70,18 +69,21 @@ public abstract class Atom extends Number implements Comparable<Atom> {
             buf[b++] = (byte) ((w & 0xFF000000) >>> 24);
             if (b >= bel) break;
         }
+        if (endian == BIG_ENDIAN) {
+            Collections.reverse(Arrays.asList(buf));
+        }
         return buf;
     }
 
-    // Big-endian byte array (like BigInteger)
-    public byte[] toByteArray() {
-        return reverseBytes(toLittleEndian());
-    }
-
-    // Bytes should be in little-endian order.
-    public static Atom fromPill(byte[] pill) {
+    public static Atom fromByteArray(byte[] pill, boolean endian) {
         int len  = pill.length;
         int trim = len % 4;
+
+        if (endian == BIG_ENDIAN) {
+            pill = Arrays.copyOf(pill, len);
+            Collections.reverse(Arrays.asList(pill));
+        }
+
         if (trim > 0) {
             int    nlen = len + (4-trim);
             byte[] npil = new byte[nlen];
@@ -89,6 +91,7 @@ public abstract class Atom extends Number implements Comparable<Atom> {
             pill = npil;
             len = nlen;
         }
+
         int   size  = len / 4;
         int[] words = new int[size];
         int i, b, w;
@@ -103,10 +106,9 @@ public abstract class Atom extends Number implements Comparable<Atom> {
         return malt(words);
     }
 
-    public static Atom fromBigEndian(byte[] big) {
-        return fromPill(reverseBytes(big));
+    public static Atom fromByteArray(byte[] pill) {
+        return fromByteArray(pill, BIG_ENDIAN);
     }
-
 
     public static Atom fromString(String s, int radix) {
         char[] car = s.toCharArray();

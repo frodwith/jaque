@@ -33,7 +33,7 @@
 (defn atom ^Atom [a]
   (cond (atom? a)    a
         (integer? a) (cond (instance? BigInteger a)
-                             (Atom/fromBigEndian (.toByteArray ^BigInteger a))
+                             (Atom/fromByteArray (.toByteArray ^BigInteger a) Atom/BIG_ENDIAN)
                            (instance? BigInt a)
                              (let [^BigInt a a]
                                (if (nil? (.bipart a))

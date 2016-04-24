@@ -3,7 +3,7 @@
   (:import (jaque.noun Atom)))
 
 (defn cord->string ^String [^Atom c]
-  (String. (.toLittleEndian c) "UTF-8"))
+  (String. (.toByteArray c Atom/LITTLE_ENDIAN) "UTF-8"))
 
 (defn string->cord ^Atom [^String s]
-  (Atom/fromPill (.getBytes s "UTF-8")))
+  (Atom/fromByteArray (.getBytes s "UTF-8") Atom/LITTLE_ENDIAN))
