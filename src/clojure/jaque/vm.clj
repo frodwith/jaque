@@ -19,4 +19,6 @@
   (let [pas "/home/pdriver/piers/urbit.pill"
         sys (load-pill pas)
         bin (phi (hed sys))]
-    (println "We have compiled the kernel.")))
+    (println "We have compiled the kernel.")
+    (bin a0)
+    (println "Now we've nocked it on 0.")))

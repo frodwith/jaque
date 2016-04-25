@@ -8,107 +8,111 @@
             [jaque.jets.bit-surgery :refer [cut rsh]])
   (:import (jaque.noun Atom Cell)))
 
-(defn axis [^Cell sub ^Atom axe]
+(defn fas [^Atom axe]
   (loop [dir nil
          axe axe]
     (if (lth axe a2)
-      (try
-        (reduce (fn [^Cell c dir] (if (= 0 dir) (hed c) (tal c)))
-                sub dir)
-        (catch ClassCastException ex (e/exit)))
-      (recur (cons (if (.isZero (cut a0 a0 a1 axe)) 0 1) dir)
+      (reduce (fn [f d] (if d `(hed ~f) `(tal ~f)))
+              'a dir)
+      (recur (cons (.isZero (cut a0 a0 a1 axe)) dir)
              (rsh a0 a1 axe)))))
 
-(defn daofas [^Atom b]
-  (cond (= b a1) 'a
-        (= b a2) `(hed ~'a)
-        (= b a3) `(tal ~'a)
-        :else (let [even (.isZero (cut a0 a0 a1 b))
-                    newb (rsh a0 a1 (if even b (dec b)))
-                    nexf (daofas newb)]
-                (if even
-                  `(hed ~nexf)
-                  `(tal ~nexf)))))
-
-(defn daoqot [f]
-  (cond (cell? f)
-          (let [m (daoqot (hed f))
-                n (daoqot (tal f))]
-            `(cell ~m ~n))
-        (atom? f)
-          (if (.isCat ^Atom f)
-            `(Atom/fromLong ~(.longValue ^Atom f))
-            `(Atom/malt (int-array ~(into [] (.words ^Atom f)))))
-        (= f 'a)
-          f
-        :else
-          (throw+ {:type ::bad-quote :form f})))
+(defn axis [^Cell sub ^Atom axe]
+  (let [fun (eval `(fn [~'a] ~(fas axe)))]
+    (try
+      (fun sub)
+      (catch ClassCastException e
+        (e/exit)))))
 
 (declare dao)
 
-(def phi
-  (memoize
-    (fn [f]
-      (let [body (dao f)
-            code `(fn [~'a] ~body)]
-        (eval code)))))
+(defn phi [fom]
+  (let [[bat pay] (dao fom [])
+        code      `(fn [~'q ~'a] ~bat)
+        fun       (eval code)]
+    (partial fun pay)))
+
+(defn nock [sub fom]
+  ((phi fom) sub))
 
 ; A nock compiler
-; adapted from https://gist.github.com/burtonsamograd/29103c2dfaa67f4fd344
-(defn dao [f]
-  (if-not (cell? f)
-    f
-    (let [^Cell f f
-          p (hed f)
-          q (tal f)]
-      (if (cell? p)
-        (let [^Cell p p
-              m (dao p)
-              n (dao q)]
-          `(cell ~m ~n))
-        (case (.intValue ^Atom p)
-          0  (daofas q)
-          1  (daoqot q)
-          2  (let [bc      (dao (hed q))
-                   ^Cell d (dao (tal q))]
-               (if (= (first d) 'quote)
-                 (let [x (dao (hed (tal d)))]
-                   (if (or (= bc 'a)
-                           (atom? x))
-                     (daoqot x)
-                     `(let [a ~bc]
-                        ~x)))
-                 `((phi ~d) ~bc)))
-          3  `(if (cell? ~(dao q)) yes no)
-          4  `(inc ~(dao q))
-          5  (let [m (hed q)
-                   n (tal q)]
-               `(if (= ~(dao m) ~(dao n)) yes no))
-          6  (let [^Atom b (dao (hed q))
+; original idea from https://gist.github.com/burtonsamograd/29103c2dfaa67f4fd344
+
+; We started out generating code for quoted atoms, but that blew the java
+; heap. So, we return a core from dao - i.e. some generated code and some data
+; it will be allowed to reference when it's executed. The generated code
+; references this data to implement quoting.
+
+(defn dao [^Cell f pay]
+  (let [p (hed f)
+        q (tal f)]
+    (if (cell? p)
+      (let [^Cell p p
+            [m pay] (dao p pay)
+            [n pay] (dao q pay)
+            bat     `(cell ~m ~n)]
+        [bat pay])
+      (let [op (.intValue ^Atom p)]
+        (println op)
+        (case op
+          0  [(fas q) pay]
+
+          1  (let [bat `(~'q ~(count pay))
+                   pay (conj pay q)]
+               [bat pay])
+
+          2  (let [[b pay] (dao (hed q) pay)
+                   [c pay] (dao (tal q) pay)
+                   bat     `(nock ~b ~c)]
+               [bat pay])
+
+          3  (let [[b pay] (dao q pay)
+                   bat     `(if (cell? ~b) yes no)]
+               [bat pay])
+
+          4  (let [[b pay] (dao q pay)
+                   bat     `(inc ~b)]
+               [bat pay])
+
+          5  (let [[b pay] (dao (hed q) pay)
+                   [c pay] (dao (tal q) pay)
+                   bat     `(if (= ~b ~c) yes no)]
+               [bat pay])
+
+          6  (let [[b pay] (dao (hed q) pay)
                    qq      (tal q)
-                   c       (dao (hed qq))
-                   d       (dao (tal qq))]
-               `(if (.isZero ~b) ~c ~d))
-          7  (let [b (dao (hed q))
-                   c (dao (tal q))]
-               `((fn [~'a] ~c) ((fn [~'a] ~b) ~'a)))
-          8  (let [b (dao (hed q))
-                   c (dao (tal q))]
-               `(let [~'a (cell ~b ~'a)]
-                  ~c))
-          9  (let [b (dao (hed q))
-                   c (dao (tal q))]
-               `(let [~'f (fn [~'a] ~c)
-                      ~'x (~'f ~'a)]
-                  ((phi (let [~'a ~'x] ~(daofas b))) ~'x)))
-          10 (let [b (hed q)
-                   c (tal q)
-                   r (dao c)]
+                   [c pay] (dao (hed qq) pay)
+                   [d pay] (dao (tal qq) pay)
+                   bat     `(if (.isZero ^Atom ~b) ~c ~d)]
+               [bat pay])
+
+          7  (let [[b pay] (dao (hed q) pay)
+                   [c pay] (dao (tal q) pay)
+                   bat     `(let [~'a ~b] ~c)]
+               [bat pay])
+
+          8  (let [[b pay] (dao (hed q) pay)
+                   [c pay] (dao (tal q) pay)
+                   bat     `(let [~'a (cell ~b ~'a)] ~c)]
+               [bat pay])
+
+          9  (let [b       (hed q)
+                   [c pay] (dao (tal q) pay)
+                   bat     `(let [~'d ~c
+                                  ~'e (let [~'a ~'d] ~(fas b))]
+                              (nock ~'d ~'e))]
+               [bat pay])
+
+          10 (let [b         (hed q)
+                   c         (tal q)
+                   [bat pay] (dao c pay)]
                (if (atom? b)
-                 r
+                 (do (println (format "static hint: %s" b))
+                     [bat pay])
                  (let [nam (hed b)
-                       fom (tal b)]
-                   (println (format "compiling dynamic hint: %s" (cord->string nam)))
-                   `(let [hin ~(dao fom)]
-                      (println (format "dynamic hint: %s" hin))
-                      ~r)))))))))
+                       fom (tal b)
+                       bat `(let [~'hin ~(dao fom pay)]
+                              (println (format "dynamic hint: %s" ~'hin))
+                              ~bat)]
+                   (println (format "compiled dynamic hint: %s" (cord->string nam)))
+                   [bat pay]))))))))

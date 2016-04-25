@@ -88,4 +88,4 @@
               41
               "decrement"]
              ]]
-            (is (= ((phi (noun fom)) (noun sub)) (noun res)) msg))))
+            (is (= (nock (noun sub) (noun fom)) (noun res)) msg))))
