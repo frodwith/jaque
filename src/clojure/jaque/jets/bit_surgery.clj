@@ -53,6 +53,7 @@
 (defj lsh [a b c]
   (when-not (.isCat b) (e/fail))
   (let [a   (bloq a)
+        b   (.intValue b)
         len (.met c a)]
     (if (= 0 len)
       a0
@@ -68,8 +69,10 @@
     (Atom/fromLong i)))
 
 (defj rsh [a b c]
+  (when-not (.isCat b) (e/fail))
   (let [a   (bloq a)
-        len (.met c a)]
+        len (.met c a)
+        b   (.intValue b)]
     (if (>= b len)
       a0
       (let [hep (- len b)

@@ -5,6 +5,8 @@ import java.util.Arrays;
 
 public class IndirectAtom extends Atom {
     public final int[] words;
+    public boolean hashed;
+    public int hash;
 
     public IndirectAtom(int[] ws) {
         words = ws;
@@ -28,8 +30,21 @@ public class IndirectAtom extends Atom {
         return words;
     }
 
+    public boolean equals(Object o) {
+        if (!(o instanceof IndirectAtom)) {
+            return false;
+        }
+        IndirectAtom a = (IndirectAtom) o;
+        return (hashCode() == a.hashCode())
+            && (0 == compareTo(a));
+    }
+
     public int hashCode() {
-        return Arrays.hashCode(words);
+        if (!hashed) {
+            hash = Arrays.hashCode(words);
+            hashed = true;
+        }
+        return hash;
     }
 
     public int compareTo(Atom b) {

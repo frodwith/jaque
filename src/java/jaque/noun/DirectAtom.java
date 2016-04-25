@@ -27,6 +27,14 @@ public class DirectAtom extends Atom {
         return val;
     }
 
+    public boolean equals(Object o) {
+        if (!(o instanceof DirectAtom)) {
+            return false;
+        }
+        DirectAtom a = (DirectAtom) o;
+        return val == a.val;
+    }
+
     public int compareTo(Atom b) {
         if (b.isCat()) {
             int dif = val - b.intValue();

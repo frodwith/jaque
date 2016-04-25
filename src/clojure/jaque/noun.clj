@@ -1,36 +1,24 @@
 (ns jaque.noun
   (:refer-clojure :exclude [atom])
   (:require [slingshot.slingshot :refer [throw+]])
-  (:import (jaque.noun Atom)
+  (:import (jaque.noun Atom Cell Noun)
            (clojure.lang BigInt)
            (java.math BigInteger)))
-
-(deftype Cell [p q]
-  Object
-  (equals [a b] (and (instance? Cell b)
-                     (let [^Cell b b]
-                       (and (= (.p a) (.p b))
-                            (= (.q a) (.q b))))))
-  (hashCode [c]
-    (+ (* 37 (+ 37 (.hashCode (.p c))))
-       (.hashCode (.q c))))
-
-  (toString [c] (format "[%s %s]" (.p c) (.q c))))
 
 (defn hed [^Cell c] (.p c))
 (defn tal [^Cell c] (.q c))
 
 (def atom? (partial instance? Atom))
 (def cell? (partial instance? Cell))
-(defn noun? [a] (or (atom? a) (cell? a)))
+(def noun? (partial instance? Noun))
 
 (defn cell ^Cell [& xs]
   ((fn $ [c xs]
      (cond (< c 2) (throw+ {:message "A cell must be at least two things."
                             :count    c
                             :bad-cell xs})
-           (= c 2) (->Cell (first xs) (second xs))
-           :else   (->Cell (first xs) ($ (dec c) (rest xs)))))
+           (= c 2) (Cell. ^Noun (first xs) ^Noun (second xs))
+           :else   (Cell. ^Noun (first xs) ^Noun ($ (dec c) (rest xs)))))
    (count xs) xs))
 
 (defn atom ^Atom [a]

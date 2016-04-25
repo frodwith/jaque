@@ -29,7 +29,9 @@
 (defn phi [fom]
   (let [[bat pay] (dao fom [])
         code      `(fn [~'q ~'a] ~bat)
+        _         (println (str fom))
         fun       (eval code)]
+    (println "...done.")
     (partial fun pay)))
 
 (defn nock [sub fom]
@@ -112,7 +114,7 @@
                  (let [nam (hed b)
                        fom (tal b)
                        bat `(let [~'hin ~(dao fom pay)]
-                              (println (format "dynamic hint: %s" ~'hin))
-                              ~bat)]
-                   (println (format "compiled dynamic hint: %s" (cord->string nam)))
+                              (print "Computed dynamic hint:")
+                              (prn ~'hin))]
+                   (println (format "compiled %%%s" (cord->string nam)))
                    [bat pay]))))))))

@@ -4,7 +4,7 @@ import gnu.math.MPN;
 import java.util.Arrays;
 import java.util.Collections;
 
-public abstract class Atom extends Number implements Comparable<Atom> {
+public abstract class Atom extends Noun implements Comparable<Atom> {
     public static final int    MAX_FIXNUM = 255;
     public static final Atom[] fix;
     public static final Atom ZERO, ONE, TWO, THREE, TEN;
@@ -166,20 +166,30 @@ public abstract class Atom extends Number implements Comparable<Atom> {
         return new IndirectAtom(w);
     }
 
+    public abstract int intValue();
+    public abstract long longValue();
     public byte byteValue() { return (byte) intValue(); }
     public short shortValue() { return (short) intValue(); }
     public float floatValue() { return (float) longValue(); }
     public double doubleValue() { return (double) longValue(); }
 
     public String toString(int radix) {
-        int[] cur  = cloneWords();
-        int   len  = cur.length,
-              size = len;
+        StringBuilder b = new StringBuilder();
+        write(b, radix);
+        return b.toString();
+    }
 
-        StringBuffer buf = new StringBuffer();
+    public void write(StringBuilder b, int radix) {
+        int[] cur   = cloneWords();
+        int   len   = cur.length,
+              size  = len,
+              i = b.length(),
+              j = i - 1;
+
         for(;;) {
             int dig = MPN.divmod_1(cur, cur, size, radix);
-            buf.append(Character.forDigit(dig, radix));
+            b.append(Character.forDigit(dig, radix));
+            ++j;
             if (cur[len-1] == 0) {
                 if (--len == 0) {
                     break;
@@ -187,22 +197,18 @@ public abstract class Atom extends Number implements Comparable<Atom> {
             }
         }
 
-        buf.reverse();
-        return buf.toString();
-//        String s = buf.toString().replaceFirst("^0+", "");
-//        return s.length() == 0 ? "0" : s;
-    }
-
-    public String toString() {
-        return toString(10);
-    }
-
-    public boolean equals(Object o) {
-        if (!(o instanceof Atom)) {
-            return false;
+        for (; i < j; ++i, --j) {
+            char t = b.charAt(j);
+            b.setCharAt(j, b.charAt(i));
+            b.setCharAt(i, t);
         }
-        return 0 == compareTo((Atom) o);
     }
+
+    public void write(StringBuilder b) {
+        write(b, 10);
+    }
+
+    public abstract boolean equals(Object o);
 
     public class Square {
         int[] x;
