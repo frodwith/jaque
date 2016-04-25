@@ -17,6 +17,9 @@
 
   (toString [c] (format "[%s %s]" (.p c) (.q c))))
 
+(defn hed [^Cell c] (.p c))
+(defn tal [^Cell c] (.q c))
+
 (def atom? (partial instance? Atom))
 (def cell? (partial instance? Cell))
 (defn noun? [a] (or (atom? a) (cell? a)))

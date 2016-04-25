@@ -48,7 +48,21 @@ public abstract class Atom extends Number implements Comparable<Atom> {
         return toByteArray(BIG_ENDIAN);
     }
 
+    public static void reverseBytes(byte[] a) {
+        int i, j;
+        byte b;
+        for (i = 0, j = a.length - 1; j > i; ++i, --j) {
+            b = a[i];
+            a[i] = a[j];
+            a[j] = b;
+        }
+    }
+
     public byte[] toByteArray(boolean endian) {
+        if (isZero()) {
+            return new byte[1];
+        }
+
         int[]  wor = words();
         int    len = wor.length,
                bel = met((byte)3);
@@ -70,7 +84,7 @@ public abstract class Atom extends Number implements Comparable<Atom> {
             if (b >= bel) break;
         }
         if (endian == BIG_ENDIAN) {
-            Collections.reverse(Arrays.asList(buf));
+            reverseBytes(buf);
         }
         return buf;
     }
@@ -81,7 +95,7 @@ public abstract class Atom extends Number implements Comparable<Atom> {
 
         if (endian == BIG_ENDIAN) {
             pill = Arrays.copyOf(pill, len);
-            Collections.reverse(Arrays.asList(pill));
+            reverseBytes(pill);
         }
 
         if (trim > 0) {
@@ -174,8 +188,9 @@ public abstract class Atom extends Number implements Comparable<Atom> {
         }
 
         buf.reverse();
-        String s = buf.toString().replaceFirst("^0+", "");
-        return s.length() == 0 ? "0" : s;
+        return buf.toString();
+//        String s = buf.toString().replaceFirst("^0+", "");
+//        return s.length() == 0 ? "0" : s;
     }
 
     public String toString() {

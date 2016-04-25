@@ -48,8 +48,8 @@
   (let [go (fn $ [b m]
              (if (.isZero (cut a0 b a1 a))
                (let [c  (rub (inc b) a)
-                     qc (.q c)]
-                 [(inc (.p c)) qc (assoc! m b qc)])
+                     qc (tal c)]
+                 [(inc (hed c)) qc (assoc! m b qc)])
                (let [c (add a2 b)]
                  (if (.isZero (cut a0 (inc b) a1 a))
                    (let [[pu qu ru] ($ c m)
@@ -57,10 +57,10 @@
                          w          (cell qu qv)]
                      [(add a2 (add pu pv)) w (assoc! rv b w)])
                    (let [d   (rub c a)
-                         got (get m (.q d))]
+                         got (get m (tal d))]
                      (if (nil? got)
                        (e/exit)
-                       [(add a2 (.p d)) got m]))))))
+                       [(add a2 (hed d)) got m]))))))
         [p q r] (go a0 (transient {}))]
     q))
 
@@ -72,11 +72,11 @@
                    (if (atom? a)
                      (let [^Atom a a
                            d (mat a)]
-                       [(inc (.p d)) (lsh a0 a1 (.q d)) m])
+                       [(inc (hed d)) (lsh a0 a1 (tal d)) m])
                      (let [b          (add a2 b)
                            ^Cell a    a
-                           [pd qd rd] ($ (.p a) b m)
-                           [pe qe re] ($ (.q a) (add b pd) rd)]
+                           [pd qd rd] ($ (hed a) b m)
+                           [pe qe re] ($ (tal a) (add b pd) rd)]
                        [(add a2 (add pd pe))
                         (mix a1 (lsh a0 a2
                                            (cat a0 qd qe)))
@@ -84,10 +84,10 @@
                  (let [^Atom c c]
                    (if (and (atom? a) (<= (.met ^Atom a 0) (.met c 0)))
                      (let [d (mat a)]
-                       [(inc (.p d)) (lsh a0 a1 (.q d)) m])
+                       [(inc (hed d)) (lsh a0 a1 (tal d)) m])
                      (let [d (mat c)]
-                       [(add a2 (.p d))
-                        (mix a3 (lsh a0 a2 (.q d)))
+                       [(add a2 (hed d))
+                        (mix a3 (lsh a0 a2 (tal d)))
                         m]))))))
         [p q r] (go a a0 (transient {}))]
     q))

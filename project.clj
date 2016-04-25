@@ -4,6 +4,7 @@
 ;                "-Dcom.sun.management.jmxremote.ssl=false"
 ;                "-Dcom.sun.management.jmxremote.authenticate=false"
 ;                "-Dcom.sun.management.jmxremote.port=43210"]
+  :main         jaque.vm
   :source-paths      ["src/clojure"]
   :java-source-paths ["src/java"]
   :dependencies [[org.clojure/clojure "1.8.0"]
