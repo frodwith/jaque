@@ -52,6 +52,10 @@ public class DirectAtom extends Atom {
         return val == 0;
     }
 
+    public int lo() {
+        return val;
+    }
+
     public boolean isCat() {
         return true;
     }

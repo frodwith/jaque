@@ -4,18 +4,21 @@
             [jaque.error :as e]
             [jaque.noun :refer :all]
             [jaque.cord :refer :all]
-            [jaque.jets.math :refer [inc dec lth]]
-            [jaque.jets.bit-surgery :refer [cut rsh]])
+            [jaque.jets.math :refer [inc dec gth]]
+            [jaque.jets.bit-surgery :refer [cut met]])
   (:import (jaque.noun Atom Cell)))
 
 (defn fas [^Atom axe]
-  (loop [dir nil
-         axe axe]
-    (if (lth axe a2)
-      (reduce (fn [f d] (if d `(hed ~f) `(tal ~f)))
-              'a dir)
-      (recur (cons (.isZero (cut a0 a0 a1 axe)) dir)
-             (rsh a0 a1 axe)))))
+  (if (.isZero axe)
+    'a
+    (let [end (dec (met a0 axe))]
+      (loop [dir nil
+             i   a0]
+        (if (= i end)
+          (reduce (fn [f d] (if d `(hed ~f) `(tal ~f)))
+                            'a dir)
+          (recur (cons (.isZero (cut a0 i a1 axe)) dir)
+                 (inc i)))))))
 
 (defn axis [^Cell sub ^Atom axe]
   (let [fun (eval `(fn [~'a] ~(fas axe)))]
@@ -26,13 +29,14 @@
 
 (declare dao)
 
+(defn run [sub cor]
+  (let [[bat pay] cor
+        cod `(fn [~'q ~'a] ~bat)
+        fun (eval cod)]
+    (fun pay sub)))
+
 (defn phi [fom]
-  (let [[bat pay] (dao fom [])
-        code      `(fn [~'q ~'a] ~bat)
-        _         (println (str fom))
-        fun       (eval code)]
-    (println "...done.")
-    (partial fun pay)))
+  #(run % (dao fom [])))
 
 (defn nock [sub fom]
   ((phi fom) sub))
@@ -44,7 +48,6 @@
 ; heap. So, we return a core from dao - i.e. some generated code and some data
 ; it will be allowed to reference when it's executed. The generated code
 ; references this data to implement quoting.
-
 (defn dao [^Cell f pay]
   (let [p (hed f)
         q (tal f)]
@@ -52,20 +55,20 @@
       (let [^Cell p p
             [m pay] (dao p pay)
             [n pay] (dao q pay)
-            bat     `(cell ~m ~n)]
+            bat     `(Cell. ~m ~n)]
         [bat pay])
       (let [op (.intValue ^Atom p)]
-        (println op)
         (case op
           0  [(fas q) pay]
 
-          1  (let [bat `(~'q ~(count pay))
+          1  (let [i   (count pay)
+                   bat `(~'q ~i)
                    pay (conj pay q)]
                [bat pay])
 
           2  (let [[b pay] (dao (hed q) pay)
                    [c pay] (dao (tal q) pay)
-                   bat     `(nock ~b ~c)]
+                   bat     `(run ~b (dao ~c ~'q))]
                [bat pay])
 
           3  (let [[b pay] (dao q pay)
@@ -95,14 +98,13 @@
 
           8  (let [[b pay] (dao (hed q) pay)
                    [c pay] (dao (tal q) pay)
-                   bat     `(let [~'a (cell ~b ~'a)] ~c)]
+                   bat     `(let [~'a (Cell. ~b ~'a)] ~c)]
                [bat pay])
 
           9  (let [b       (hed q)
                    [c pay] (dao (tal q) pay)
-                   bat     `(let [~'d ~c
-                                  ~'e (let [~'a ~'d] ~(fas b))]
-                              (nock ~'d ~'e))]
+                   bat     `(let [~'a ~c]
+                              (run ~'a (dao ~(fas b) ~'q)))]
                [bat pay])
 
           10 (let [b         (hed q)
@@ -111,10 +113,18 @@
                (if (atom? b)
                  (do (println (format "static hint: %s" b))
                      [bat pay])
-                 (let [nam (hed b)
-                       fom (tal b)
-                       bat `(let [~'hin ~(dao fom pay)]
-                              (print "Computed dynamic hint:")
-                              (prn ~'hin))]
-                   (println (format "compiled %%%s" (cord->string nam)))
+                 (let [nam       (cord->string (hed b))
+                       fom       (tal b)
+                       [hif pay] (dao fom pay)
+                       bat       `(let [~'hin ~hif]
+                                    (println "Computed dynamic hint")
+                                    ~(if (= nam "fast")
+                                       `(let [~'hid (hed ~'hin)
+                                              ~'nam (if (cell? ~'hid)
+                                                      (format "%s%s" (cord->string (hed ~'hid)) (tal ~'hid))
+                                                      (cord->string ~'hid))]
+                                          (println (format "%%fast hint: %%%s" ~'nam))
+                                          ~bat)
+                                       bat))]
+                   (println (format "compiled %%%s" nam))
                    [bat pay]))))))))

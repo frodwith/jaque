@@ -6,7 +6,13 @@ public class Cell extends Noun {
     public boolean hashed;
     public int hash;
 
-    public Cell(Noun p, Noun q) {
+    public Cell(Noun p, Noun q) throws Exception {
+        if (p == null) {
+            throw new Exception("Null p in cell constructor");
+        }
+        if (q == null) {
+            throw new Exception("Null q in cell constructor");
+        }
         this.p = p;
         this.q = q;
     }

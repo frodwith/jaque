@@ -27,8 +27,13 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
     public abstract int compareTo(Atom a);
     public abstract int hashCode();
     public abstract boolean isZero();
+    public abstract int lo();
     public abstract int[] words();
     public abstract boolean isCat();
+
+    public boolean isEven() {
+        return (lo() & 1) == 0;
+    }
 
     public static Atom fromLong(long l) {
         if (l >= 0 && l < MAX_FIXNUM) {

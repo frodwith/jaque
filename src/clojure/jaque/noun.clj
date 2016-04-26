@@ -5,12 +5,12 @@
            (clojure.lang BigInt)
            (java.math BigInteger)))
 
-(defn hed [^Cell c] (.p c))
-(defn tal [^Cell c] (.q c))
-
 (def atom? (partial instance? Atom))
 (def cell? (partial instance? Cell))
 (def noun? (partial instance? Noun))
+
+(defn hed [^Cell c] (.p c))
+(defn tal [^Cell c] (.q c))
 
 (defn cell ^Cell [& xs]
   ((fn $ [c xs]

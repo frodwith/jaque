@@ -59,6 +59,10 @@ public class IndirectAtom extends Atom {
         return false;
     }
 
+    public int lo() {
+        return words[0];
+    }
+
     public boolean isCat() {
         return false;
     }
