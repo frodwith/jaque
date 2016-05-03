@@ -15,7 +15,7 @@
                    ]]
       (is (= (noun p) (noun q)) p))))
 
-(deftest axis-test
+(deftest at-test
   (testing "tree-indexing (axis)"
     (let [x (noun [[10 20] [30 40 50 60]])]
       (doseq [[p q] [[0  x]
@@ -26,18 +26,17 @@
                      [5  20]
                      [6  30]
                      [7  [40 50 60]]
-                     [8  :exit]
-                     [9  :exit]
-                     [10 :exit]
-                     [11 :exit]
-                     [12 :exit]
-                     [13 :exit]
+                     [8  nil]
+                     [9  nil]
+                     [10 nil]
+                     [11 nil]
+                     [12 nil]
+                     [13 nil]
                      [14 40]
                      [15 [50 60]]
                      [30 50]
                      [31 60]]]
-        (is (= (try+ (axis x (atom p)) (catch [:type :jaque.error/bail ] {:keys [bail-type]} bail-type))
-               (if (= q :exit) :exit (noun q))))))))
+        (is (= (at x (atom p)) (if (nil? q) nil (noun q))))))))
 
 (deftest tutorial
   (testing "examples from nock tutorial"
