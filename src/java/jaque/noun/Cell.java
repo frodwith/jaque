@@ -27,7 +27,7 @@ public class Cell extends Noun {
 
     public final int hashCode() {
         if (!hashed) {
-            hash = p.hashCode() ^ q.hashCode();
+            hash = Noun._mug_both(p.hashCode(), q.hashCode());
             hashed = true;
         }
         return hash;

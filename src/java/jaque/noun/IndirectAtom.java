@@ -41,7 +41,7 @@ public class IndirectAtom extends Atom {
 
     public int hashCode() {
         if (!hashed) {
-            hash = Arrays.hashCode(words);
+            hash = Noun._mug_words((int) 2166136261L, words.length, words);
             hashed = true;
         }
         return hash;

@@ -24,7 +24,7 @@ public class DirectAtom extends Atom {
     }
 
     public int hashCode() {
-        return val;
+        return Noun._mug_words((int) 2166136261L, (val > 0 ? 1 : 0), words());
     }
 
     public boolean equals(Object o) {

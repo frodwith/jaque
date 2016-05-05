@@ -39,3 +39,5 @@
   (if (atom? yux)
     (shaf mash-mote yux)
     (shaf sham-mote (jam yux))))
+
+(defn mug [a] (atom (.hashCode a)))

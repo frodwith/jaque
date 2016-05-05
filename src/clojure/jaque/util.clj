@@ -13,3 +13,6 @@
                                 (bits-in (inc i))))))]
     (f a0)))
 
+(defn cell-list [c]
+  (when (cell? c)
+    (lazy-seq (cons (hed c) (cell-list (tal c))))))
