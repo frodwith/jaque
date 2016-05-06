@@ -3,6 +3,8 @@ package jaque.noun;
 import gnu.math.MPN;
 import java.util.Arrays;
 import java.util.Collections;
+import clojure.lang.Cons;
+import clojure.lang.ISeq;
 
 public abstract class Atom extends Noun implements Comparable<Atom> {
     public static final int    MAX_FIXNUM = 255;
@@ -33,6 +35,10 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
 
     public boolean isEven() {
         return (lo() & 1) == 0;
+    }
+
+    public ISeq seq() {
+        return new Cons(this, null);
     }
 
     public static Atom fromLong(long l) {

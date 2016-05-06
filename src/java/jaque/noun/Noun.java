@@ -1,6 +1,8 @@
 package jaque.noun;
 
-public abstract class Noun {
+import clojure.lang.Seqable;
+
+public abstract class Noun implements Seqable {
     public abstract void write(StringBuilder b);
 
     public final String toString() {

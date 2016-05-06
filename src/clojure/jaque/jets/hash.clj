@@ -40,4 +40,4 @@
     (shaf mash-mote yux)
     (shaf sham-mote (jam yux))))
 
-(defn mug [a] (atom (.hashCode a)))
+(defn mug [^Atom a] (atom (.hashCode a)))
