@@ -37,6 +37,10 @@ public class Cell extends Noun {
         this.q = q;
     }
 
+    public boolean isZero() {
+        return false;
+    }
+
     public void write(StringBuilder b) {
         b.append("[");
         p.write(b);

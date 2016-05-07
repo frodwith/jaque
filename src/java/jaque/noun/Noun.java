@@ -4,6 +4,7 @@ import clojure.lang.Seqable;
 
 public abstract class Noun implements Seqable {
     public abstract void write(StringBuilder b);
+    public abstract boolean isZero();
 
     public final String toString() {
         StringBuilder b = new StringBuilder();
@@ -51,7 +52,6 @@ public abstract class Noun implements Seqable {
         }
         int i, x;
         for (i = 0; i < (nwd - 1); ++i) {
-            System.out.println(i);
             x = wod[i];
 
             off = _mug_fnv(off ^ ((x >>> 0)  & 0xff));
