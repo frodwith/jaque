@@ -29,6 +29,11 @@
   (is (= false (noun? "hi")))
   (is (= true  (noun? a0))))
 
+(deftest test-cord->string
+  (is (= "fast"  (cord->string (atom 1953718630))))
+  (is (= "hello" (cord->string (atom 478560413032))))
+  (is (= "nock"  (cord->string (atom 1801678702)))))
+
 (deftest test-head
   (is (= a1 (head (cell a1 a2)))))
 

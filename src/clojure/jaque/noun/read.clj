@@ -14,6 +14,9 @@
 (defn head [^Cell c] (.p c))
 (defn tail [^Cell c] (.q c))
 
+(defn cord->string ^String [^Atom c]
+  (String. (.toByteArray c Atom/LITTLE_ENDIAN) "UTF-8"))
+
 (defn fragment [^Atom axis ^Noun subject]
   (loop [a axis
          n subject]

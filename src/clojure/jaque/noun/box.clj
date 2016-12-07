@@ -35,3 +35,6 @@
         (vector? v)  (apply cell (map noun v))
         :else        (throw+ {:message "bad argument to noun"
                               :bad-noun v})))
+
+(defn string->cord ^Atom [^String s]
+  (Atom/fromByteArray (.getBytes s "UTF-8") Atom/LITTLE_ENDIAN))

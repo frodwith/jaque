@@ -346,7 +346,7 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
       }
       else {
         int i, len = Math.max(lna, lnb);
-        int[] sal  = slaq(0, len);
+        int[] sal  = new int[len];
         int[] bow  = b.words();
 
         chop(w, 0, lna, 0, sal, a);

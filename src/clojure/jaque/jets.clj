@@ -1,14 +1,14 @@
 (ns jaque.jets
   (:require [jaque.constants :refer [a3 yes]])
-  (:require [jaque.imprison :refer [cell]])
+  (:require [jaque.box :refer [cell]])
   (:require [jaque.jets.v2 :refer [get-by]])
-  (:require [jaque.read :refer [fragment larf head]]))
+  (:require [jaque.noun.read :refer [fragment lark head]]))
 
 (defn fine? [machine cup mop cor]
   (if (= yes (head cup))
     (= cor (tail cup))
-    (let [par (larf +> mop)
-          pax (larf +< mop)]
+    (let [par (lark +> mop)
+          pax (lark +< mop)]
       (if (= no (head par))
         (do (assert (= a3 pax))
             (= (tail par) (tail cor)))
@@ -19,8 +19,8 @@
               (if (nil? cax)
                 false
                 (fine? machine
-                       (larf +>- cax)
-                       (larf +<+ cax)
+                       (lark +>- cax)
+                       (lark +<+ cax)
                        pac)))))))))
 
 (defn lookup [machine core axis]
@@ -29,11 +29,11 @@
     (if (nil? cax)
       nil
       (if-not (fine? machine
-                     (larf +>- cax) 
-                     (larf +<+ cax)
+                     (lark +>- cax) 
+                     (lark +<+ cax)
                      core)
         nil
-        ((:hot machine) [(larf ->+< cax) axis])))))
+        ((:hot machine) [(lark ->+< cax) axis])))))
 
 (defn register [machine core clue]
   (let [bat (head core)
@@ -54,14 +54,14 @@
                             cax ((:warm machine) tab)]
                         (if (nil? cax)
                           nil
-                          (let [hos (larf +<- cax)
-                                puc (larf +>- cax)]
+                          (let [hos (lark +<- cax)
+                                puc (lark +>- cax)]
                             [(cell leaf-name axis-in-parent yes hos)
                              (if (and (= a3 axis-in-parent)
                                       (= yes (head puc)))
                                (cell yes core)
                                (cell no tab))
-                             (larf ->+< cax)]))))))]
+                             (lark ->+< cax)]))))))]
             (if (nil? mop)
               machine
               (let [soh (sham mop)
