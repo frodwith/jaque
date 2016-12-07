@@ -1,0 +1,53 @@
+(ns jaque.noun.read
+  (:refer-clojure :exclude [zero?])
+  (:require [jaque.noun.print]
+            [jaque.error :refer [bail]]
+            [jaque.constants :refer [yes no a1 a2]]
+            [jaque.math :refer [cap mas]])
+  (:import (jaque.noun Atom Cell Noun)))
+
+(def atom? (partial instance? Atom))
+(def cell? (partial instance? Cell))
+(def noun? (partial instance? Noun))
+
+(defn zero? [^Noun n] (.isZero n))
+(defn head [^Cell c] (.p c))
+(defn tail [^Cell c] (.q c))
+
+(defn fragment [^Atom axis ^Noun subject]
+  (loop [a axis
+         n subject]
+  (if (= a1 a)
+    n
+  (if-not (cell? n)
+    nil
+  (recur (mas a)
+         ((if (= a2 (cap a)) head tail) n))))))
+
+(defn mean [x & as]
+  (map #(fragment % x) as))
+
+(defn ^Atom lark->axis [s]
+  (if-not (re-find #"^[+-](?:[<>][+-])*[<>]?$" s)
+    0
+    (let [bits (map #(case % \- \0
+                             \+ \1
+                             \< \0
+                             \> \1)
+                    (seq s))]
+      (Atom/fromString (apply str (conj bits \1)) 2))))
+
+(defmacro lark [sym n]
+  `(fragment ~(lark->axis (name sym)) ~n))
+
+(defmacro if& [t y n]
+  `(let [r# ~t]
+     (cond (= yes r#) ~y
+           (= no  r#) ~n
+           :else      (bail :exit))))
+
+(defmacro if| [t y n]
+  `(let [r# ~t]
+     (cond (= no  r#) ~y
+           (= yes r#) ~n
+           :else      (bail :exit))))

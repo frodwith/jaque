@@ -265,6 +265,7 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
     }
 
     /* This section is stolen from c3 */
+    public abstract boolean bit(int a);
 
     public int met(byte a) {
         int gal, daz;
@@ -335,6 +336,28 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
         return malt(sal);
     }
 
+    public static Atom con(Atom a, Atom b) {
+      byte w   = 5;
+      int  lna = a.met(w);
+      int  lnb = b.met(w);
+
+      if ( (0 == lna) && (0 == lnb) ) {
+        return ZERO;
+      }
+      else {
+        int i, len = Math.max(lna, lnb);
+        int[] sal  = slaq(0, len);
+        int[] bow  = b.words();
+
+        chop(w, 0, lna, 0, sal, a);
+
+        for ( i = 0; i < lnb; i++ ) {
+          sal[i] |= bow[i];
+        }
+
+        return malt(sal);
+      }
+    }
 
     public static void chop(byte met, int fum, int wid, int tou, int[] dst, Atom src) {
         int[] buf = src.words();

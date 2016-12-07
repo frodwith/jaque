@@ -66,4 +66,15 @@ public class IndirectAtom extends Atom {
     public boolean isCat() {
         return false;
     }
+
+    public boolean bit(int a) {
+      int pix = a >> 5;
+
+      if ( pix >= words.length ) {
+        return false;
+      }
+      else {
+        return (1 & (words[pix] >>> (a & 31))) > 0;
+      }
+    }
 }

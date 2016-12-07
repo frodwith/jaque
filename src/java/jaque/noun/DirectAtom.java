@@ -59,4 +59,13 @@ public class DirectAtom extends Atom {
     public boolean isCat() {
         return true;
     }
+
+    public boolean bit(int a) {
+      if ( a >= 31 ) {
+        return false;
+      }
+      else {
+        return (1 & (val >>> a)) > 0;
+      }
+    }
 }
