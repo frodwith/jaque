@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [zero?])
   (:require [jaque.noun.print]
             [jaque.error :refer [bail]]
-            [jaque.constants :refer [yes no a1 a2]]
+            [jaque.constants :refer [yes no a0 a1 a2]]
             [jaque.math :refer [cap mas]])
   (:import (jaque.noun Atom Cell Noun)))
 
@@ -32,7 +32,7 @@
 
 (defn ^Atom lark->axis [s]
   (if-not (re-find #"^[+-](?:[<>][+-])*[<>]?$" s)
-    0
+    a0
     (let [bits (map #(case % \- \0
                              \+ \1
                              \< \0

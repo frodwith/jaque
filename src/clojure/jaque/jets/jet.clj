@@ -21,17 +21,22 @@
 
 (defprotocol Jet
   (label [j])
-  (axis [j])
+  (arm [j])
   (apply-core [j core]))
 
-(defnrecord f JetRec [label arm-axis mean-seq f]
+(defnrecord f JetRec [label axis-or-name mean-seq f]
   Jet
-    (apply-core [this core] (apply f (apply (partial mean core) mean-seq)))
-    (axis [this] arm-axis)
-    (label [this] label))
+    (label [this] label)
+    (arm [this] axis-or-name)
+    (apply-core [this core] (apply f (apply (partial mean core) mean-seq))))
 
 (defmacro defjet [sym label arm men arg & body]
-  `(def ~sym (->JetRec [~@(map name label)]
-                       ~(lark->axis (name arm))
-                       [~@(map lark->axis (map name men))]
-                       (fn ~sym ~arg ~@body))))
+  (let [arm-name (name arm)
+        arm-axis (lark->axis arm-name)
+        arm-id   (if (zero? arm-axis)
+                   arm-name
+                   arm-axis)]
+    `(def ~sym (->JetRec [~@(map name label)]
+                         ~arm-id
+                         [~@(map lark->axis (map name men))]
+                         (fn ~sym ~arg ~@body)))))

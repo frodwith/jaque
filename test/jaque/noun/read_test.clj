@@ -56,6 +56,7 @@
     (is (= a3 (fragment (atom 15) x)))))
 
 (deftest test-lark->axis
+  (is (= (atom 0) (lark->axis "tomfoolery")))
   (is (= (atom 2) (lark->axis "-")))
   (is (= (atom 3) (lark->axis "+")))
   (is (= (atom 4) (lark->axis "-<")))
