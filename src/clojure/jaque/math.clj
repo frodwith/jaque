@@ -1,12 +1,7 @@
 (ns jaque.math
   (:require [jaque.error :as e]
-            [jaque.constants :refer [a0 a1 a2 a3]])
+            [jaque.constants :refer :all])
   (:import (jaque.noun Atom)))
-
-(declare lsh)
-
-(defn bex [^Atom a]
-  (lsh a0 a a1))
 
 (defn bloq [^Atom a]
   (let [v (.intValue a)]
@@ -14,14 +9,11 @@
       (e/fail)
       v)))
 
-(defn cap [^Atom a]
-  (let [m (.met a 0)]
-    (cond (< m 2)
-            (e/exit)
-          (.bit a (- m 2))
-            a3
-          :else
-            a2)))
+;; Contrary to what one might think, this is not where all the math functions
+;; go. Some math jets (in particular cap/mas) are used in very core modules
+;; like jaque.noun.read. This module exists solely to resolve the circular
+;; dependency. Unless you are one of those core modules, please import the
+;; actual jets rather than these helpers.
 
 (defn lsh [^Atom a ^Atom b ^Atom c]
   (when-not (.isCat b) (e/fail))
@@ -35,6 +27,18 @@
         (let [sal (Atom/slaq a lus)]
           (Atom/chop a 0 len b sal c)
           (Atom/malt sal))))))
+
+(defn bex [^Atom a]
+  (lsh a0 a a1))
+
+(defn cap [^Atom a]
+  (let [m (.met a 0)]
+    (cond (< m 2)
+            (e/exit)
+          (.bit a (- m 2))
+            a3
+          :else
+            a2)))
 
 (defn mas [^Atom a]
   (let [b (.met a 0)]

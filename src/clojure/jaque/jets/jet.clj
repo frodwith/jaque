@@ -1,6 +1,7 @@
 (ns jaque.jets.jet
+  (:refer-clojure :exclude [zero?])
   (:require [clojure.string :refer [split]]
-            [jaque.noun.read :refer [lark->axis mean]]))
+            [jaque.noun.read :refer [zero? lark->axis mean]]))
 
 ; Thanks to https://gist.github.com/odyssomay/1035590 and
 ; http://grokbase.com/t/gg/clojure/11awnj1azb/extending-ifn

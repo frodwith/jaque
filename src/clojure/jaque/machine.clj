@@ -1,9 +1,57 @@
 (ns jaque.machine
-  (:require [jaque.noun.read :refer [if& if| head tail lark]]))
+  (:require [jaque.constants :refer :all]
+            [jaque.noun.read :refer [if& if| head tail lark]]
+            [jaque.jets.v2 :refer [end shax jam]]))
 
-(defn mine [core cey]
-  ;; left off here
-  )
+(defn hot-names [^Machine m huk]
+  axis->name)
+
+(defn jet-sham [a]
+  (end a7 a1 (shax (jam a))))
+
+(defn ^Machine mine [^Machine m core cey]
+  (let
+    [battery     (head core)
+     core-name   (head cey)
+     ey          (tail cey)
+     parent-axis (head ey)
+     term->nock  (tail ey)
+     [cope corp parent-label]
+       (if (zero? parent-axis)
+         [(cell core-name a3 no (tail core))
+          (cell no core)
+          a0]
+       (let [parent (fragment parent-axis core)]
+       (if (or (nil? parent)
+               (not (cell? parent)))
+         m
+       (let [parent-battery (head parent)
+             parent-calx    (get (:warm m) parent-battery)]
+       (if (nil? parent-calx)
+         m
+       (let [parent-bash (lark +<- parent-cax)
+             parent-corp (lark +>- parent-cax)]
+         [(cell core-name parent-axis yes parent-bash)
+          (if (and (= a3 parent-axis)
+                   (= yes (head parent-corp)))
+            (cell yes core)
+            (cell no  parent-battery))
+          (lark ->+< parent-calx)]))))))
+     bash       (jet-sham cope)
+     club       (cell corp term->nock)
+     uold-clog  (get-by (:cold m) bash)
+     bat->club  (put-by (if (zero? uold-clog)
+                          a0
+                          (lark +> uold-clog))
+                        battery
+                        club)
+     new-clog   (cell cope bat->club)
+     m          (assoc m :cold (put-by (:cold m) bash new-clog))
+     label      (cell core-name parent-label)
+     axis->name (hot-names m term->nock)
+     calf       (cell a0 axis->name label a0)
+     calx       (cell calf (cell bash cope) club)])
+  (assoc-in m [:warm battery] calx))
 
 (defn fine? [machine corp cope core]
   (loop [cup corp
@@ -65,8 +113,8 @@
           by-axis (get hot-axis [label axis])]
     (if-not (nil? by-axis)
       by-axis
-    (let [hap   (lark ->- cax)
-          uname (get-by hap axis)]
+    (let [axis->name (lark ->- cax)
+          uname      (get-by axis->name axis)]
     (if (zero? uname)
       nil
     (get hot-name [label (tail uname)])))))))))
