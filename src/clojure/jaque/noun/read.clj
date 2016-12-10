@@ -43,6 +43,23 @@
 (defmacro lark [sym n]
   `(fragment ~(lark->axis (name sym)) ~n))
 
+(defn trel-seq [^Noun n]
+  (or
+    (and (cell? n)
+    (let [p (head n)
+          x (tail n)]
+    (and (cell? x)
+    (let [q (head x)
+          r (tail x)]
+    [p q r]))))
+  nil))
+
+(defn nlr-seq [^Noun n]
+  (let [[n l r] (trel-seq n)]
+  (if (or (nil? n) (zero? n))
+    nil
+  (concat (nlr-seq l) (cons n (nlr-seq r))))))
+
 (defmacro if& [t y n]
   `(let [r# ~t]
      (cond (= yes r#) ~y
