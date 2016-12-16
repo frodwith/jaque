@@ -13,6 +13,8 @@
 (defn zero? [^Noun n] (.isZero n))
 (defn head [^Cell c] (.p c))
 (defn tail [^Cell c] (.q c))
+(defn lth? [^Atom a ^Atom b] (= -1 (.compareTo a b)))
+(defn mug [^Noun a] (Atom/fromLong (.hashCode a)))
 
 (defn cord->string ^String [^Atom c]
   (String. (.toByteArray c Atom/LITTLE_ENDIAN) "UTF-8"))

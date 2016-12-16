@@ -1,4 +1,4 @@
-(ns jaque.machine
+(ns jaque.jets.dashboard
   (:refer-clojure :exclude [atom zero?])
   (:require [jaque.constants :refer :all]
             [jaque.noun.read :refer :all]
@@ -6,11 +6,11 @@
             [jaque.jets.v2 :refer [end shax jam by-put by-get]])
   (:import (jaque.noun Atom)))
 
-(defprotocol Machine
-  (install-jet [m label axis-or-name jet])
-  (register-core [m core clue])
-  (find-jet [m core axis])
-  (hook [m core name-as-string]))
+(defprotocol Dashboard
+  (install-jet [d label axis-or-name jet])
+  (declare-core [d core clue])
+  (find-jet [d core axis])
+  (hook [d core name-as-string]))
 
 (defn skip-hints [formula]
   (loop [f formula]
@@ -38,7 +38,7 @@
     a0
   q))))
 
-(defn hot-names [m huk]
+(defn hot-names [huk]
   (reduce (fn [m kv]
           (let [term (head kv)
                 axis (hook-axis (tail kv))]
@@ -52,15 +52,17 @@
 
 (defn clue-list->map [clue-list]
   (loop [m a0, l clue-list]
+  (if (zero? l)
+    m
   (if-not (cell? l) 
     nil
   (let [[i t] [(head l) (tail l)]]
   (if-not (cell? i)
     nil
-  (let [[axis term] [(head i) (tail i)]]
-  (if-not (atom? axis)
+  (let [term (head i), nock (tail i)]
+  (if-not (atom? term)
     nil
-  (recur (by-put m axis term) t))))))))
+  (recur (by-put m term nock) t)))))))))
 
 (defn clue-parent-axis [formula]
   (let [f (skip-hints formula)]
@@ -86,7 +88,7 @@
   (string->cord 
   (format "%s%d" 
     (cord->string h) 
-  ^Atom t))))))
+  ^Atom (.intValue t)))))))
 
 (defn fsck [clue]
   (let [[p q r] (trel-seq clue)]
@@ -101,15 +103,11 @@
   (let [hook-map (clue-list->map r)]
   (if (nil? hook-map)
     nil
-  (cell nam axis hook-map))))))))))
+  [nam axis hook-map])))))))))
 
-(defn mine [m core cey]
+(defn mine [d core [core-name parent-axis term->nock]]
   (let
     [battery     (head core)
-     core-name   (head cey)
-     ey          (tail cey)
-     parent-axis (head ey)
-     term->nock  (tail ey)
      [cope corp parent-label]
        (if (zero? parent-axis)
          [(cell core-name a3 no (tail core))
@@ -118,11 +116,11 @@
        (let [parent (fragment parent-axis core)]
        (if (or (nil? parent)
                (not (cell? parent)))
-         m
+         d
        (let [parent-battery (head parent)
-             parent-calx    (get (:warm m) parent-battery)]
+             parent-calx    (get (:warm d) parent-battery)]
        (if (nil? parent-calx)
-         m
+         d
        (let [parent-bash (lark +<- parent-calx)
              parent-corp (lark +>- parent-calx)]
          [(cell core-name parent-axis yes parent-bash)
@@ -133,21 +131,21 @@
           (lark ->+< parent-calx)]))))))
      bash       (jet-sham cope)
      club       (cell corp term->nock)
-     uold-clog  (by-get (:cold m) bash)
+     uold-clog  (by-get (:cold d) bash)
      bat->club  (by-put (if (zero? uold-clog)
                           a0
                           (lark +> uold-clog))
                         battery
                         club)
      new-clog   (cell cope bat->club)
-     m          (assoc m :cold (by-put (:cold m) bash new-clog))
+     d          (assoc d :cold (by-put (:cold d) bash new-clog))
      label      (cell core-name parent-label)
-     axis->name (hot-names m term->nock)
+     axis->name (hot-names term->nock)
      calf       (cell a0 axis->name label a0)
      calx       (cell calf (cell bash cope) club)]
-  (assoc-in m [:warm battery] calx)))
+  (assoc-in d [:warm battery] calx)))
 
-(defn fine? [machine corp cope core]
+(defn fine? [d corp cope core]
   (loop [cup corp
          mop cope
          cor core]
@@ -161,40 +159,39 @@
   (let [pac (fragment pax cor)]
   (if (or (nil? pac) (not (cell? pac)))
     false
-  (let [cax ((:warm machine) (head pac))]
+  (let [cax ((:warm d) (head pac))]
   (if (nil? cax)
     false
   (recur (lark +>- cax) 
          (lark +<+ cax)
          pac))))))))))
 
-(defrecord JaqueMachine [hot-axis hot-name warm cold]
+(defrecord DashRec [hot-axis hot-name warm cold]
 
-  Machine
-
-  (install-jet [m label k jet]
+  Dashboard
+  (install-jet [d label k jet]
     (let [is-axis   (atom? k)
           which-map (if is-axis :hot-axis :hot-name)
           map-key   [label (if is-axis k (string->cord k))]]
-      (assoc-in m [which-map map-key] jet)))
+      (assoc-in d [which-map map-key] jet)))
 
-  (register-core [m core clue]
+  (declare-core [d core clue]
     (let [bat (head core)
           cax (get warm bat)]
     (if-not (nil? cax)
-      m
+      d
     (let [cey (fsck clue)]
     (if (nil? cey)
-      m
-    (mine m core cey))))))
+      d
+    (mine d core cey))))))
 
   ;; Jet or nil
-  (find-jet [m core axis]
+  (find-jet [d core axis]
     (let [bat (head core)
           cax (get warm bat)]
     (if (nil? cax)
       nil
-    (if-not (fine? m (lark +>- cax)
+    (if-not (fine? d (lark +>- cax)
                      (lark +<+ cax)
                      core)
       nil
@@ -209,7 +206,7 @@
     (get hot-name [label (tail uname)])))))))))
 
   ;; [core nock-formula] or nil
-  (hook [m core s]
+  (hook [d core s]
     (loop [cor core]
     (let [bat (head cor)
           cax (get warm bat)]

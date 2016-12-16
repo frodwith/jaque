@@ -1,12 +1,13 @@
 (ns jaque.jets.v2
   (:refer-clojure :exclude [atom zero? cat inc dec])
   (:require [jaque.noun.motes :refer [defmote]]
-            [jaque.noun.read :refer [if& atom? zero? lark head tail]]
+            [jaque.noun.read :refer [if& atom? zero? lark head tail lth?]]
+            [jaque.jets.nlr :as nlr]
             [jaque.noun.box :refer :all]
             [jaque.constants :refer :all]
             [jaque.jets.jet :refer [defjet]]
             [jaque.error :as e]
-            [jaque.math :as m])
+            [jaque.math :as math])
   (:import (jaque.noun Atom Noun)
            (java.util Arrays)
            (java.security MessageDigest)))
@@ -29,10 +30,10 @@
 (defmacro defg3 [n & args-on]
   `(defgate ~n [+<- +<+< +<+>] ~args-on))
 
-(def bloq m/bloq)
+(def bloq math/bloq)
 
 (defg1 bex [a]
-  (m/bex a))
+  (math/bex a))
 
 (defg2 met [a b]
   (let [a (bloq a)
@@ -82,7 +83,7 @@
     (Atom/malt sal)))))))
 
 (defg3 lsh [a b c]
-  (m/lsh a b c))
+  (math/lsh a b c))
 
 (defg3 rsh [^Atom a ^Atom b ^Atom c]
   (when-not (.isCat b) (e/fail))
@@ -97,10 +98,10 @@
     (Atom/malt sal)))))
 
 (defg1 cap [a]
-  (m/cap a))
+  (math/cap a))
 
 (defg1 mas [a]
-  (m/mas a))
+  (math/mas a))
 
 (defg2 add [^Atom a ^Atom b]
   (.add a b))
@@ -120,8 +121,8 @@
 (defg2 mix [^Atom a ^Atom b]
   (Atom/mix a b))
 
-(defg2 lth [^Atom a ^Atom b]
-  (if (= -1 (.compareTo a b)) yes no))
+(defg2 lth [a b]
+  (if (lth? a b) yes no))
 
 (defg2 gth [^Atom a ^Atom b]
   (if (= 1 (.compareTo a b)) yes no))
@@ -211,8 +212,8 @@
     a a0 (transient {}))
    1))
 
-(defg1 mug [^Noun a]
-  (atom (.hashCode a)))
+(defg1 mug [a]
+  (jaque.noun.read/mug a))
 
 (defg2 shay [^Atom len ^Atom ruz]
   (let [dig (MessageDigest/getInstance "SHA-256")
@@ -240,65 +241,16 @@
     (shaf %sham (jam yux))))
 
 (defg2 dor [a b]
-  (loop [a a
-         b b]
-  (if (= a b)
-    yes
-  (if (atom? a)
-    (if (atom? b)
-      (lth a b)
-    yes)
-  (if (atom? b)
-    no
-  (if (= (head a) (head b))
-    (recur (tail a) (tail b))
-  (recur (head a) (head b))))))))
+  (nlr/dor a b))
 
 (defg2 gor [a b]
-  (let [c (mug a)
-        d (mug b)]
-    (if (= c d)
-      (dor a b)
-      (lth c d))))
+  (nlr/gor a b))
 
 (defg2 vor [a b]
-  (let [c (mug (mug a))
-        d (mug (mug b))]
-    (if (= c d)
-      (dor a b)
-      (lth c d))))
+  (nlr/vor a b))
 
 (defjet by-get [get by hoon mood k151] - [+>+< +<] [a b]
-  (loop [a a]
-  (if (zero? a)
-    a0
-  (if (= b (lark -< a))
-    (cell a0 (lark -> a))
-  (recur (if& (gor b (lark -< a))
-           (lark +< a)
-         (lark +> a)))))))
+  (nlr/by-get a b))
 
 (defjet by-put [put by hoon mood k151] - [+>+< +<- +<+] [a b c]
-  (if (zero? a)
-    (cell (cell b c) a0 a0)
-  (if (= b (lark -< a))
-    (if (= c (lark -> a))
-      a
-    (cell (cell b c) (lark +< a) (lark +> a)))
-  (if& (gor b (lark -< a))
-    (let [d (by-put (lark +< a) b c)]
-    (if& (vor (lark -< a) (lark -< d))
-      (cell (head a) d (lark +> a))
-    (cell (head d) 
-          (lark +< d)
-          (head a)
-          (lark +> d)
-          (lark +> a))))
-  (let [d (by-put (lark +> a) b c)]
-  (if& (vor (lark -< a) (lark -< d))
-    (cell (head a) (lark +< a) d)
-  (cell (head d)
-        (cell (head a)
-              (lark +< a)
-              (lark +< d))
-        (lark +> d))))))))
+  (nlr/by-put a b c))
