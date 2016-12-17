@@ -31,6 +31,8 @@
            :else   (Cell. ^Noun (first xs) ^Noun ($ (dec c) (rest xs)))))
    (count xs) xs))
 
+(declare noun)
+
 (defn map->nlr [m]
   (reduce #(by-put %1 (noun (%2 0)) (noun (%2 1)))
           (atom 0) m))

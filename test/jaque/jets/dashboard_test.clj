@@ -92,7 +92,20 @@
         dec-club (noun [dec-corp 0])
         dec-clog (noun [dec-cope {dec-batt dec-club}])
         dec-calx (noun [dec-calf [dec-bash dec-cope] dec-club])
-        mine-b   (mine mine-a dec-core dec-clue)]
+        mine-b   (mine mine-a dec-core dec-clue)
+        ver-batt (noun [9 2 0 3])
+        ver-core (noun [ver-batt core])
+        ver-clue (fsck (noun [:ver [0 3] 0]))
+        ver-calf (noun [0 0 (list :ver :k151) 0])
+        ver-cope (noun [:ver 3 yes bash])
+        ver-bash (jet-sham ver-cope)
+        ver-corp (cell yes ver-core)
+        ver-club (noun [ver-corp 0])
+        ver-clog (noun [ver-cope {ver-batt ver-club}])
+        ver-calx (noun [ver-calf [ver-bash ver-cope] ver-club])
+        mine-c   (mine mine-b ver-core ver-clue)]
     (is (= mine-a {:warm {batt calx}, :cold (noun {bash clog})}))
     (is (= mine-b {:warm {batt calx, dec-batt dec-calx},
-                   :cold (noun {bash clog, dec-bash dec-clog})}))))
+                   :cold (noun {bash clog, dec-bash dec-clog})}))
+    (is (= mine-c {:warm {batt calx, dec-batt dec-calx, ver-batt ver-calx},
+                   :cold (noun {bash clog, dec-bash dec-clog, ver-bash ver-clog})}))))
