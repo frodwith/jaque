@@ -46,9 +46,9 @@
         (integer? v) (atom v)
         (char? v)    (atom (int v))
         (keyword? v) (string->cord (name v))
-        (string? v)  (seq->it (seq v))
         (vector? v)  (apply cell (map noun v))
         (map? v)     (map->nlr v)
+        (string? v)  (seq->it (seq v))
         (seq? v)     (seq->it v)
         :else        (throw+ {:message "bad argument to noun"
                               :bad-noun v})))

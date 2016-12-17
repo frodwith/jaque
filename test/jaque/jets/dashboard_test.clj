@@ -3,6 +3,7 @@
   (:require [jaque.jets.dashboard :refer :all]
             [jaque.jets.v2 :refer [by-put]]
             [jaque.noun.box :refer :all]
+            [jaque.noun.read :refer :all]
             [jaque.noun.motes :refer [defmote]]
             [jaque.constants :refer :all]
             [clojure.test :refer :all]))
@@ -58,12 +59,40 @@
          (fsck (noun [%fast [0 3] (list [:foo [9 4 0 1]]
                                         [:bar [9 5 0 1]])])))))
 
-(def test-kernel (noun
-  [[[7 
-      [8 [1 0] [1 [6 [5 [0 7] 4 0 6] [0 6] 9 2 [0 2] [4 0 6] 0 7]] 9 2 0 1]
-      [10 [:fast 1 :dec [0 7] 0] 0 1]]
-    [7
-      [8 [1 0 0] [1 6 [5 [1 0] 0 12] [0 13] 9 2 [0 2] [[8 [9 4 0 7] 9 2 [0 4] [0 28] 0 11] 4 0 13] 0 7] 0 1]
-      [10 [:fast 1 :add [0 7] 0] 0 1]]]
-   [1 151]
-   151]))
+;;(def test-kernel (noun
+;;  [[[7 
+;;      [8 [1 0] [1 [6 [5 [0 7] 4 0 6] [0 6] 9 2 [0 2] [4 0 6] 0 7]] 9 2 0 1]
+;;      [10 [:fast 1 :dec [0 7] 0] 0 1]]
+;;    [7
+;;      [8 [1 0 0] [1 6 [5 [1 0] 0 12] [0 13] 9 2 [0 2] [[8 [9 4 0 7] 9 2 [0 4] [0 28] 0 11] 4 0 13] 0 7] 0 1]
+;;      [10 [:fast 1 :add [0 7] 0] 0 1]]]
+;;   [1 151]
+;;   151]))
+
+(deftest mine-test
+  (let [core     (noun [[1 151] 151])
+        batt     (head core)
+        clue     (fsck (noun [:k151 [1 0] (list [:vers 9 2 0 1])]))
+        calf     (noun [0 {2 :vers} (list :k151) 0])
+        cope     (noun [:k151 3 no 151])
+        bash     (jet-sham cope)
+        corp     (cell yes core)
+        club     (noun [corp {:vers [9 2 0 1]}])
+        clog     (noun [cope {batt club}])
+        calx     (noun [calf [bash cope] club])
+        fake     {:warm {}, :cold a0}
+        mine-a   (mine fake core clue)
+        dec-batt (noun [6 [5 [0 7] 4 0 6] [0 6] 9 2 [0 2] [4 0 6] 0 7])
+        dec-core (noun [dec-batt 0 core])
+        dec-clue (fsck (noun [:dec [0 7] 0]))
+        dec-calf (noun [0 0 (list :dec :k151) 0])
+        dec-cope (noun [:dec 7 yes bash])
+        dec-bash (jet-sham dec-cope)
+        dec-corp (cell no batt)
+        dec-club (noun [dec-corp 0])
+        dec-clog (noun [dec-cope {dec-batt dec-club}])
+        dec-calx (noun [dec-calf [dec-bash dec-cope] dec-club])
+        mine-b   (mine mine-a dec-core dec-clue)]
+    (is (= mine-a {:warm {batt calx}, :cold (noun {bash clog})}))
+    (is (= mine-b {:warm {batt calx, dec-batt dec-calx},
+                   :cold (noun {bash clog, dec-bash dec-clog})}))))

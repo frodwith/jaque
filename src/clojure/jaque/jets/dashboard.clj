@@ -106,44 +106,45 @@
   [nam axis hook-map])))))))))
 
 (defn mine [d core [core-name parent-axis term->nock]]
-  (let
-    [battery     (head core)
-     [cope corp parent-label]
-       (if (zero? parent-axis)
-         [(cell core-name a3 no (tail core))
-          (cell no core)
-          a0]
-       (let [parent (fragment parent-axis core)]
-       (if (or (nil? parent)
-               (not (cell? parent)))
-         d
-       (let [parent-battery (head parent)
-             parent-calx    (get (:warm d) parent-battery)]
-       (if (nil? parent-calx)
-         d
-       (let [parent-bash (lark +<- parent-calx)
-             parent-corp (lark +>- parent-calx)]
-         [(cell core-name parent-axis yes parent-bash)
-          (if (and (= a3 parent-axis)
-                   (= yes (head parent-corp)))
-            (cell yes core)
-            (cell no  parent-battery))
-          (lark ->+< parent-calx)]))))))
-     bash       (jet-sham cope)
-     club       (cell corp term->nock)
-     uold-clog  (by-get (:cold d) bash)
-     bat->club  (by-put (if (zero? uold-clog)
-                          a0
-                          (lark +> uold-clog))
-                        battery
-                        club)
-     new-clog   (cell cope bat->club)
-     d          (assoc d :cold (by-put (:cold d) bash new-clog))
-     label      (cell core-name parent-label)
-     axis->name (hot-names term->nock)
-     calf       (cell a0 axis->name label a0)
-     calx       (cell calf (cell bash cope) club)]
-  (assoc-in d [:warm battery] calx)))
+  (let [battery (head core)
+        [cope corp parent-label]
+          (if (zero? parent-axis)
+            [(cell core-name a3 no (tail core))
+             (cell yes core)
+             a0]
+          (let [parent (fragment parent-axis core)]
+          (if (or (nil? parent)
+                  (not (cell? parent)))
+            nil
+          (let [parent-battery (head parent)
+                parent-calx    (get (:warm d) parent-battery)]
+          (if (nil? parent-calx)
+            nil
+          (let [parent-bash (lark +<- parent-calx)
+                parent-corp (lark +>- parent-calx)]
+            [(cell core-name parent-axis yes parent-bash)
+             (if (and (= a3 parent-axis)
+                      (= yes (head parent-corp)))
+               (cell yes core)
+               (cell no  parent-battery))
+             (lark ->+< parent-calx)]))))))]
+  (if (nil? cope)
+    d
+  (let [bash       (jet-sham cope)
+        club       (cell corp term->nock)
+        uold-clog  (by-get (:cold d) bash)
+        bat->club  (by-put (if (zero? uold-clog)
+                             a0
+                             (lark +> uold-clog))
+                           battery
+                           club)
+        new-clog   (cell cope bat->club)
+        d          (assoc d :cold (by-put (:cold d) bash new-clog))
+        label      (cell core-name parent-label)
+        axis->name (hot-names term->nock)
+        calf       (cell a0 axis->name label a0)
+        calx       (cell calf (cell bash cope) club)]
+  (assoc-in d [:warm battery] calx)))))
 
 (defn fine? [d corp cope core]
   (loop [cup corp
