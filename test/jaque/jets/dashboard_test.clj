@@ -1,5 +1,5 @@
 (ns jaque.jets.dashboard-test
-  (:refer-clojure :exclude [atom zero?])
+  (:refer-clojure :exclude [atom zero? dec])
   (:require [jaque.jets.dashboard :refer :all]
             [jaque.jets.v2 :refer [by-put]]
             [jaque.noun.box :refer :all]
@@ -59,53 +59,53 @@
          (fsck (noun [%fast [0 3] (list [:foo [9 4 0 1]]
                                         [:bar [9 5 0 1]])])))))
 
-;;(def test-kernel (noun
-;;  [[[7 
-;;      [8 [1 0] [1 [6 [5 [0 7] 4 0 6] [0 6] 9 2 [0 2] [4 0 6] 0 7]] 9 2 0 1]
-;;      [10 [:fast 1 :dec [0 7] 0] 0 1]]
-;;    [7
-;;      [8 [1 0 0] [1 6 [5 [1 0] 0 12] [0 13] 9 2 [0 2] [[8 [9 4 0 7] 9 2 [0 4] [0 28] 0 11] 4 0 13] 0 7] 0 1]
-;;      [10 [:fast 1 :add [0 7] 0] 0 1]]]
-;;   [1 151]
-;;   151]))
+
+(defn calc [m]
+  (let [batt (head (:core m))
+        cope (:cope m)
+        bash (jet-sham cope)
+        club (:club m)]
+    (merge m {:batt batt
+              :bash bash
+              :clog (noun [cope {batt club}])
+              :calx (noun [(:calf m) [bash cope] club])})))
+(def kernel
+  (let [core (noun [[1 151] 151])
+        corp (cell yes core)]
+    (calc {:core core
+           :cope (noun [:k151 3 no 151])
+           :club (noun [corp {:vers [9 2 0 1]}])
+           :calf (noun [0 {2 :vers} (list :k151) 0])
+           :corp corp
+           :clue (fsck (noun [:k151 [1 0] (list [:vers 9 2 0 1])]))})))
+
+(def dec
+  (let [core (noun [[6 [5 [0 7] 4 0 6] [0 6] 9 2 [0 2] [4 0 6] 0 7] 0 (:core kernel)])
+        corp (cell no (:batt kernel))]
+    (calc {:core core
+           :cope (noun [:dec 7 yes (:bash kernel)])
+           :club (noun [corp 0])
+           :calf (noun [0 0 (list :dec :k151) 0])
+           :clue (fsck (noun [:dec [0 7] 0]))})))
+
+(def ver
+  (let [core (noun [[9 2 0 3] (:core kernel)])
+        corp (cell yes core)]
+    (calc {:core core
+           :cope (noun [:ver 3 yes (:bash kernel)])
+           :club (noun [corp 0])
+           :calf (noun [0 0 (list :ver :k151) 0])
+           :clue (fsck (noun [:ver [0 3] 0]))})))
+
+(defn mined [old reg]
+  {:warm (assoc (:warm old) (:batt reg) (:calx reg))
+   :cold (by-put (:cold old) (:bash reg) (:clog reg))})
 
 (deftest mine-test
-  (let [core     (noun [[1 151] 151])
-        batt     (head core)
-        clue     (fsck (noun [:k151 [1 0] (list [:vers 9 2 0 1])]))
-        calf     (noun [0 {2 :vers} (list :k151) 0])
-        cope     (noun [:k151 3 no 151])
-        bash     (jet-sham cope)
-        corp     (cell yes core)
-        club     (noun [corp {:vers [9 2 0 1]}])
-        clog     (noun [cope {batt club}])
-        calx     (noun [calf [bash cope] club])
-        fake     {:warm {}, :cold a0}
-        mine-a   (mine fake core clue)
-        dec-batt (noun [6 [5 [0 7] 4 0 6] [0 6] 9 2 [0 2] [4 0 6] 0 7])
-        dec-core (noun [dec-batt 0 core])
-        dec-clue (fsck (noun [:dec [0 7] 0]))
-        dec-calf (noun [0 0 (list :dec :k151) 0])
-        dec-cope (noun [:dec 7 yes bash])
-        dec-bash (jet-sham dec-cope)
-        dec-corp (cell no batt)
-        dec-club (noun [dec-corp 0])
-        dec-clog (noun [dec-cope {dec-batt dec-club}])
-        dec-calx (noun [dec-calf [dec-bash dec-cope] dec-club])
-        mine-b   (mine mine-a dec-core dec-clue)
-        ver-batt (noun [9 2 0 3])
-        ver-core (noun [ver-batt core])
-        ver-clue (fsck (noun [:ver [0 3] 0]))
-        ver-calf (noun [0 0 (list :ver :k151) 0])
-        ver-cope (noun [:ver 3 yes bash])
-        ver-bash (jet-sham ver-cope)
-        ver-corp (cell yes ver-core)
-        ver-club (noun [ver-corp 0])
-        ver-clog (noun [ver-cope {ver-batt ver-club}])
-        ver-calx (noun [ver-calf [ver-bash ver-cope] ver-club])
-        mine-c   (mine mine-b ver-core ver-clue)]
-    (is (= mine-a {:warm {batt calx}, :cold (noun {bash clog})}))
-    (is (= mine-b {:warm {batt calx, dec-batt dec-calx},
-                   :cold (noun {bash clog, dec-bash dec-clog})}))
-    (is (= mine-c {:warm {batt calx, dec-batt dec-calx, ver-batt ver-calx},
-                   :cold (noun {bash clog, dec-bash dec-clog, ver-bash ver-clog})}))))
+  (let [fake   {:warm {}, :cold a0}
+        mine-a (mine fake (:core kernel) (:clue kernel))
+        mine-b (mine mine-a (:core dec) (:clue dec))
+        mine-c (mine mine-b (:core ver) (:clue ver))]
+  (is (= mine-a (mined fake kernel)))
+  (is (= mine-b (mined mine-a dec)))
+  (is (= mine-c (mined mine-b ver)))))
