@@ -19,6 +19,22 @@
 (defn cord->string ^String [^Atom c]
   (String. (.toByteArray c Atom/LITTLE_ENDIAN) "UTF-8"))
 
+(defn fragment-path [^Atom axis]
+  (loop [a axis, p nil]
+  (if (= a1 a)
+    p
+  (let [c (if (= a2 (cap a)) :left :right)]
+  (recur (mas a) (cons c p))))))
+
+(defn inline-fragment [axe subject]
+  (reduce (fn [s dir]
+            (let [tagged (with-meta s {:tag 'jaque.noun.Cell})]
+              (case dir
+                :left  `(.p ^Cell ~tagged)
+                :right `(.q ^Cell ~tagged))))
+          subject
+          (reverse (fragment-path axe))))
+
 (defn fragment [^Atom axis ^Noun subject]
   (loop [a axis
          n subject]
@@ -42,8 +58,14 @@
                     (seq s))]
       (Atom/fromString (apply str (conj bits \1)) 2))))
 
+; throws ClassCastException if lark isn't a valid path for n
 (defmacro lark [sym n]
-  `(fragment ~(lark->axis (name sym)) ~n))
+  (inline-fragment (lark->axis (name sym)) n))
+
+; if you want nil instead of an exception when shape is invalid
+(defmacro try-lark [sym n]
+  `(try (lark ~sym ~n)
+     (catch ClassCastException ~'_ nil)))
 
 (defn trel-seq [^Noun n]
   (or

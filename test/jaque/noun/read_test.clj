@@ -71,7 +71,16 @@
     (is (= a0 (lark - x)))
     (is (= a1 (lark +< x)))
     (is (= a2 (lark +>- x)))
-    (is (= a3 (lark +>+ x)))))
+    (is (= a3 (lark +>+ x)))
+    (is (thrown? ClassCastException (lark +>+> x)))))
+
+(deftest test-try-lark
+  (let [x (cell a0 a1 a2 a3)]
+    (is (= a0 (try-lark - x)))
+    (is (= a1 (try-lark +< x)))
+    (is (= a2 (try-lark +>- x)))
+    (is (= a3 (try-lark +>+ x)))
+    (is (= nil (try-lark +>+> x)))))
 
 (deftest test-if&
   (is (= true  (if& yes true false)))
