@@ -71,41 +71,63 @@
               :calx (noun [(:calf m) [bash cope] club])})))
 (def kernel
   (let [core (noun [[1 151] 151])
-        corp (cell yes core)]
+        corp (cell yes core)
+        clue (noun [:k151 [1 0] (list [:vers 9 2 0 1])])]
     (calc {:core core
            :cope (noun [:k151 3 no 151])
            :club (noun [corp {:vers [9 2 0 1]}])
            :calf (noun [0 {2 :vers} (list :k151) 0])
            :corp corp
-           :clue (fsck (noun [:k151 [1 0] (list [:vers 9 2 0 1])]))})))
+           :clue clue
+           :fsck (fsck clue)})))
 
 (def dec
   (let [core (noun [[6 [5 [0 7] 4 0 6] [0 6] 9 2 [0 2] [4 0 6] 0 7] 0 (:core kernel)])
-        corp (cell no (:batt kernel))]
+        corp (cell no (:batt kernel))
+        clue (noun [:dec [0 7] 0])]
     (calc {:core core
            :cope (noun [:dec 7 yes (:bash kernel)])
            :club (noun [corp 0])
            :calf (noun [0 0 (list :dec :k151) 0])
-           :clue (fsck (noun [:dec [0 7] 0]))})))
+           :corp corp
+           :clue clue
+           :fsck (fsck clue)})))
 
 (def ver
   (let [core (noun [[9 2 0 3] (:core kernel)])
-        corp (cell yes core)]
+        corp (cell yes core)
+        clue (noun [:ver [0 3] 0])]
     (calc {:core core
            :cope (noun [:ver 3 yes (:bash kernel)])
            :club (noun [corp 0])
            :calf (noun [0 0 (list :ver :k151) 0])
-           :clue (fsck (noun [:ver [0 3] 0]))})))
+           :corp corp
+           :clue clue
+           :fsck (fsck clue)})))
 
 (defn mined [old reg]
   {:warm (assoc (:warm old) (:batt reg) (:calx reg))
    :cold (by-put (:cold old) (:bash reg) (:clog reg))})
 
+(def fake   {:warm {}, :cold a0})
+(def mine-a (mine fake (:core kernel) (:fsck kernel)))
+(def mine-b (mine mine-a (:core dec) (:fsck dec)))
+(def mine-c (mine mine-b (:core ver) (:fsck ver)))
+
 (deftest mine-test
-  (let [fake   {:warm {}, :cold a0}
-        mine-a (mine fake (:core kernel) (:clue kernel))
-        mine-b (mine mine-a (:core dec) (:clue dec))
-        mine-c (mine mine-b (:core ver) (:clue ver))]
   (is (= mine-a (mined fake kernel)))
   (is (= mine-b (mined mine-a dec)))
-  (is (= mine-c (mined mine-b ver)))))
+  (is (= mine-c (mined mine-b ver))))
+
+(deftest fine-test
+  (is (= true  (fine? mine-c (:corp dec) (:cope dec) (:core dec))))
+  (is (= false (fine? mine-c (:corp dec) (:cope dec) (noun [(:batt dec) 5]))))
+  (is (= true  (fine? mine-c (:corp ver) (:cope ver) (:core ver)))))
+
+(deftest overview-test
+  (let [d (-> empty-dashboard
+            (.declare-core (:core kernel) (:clue kernel))
+            (.declare-core (:core dec) (:clue dec))
+            (.install-jet  (noun (list :dec :k151)) a2 :a-jet))]
+    (is (= [(:core kernel) (noun [9 2 0 1])] (.hook d (:core dec) "vers")))
+    (is (= :a-jet (.find-jet d (:core dec) a2)))))

@@ -217,3 +217,5 @@
     (if (zero? unock)
       (recur (fragment (lark +<+>- cax) cor))
     [cor (tail unock)])))))))
+
+(def empty-dashboard (->DashRec {} {} {} a0))
