@@ -1,43 +1,38 @@
 (ns jaque.jets.jet
   (:refer-clojure :exclude [zero?])
   (:require [clojure.string :refer [split]]
+            [jaque.noun.box :refer [seq->it string->cord]]
             [jaque.noun.read :refer [zero? lark->axis mean]]))
 
-; Thanks to https://gist.github.com/odyssomay/1035590 and
-; http://grokbase.com/t/gg/clojure/11awnj1azb/extending-ifn
-(defmacro defnrecord [ifn & defrecord-body]
-  (let [max-arity   20
-        args        (repeatedly max-arity gensym)
-        make-invoke (fn [n]
-                      (let [args (take n args)]
-                        `(invoke [_ ~@args] (~ifn ~@args))))]
-    `(defrecord
-       ~@defrecord-body
-       clojure.lang.IFn
-       ~@(map make-invoke (range (inc max-arity)))
-       (invoke [_ ~@args more#]
-         (apply ~ifn (concat (list ~@args) more#)))
-       (applyTo [_ args#]
-         (apply ~ifn args#)))))
-
 (defprotocol Jet
-  (label [j])
-  (arm [j])
-  (apply-core [j core]))
+  (hot-key [jet])
+  (apply-core [jet machine core]))
 
-(defnrecord f JetRec [label axis-or-name mean-seq f]
+(defrecord JetRec [k m f]
   Jet
-    (label [this] label)
-    (arm [this] axis-or-name)
-    (apply-core [this core] (apply f (apply (partial mean core) mean-seq))))
+  (hot-key [j] k)
+  (apply-core [j m c]
+    (apply f (apply (partial mean c) m))))
 
-(defmacro defjet [sym label arm men arg & body]
-  (let [arm-name (name arm)
-        arm-axis (lark->axis arm-name)
-        arm-id   (if (zero? arm-axis)
-                   arm-name
-                   arm-axis)]
-    `(def ~sym (->JetRec [~@(map name label)]
-                         ~arm-id
-                         [~@(map lark->axis (map name men))]
-                         (fn ~sym ~arg ~@body)))))
+(defn make-hot-key [label-noun axis-or-name]
+  (let [maxis (lark->axis (name axis-or-name))
+        axis? (not (nil? maxis))
+        two   (if axis? :axis :name)
+        three (if axis? maxis (string->cord (name axis-or-name)))]
+    [label-noun two three]))
+
+(defn build-jet [label-seq arm-sym lark-seq f]
+  (let [label (seq->it (map (comp string->cord name) label-seq))
+        k     (make-hot-key label (name arm-sym))
+        m     (map (comp lark->axis name) lark-seq)]
+    (->JetRec k m f)))
+
+(defn ignore-machine [f]
+  (fn [m & args] [m (apply f args)]))
+
+;; define a jet whose implementation is an external function f, whose
+;; arguments have already been unpacked (like a u3q function), and who neither
+;; recieves a machine as its first argument nor returns a vector of machine
+;; and product - it simply returns product.
+(defmacro defjet [sym label arm lark f]
+  `(def ~sym ~(build-jet label arm lark f)))

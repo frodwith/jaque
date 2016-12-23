@@ -7,7 +7,7 @@
   (:import (jaque.noun Atom)))
 
 (defprotocol Dashboard
-  (install-jet [d label axis-or-name jet])
+  (install-jet [d jet])
   (declare-core [d core clue])
   (find-jet [d core axis])
   (hook [d core name-as-string]))
@@ -170,10 +170,11 @@
 (defrecord DashRec [hot-axis hot-name warm cold]
 
   Dashboard
-  (install-jet [d label k jet]
-    (let [is-axis   (atom? k)
+  (install-jet [d jet]
+    (let [k         (.arm jet)
+          is-axis   (atom? k)
           which-map (if is-axis :hot-axis :hot-name)
-          map-key   [label (if is-axis k (string->cord k))]]
+          map-key   [(.label jet) (if is-axis k (string->cord k))]]
       (assoc-in d [which-map map-key] jet)))
 
   (declare-core [d core clue]
