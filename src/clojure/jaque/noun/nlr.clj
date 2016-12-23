@@ -4,7 +4,7 @@
             [jaque.noun.core :refer [export gor]]
             [jaque.noun.box  :refer :all]
             [jaque.constants :refer :all])
-  (:import (jaque.noun Atom Cell)))
+  (:import jaque.noun.Noun))
 
 (export by-put)
 
@@ -18,3 +18,8 @@
            (lark +< a)
          (lark +> a)))))))
 
+(defn nlr-seq [^Noun n]
+  (let [[n l r] (trel-seq n)]
+  (if (or (nil? n) (zero? n))
+    nil
+  (concat (nlr-seq l) (cons n (nlr-seq r))))))

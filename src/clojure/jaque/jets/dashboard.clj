@@ -3,7 +3,10 @@
   (:require [jaque.constants :refer :all]
             [jaque.noun.read :refer :all]
             [jaque.noun.box  :refer :all]
-            [jaque.jets.v2 :refer [end shax jam by-put by-get]])
+            [jaque.noun.bits :refer [end]]
+            [jaque.noun.hash :refer [shax]]
+            [jaque.noun.pack :refer [jam]]
+            [jaque.noun.nlr  :refer [by-put by-get nlr-seq]])
   (:import (jaque.noun Atom)))
 
 (defprotocol Dashboard
@@ -167,15 +170,11 @@
          (lark +<+ cax)
          pac))))))))))
 
-(defrecord DashRec [hot-axis hot-name warm cold]
+(defrecord DashRec [hot warm cold]
 
   Dashboard
   (install-jet [d jet]
-    (let [k         (.arm jet)
-          is-axis   (atom? k)
-          which-map (if is-axis :hot-axis :hot-name)
-          map-key   [(.label jet) (if is-axis k (string->cord k))]]
-      (assoc-in d [which-map map-key] jet)))
+    (assoc-in d [:hot (.hot-key jet)] jet))
 
   (declare-core [d core clue]
     (let [bat (head core)
@@ -198,14 +197,14 @@
                      core)
       nil
     (let [label   (lark ->+< cax)
-          by-axis (get hot-axis [label axis])]
+          by-axis (hot [label :axis axis])]
     (if-not (nil? by-axis)
       by-axis
     (let [axis->name (lark ->- cax)
           uname      (by-get axis->name axis)]
     (if (zero? uname)
       nil
-    (get hot-name [label (tail uname)])))))))))
+    (hot [label :name (tail uname)])))))))))
 
   ;; [core nock-formula] or nil
   (hook [d core s]
@@ -219,4 +218,6 @@
       (recur (fragment (lark +<+>- cax) cor))
     [cor (tail unock)])))))))
 
-(def empty-dashboard (->DashRec {} {} {} a0))
+(def empty-dashboard (map->DashRec {:hot  {}
+                                    :warm {}
+                                    :cold a0}))

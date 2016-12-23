@@ -40,12 +40,6 @@
     [p q r]))))
   nil))
 
-(defn nlr-seq [^Noun n]
-  (let [[n l r] (trel-seq n)]
-  (if (or (nil? n) (zero? n))
-    nil
-  (concat (nlr-seq l) (cons n (nlr-seq r))))))
-
 (defmacro if| [t y n]
   `(let [r# ~t]
      (cond (= no  r#) ~y

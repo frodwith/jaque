@@ -59,26 +59,7 @@
                  jet       (.find-jet (.dashboard m1) core axis)]
              (if (nil? jet)
                (nock m1 core (fragment axis core))
-               ;; Apply-core doesn't return a pair of machine and product,
-               ;; because jets don't deal in machines (at the moment). Need to
-               ;; decide how to approach this. Fundamentally, they need access
-               ;; to a machine to do any nock computation (including hook). It
-               ;; seems like passing machine as the first argument to any jet
-               ;; makes sense, although it's a bit annoying. We could also set
-               ;; a thread-local-binding for the machine, and set it to
-               ;; empty-machine when calling as a function...  which doesn't
-               ;; make any sense for things which intrincally are going to do
-               ;; something with the machine.
-
-               ;; I think we're just going to have to bite the bullet and
-               ;; include a position for the machine in the calling
-               ;; structure... for things we want to call outside of a machine
-               ;; context (analagous to to q jets) we'll have separate fns
-               ;; that we call from the defjet (which i guess is analogous,
-               ;; although a bit nicer, to the w functions). the jets will
-               ;; have to take an "m" param, and not pass it to the auxillary
-               ;; functions.
-               (.apply-core jet core)))
+               (.apply-core jet m1 core)))
         10 (let [hint-formula (head arguments)
                  next-formula (tail arguments)]
              (let [hint-cell         (cell? hint-formula)

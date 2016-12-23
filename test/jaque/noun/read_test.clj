@@ -101,13 +101,3 @@
   (is (= [(cell a1 a1) a2 a3] (trel-seq (noun [[1 1] 2 3]))))
   (is (= [a1 (cell a2 a2) a3] (trel-seq (noun [1 [2 2] 3]))))
   (is (= [a1 a2 (cell a3 a3)] (trel-seq (noun [1 2 3 3])))))
-
-(deftest nlr-seq-test
-  (is (= [(noun [97 1])] 
-         (nlr-seq (noun [[97 1] 0 0]))))
-  (is (= [(noun [97 1]) (noun [98 2])] 
-         (nlr-seq (noun [[98 2] [[97 1] 0 0] 0]))))
-  (is (= [(noun [7171949 31337])] 
-         (nlr-seq (noun [[7171949 31337] 0 0]))))
-  (is (= [(noun [7171949 31337]) (noun [26984 42])] 
-         (nlr-seq (noun [[7171949 31337] 0 [26984 42] 0 0])))))
