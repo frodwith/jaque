@@ -95,16 +95,7 @@ public final class Interpreter {
       if ( operator instanceof Cell ) {
         Result h = nock(machine, subject, operator),
                t = nock(h.m, subject, arguments);
-        Cell c;
-
-        try {
-          c = new Cell(h.r, t.r);
-        }
-        catch (Exception e) {
-          throw new Bail();
-        }
-
-        return new Result(t.m, c);
+        return new Result(t.m, new Cell(h.r, t.r));
       }
       else if ( operator instanceof IndirectAtom ) {
         throw new Bail();

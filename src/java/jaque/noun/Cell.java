@@ -26,13 +26,9 @@ public class Cell extends Noun {
         return IteratorSeq.create(l.iterator());
     }
 
-    public Cell(Noun p, Noun q) throws Exception {
-        if (p == null) {
-            throw new Exception("Null p in cell constructor");
-        }
-        if (q == null) {
-            throw new Exception("Null q in cell constructor");
-        }
+    public Cell(Noun p, Noun q) {
+        assert p != null;
+        assert q != null;
         this.p = p;
         this.q = q;
     }
