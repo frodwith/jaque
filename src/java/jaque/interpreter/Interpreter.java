@@ -1,29 +1,7 @@
 package jaque.interpreter;
 
 import jaque.noun.*;
-import clojure.lang.ISeq;
 import gnu.math.MPN;
-import java.util.Stack;
-
-/* Ah yes, as I feared, we can't import clojure protocol interfaces. We'll
- * need to write Machine, Jet, etc. as interfaces rather than protocols, which
- * is perfectly fine.
- *
- *   jaque
- *     
- *     interpeter
- *       Interpreter
- *       Result
- *       Machine
- *       Dashboard
- *       Jet
- *     noun
- *       Noun
- *       Cell
- *       Atom
- *       DirectAtom
- *       IndirectAtom
- */
 
 public final class Interpreter {
   public static final class Bail extends Exception {
