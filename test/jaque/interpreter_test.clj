@@ -8,7 +8,7 @@
             [jaque.noun.math :as math]
             [jaque.jets.dashboard :refer [empty-dashboard]]
             [jaque.interpreter :refer :all])
-  (:import jaque.noun.Atom))
+  (:import jaque.noun.Atom jaque.interpreter.Result))
 
 (deftest tutorial
   (testing "examples from nock tutorial"
@@ -69,18 +69,18 @@
 (defjet math-sub [sub math kmat] - [+<- +<+] (ignore-machine math/sub))
 (defjet math-dec [dec math kmat] - [+<]
   (fn [m a]
-    [(assoc m :dec-count (inc (:dec-count m)))
-     (math/dec a)]))
+    (Result. (assoc m :dec-count (inc (:dec-count m)))
+             (math/dec a))))
 (defjet math-lth [lth math kmat] - [+<- +<+] (ignore-machine math/lth))
 
 (def math-kernel-formula
   (noun [7 [1 :kmat] 7 [8 [1 1 :kmat] 10 [:fast 1 :kmat [1 0] 0] 0 1] 8 [1 [7 [8 [1 0 0] [1 6 [5 [1 0] 0 12] [0 13] 9 2 [0 2] [[8 [9 47 0 7] 9 2 [0 4] [0 28] 0 11] 4 0 13] 0 7] 0 1] 10 [:fast 1 :add [0 7] 0] 0 1] [7 [8 [1 0 0] [1 6 [6 [5 [0 12] 0 13] [1 1] 1 0] [6 [8 [1 6 [5 [1 0] 0 28] [1 0] 6 [6 [6 [5 [1 0] 0 29] [1 1] 1 0] [6 [9 2 [0 2] [0 6] [[8 [9 47 0 15] 9 2 [0 4] [0 60] 0 11] 8 [9 47 0 15] 9 2 [0 4] [0 61] 0 11] 0 15] [1 0] 1 1] 1 1] [1 0] 1 1] 9 2 0 1] [1 0] 1 1] 1 1] 0 1] 10 [:fast 1 :lth [0 7] 0] 0 1] [7 [8 [1 0] [1 10 [:memo 1 0] 8 [1 6 [8 [9 10 0 15] 9 2 [0 4] [[0 30] 7 [0 3] 1 3] 0 11] [1 1] 8 [8 [9 47 0 15] 9 2 [0 4] [0 30] 0 11] 8 [9 4 0 31] 9 2 [0 4] [[7 [0 3] 9 2 [0 6] [0 14] [0 2] 0 31] 7 [0 3] 9 2 [0 6] [0 14] [8 [9 47 0 31] 9 2 [0 4] [0 6] 0 11] 0 31] 0 11] 9 2 0 1] 0 1] 10 [:fast 1 :fib [0 7] 0] 0 1] [7 [8 [1 0 0] [1 6 [5 [1 0] 0 13] [0 12] 9 2 [0 2] [[8 [9 47 0 7] 9 2 [0 4] [0 28] 0 11] 8 [9 47 0 7] 9 2 [0 4] [0 29] 0 11] 0 7] 0 1] 10 [:fast 1 :sub [0 7] 0] 0 1] 7 [8 [1 0] [1 6 [5 [1 0] 0 6] [0 0] 8 [1 0] 8 [1 6 [5 [0 30] 4 0 6] [0 6] 9 2 [0 2] [4 0 6] 0 7] 9 2 0 1] 0 1] 10 [:fast 1 :dec [0 7] 0] 0 1] 10 [:fast 1 :math [0 3] [:add 9 4 0 1] [:sub 9 46 0 1] [:dec 9 47 0 1] [:fib 9 22 0 1] 0] 0 1]))
 
 (def m0 (assoc empty-machine :dash (-> empty-dashboard
-                                       (.install-jet math-add)
-                                       (.install-jet math-sub)
-                                       (.install-jet math-dec)
-                                       (.install-jet math-lth))))
+                                       (.install math-add)
+                                       (.install math-sub)
+                                       (.install math-dec)
+                                       (.install math-lth))))
 
 (deftest math-kernel-test
   (let [[m1 ken] (nock m0 a0 math-kernel-formula)

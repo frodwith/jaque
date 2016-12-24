@@ -3,22 +3,25 @@
   (:require [jaque.noun.core :refer [mas cap export]]
             [jaque.error     :as e]
             [jaque.constants :refer :all])
-  (:import (jaque.noun Atom Noun)))
+  (:import jaque.interpreter.Interpreter 
+           (jaque.noun Atom Noun)))
 
 (export atom? cell? noun? zero? head tail inline-fragment lark->axis lark if&)
 
 (defn cord->string ^String [^Atom c]
   (String. (.toByteArray c Atom/LITTLE_ENDIAN) "UTF-8"))
 
+;(defn fragment [^Atom axis ^Noun subject]
+;  (loop [a axis
+;         n subject]
+;  (if (= a1 a)
+;    n
+;  (if-not (cell? n)
+;    nil
+;  (recur (mas a)
+;         ((if (= a2 (cap a)) head tail) n))))))
 (defn fragment [^Atom axis ^Noun subject]
-  (loop [a axis
-         n subject]
-  (if (= a1 a)
-    n
-  (if-not (cell? n)
-    nil
-  (recur (mas a)
-         ((if (= a2 (cap a)) head tail) n))))))
+  (Interpreter/fragment axis subject))
 
 (defn mean [x & as]
   ;; fixme: use minimal traversal instead of fragment

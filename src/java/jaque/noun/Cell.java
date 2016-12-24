@@ -58,10 +58,18 @@ public class Cell extends Noun {
     }
 
     public final boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
         if (!(o instanceof Cell)) {
             return false;
         }
         Cell c = (Cell) o;
-        return (hashCode() == c.hashCode()) && p.equals(c.p) && q.equals(c.q);
+        if (hashed && c.hashed && hash != c.hash) {
+            return false;
+        }
+        else {
+            return p.equals(c.p) && q.equals(c.q);
+        }
     }
 }

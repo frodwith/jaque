@@ -131,8 +131,9 @@
 
 (deftest overview-test
   (let [d (-> empty-dashboard
-            (.declare-core (:core kernel) (:clue kernel))
-            (.declare-core (:core dec) (:clue dec))
-            (.install-jet overview-dec))]
-    (is (= [(:core kernel) (noun [9 2 0 1])] (.hook d (:core dec) "vers")))
-    (is (= overview-dec (.find-jet d (:core dec) a2)))))
+            (.declare (:core kernel) (:clue kernel))
+            (.declare (:core dec) (:clue dec))
+            (.install overview-dec))
+        h (.hook d (:core dec) "vers")]
+    (is (= [(:core kernel) (noun [9 2 0 1])] [(.core h) (.formula h)]))
+    (is (= overview-dec (.find d (:core dec) a2)))))

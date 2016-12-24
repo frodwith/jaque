@@ -9,7 +9,7 @@ import clojure.lang.ISeq;
 public abstract class Atom extends Noun implements Comparable<Atom> {
     public static final int    MAX_FIXNUM = 255;
     public static final Atom[] fix;
-    public static final Atom ZERO, ONE, TWO, THREE, TEN;
+    public static final Atom ZERO, ONE, TWO, THREE, TEN, YES, NO;
     public static final boolean BIG_ENDIAN = true;
     public static final boolean LITTLE_ENDIAN = false;
 
@@ -23,6 +23,8 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
         TWO   = fix[2];
         THREE = fix[3];
         TEN   = fix[10];
+        YES   = fix[0];
+        NO    = fix[1];
     }
 
     public abstract int[] cloneWords();

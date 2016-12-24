@@ -7,13 +7,8 @@
             [jaque.noun.hash :refer [shax]]
             [jaque.noun.pack :refer [jam]]
             [jaque.noun.nlr  :refer [by-put by-get nlr-seq]])
-  (:import (jaque.noun Atom)))
-
-(defprotocol Dashboard
-  (install-jet [d jet])
-  (declare-core [d core clue])
-  (find-jet [d core axis])
-  (hook [d core name-as-string]))
+  (:import (jaque.interpreter Dashboard Result Hook)
+           (jaque.noun Atom)))
 
 (defn skip-hints [formula]
   (loop [f formula]
@@ -147,6 +142,7 @@
         axis->name (hot-names term->nock)
         calf       (cell a0 axis->name label a0)
         calx       (cell calf (cell bash cope) club)]
+    (println "new jet: " (clojure.string/join "/" (reverse (map cord->string (seq label)))))
   (assoc-in d [:warm battery] calx)))))
 
 (defn fine? [d corp cope core]
@@ -173,10 +169,10 @@
 (defrecord DashRec [hot warm cold]
 
   Dashboard
-  (install-jet [d jet]
+  (install [d jet]
     (assoc-in d [:hot (.hot-key jet)] jet))
 
-  (declare-core [d core clue]
+  (declare [d core clue]
     (let [bat (head core)
           cax (get warm bat)]
     (if-not (nil? cax)
@@ -187,7 +183,7 @@
     (mine d core cey))))))
 
   ;; Jet or nil
-  (find-jet [d core axis]
+  (find [d core axis]
     (let [bat (head core)
           cax (get warm bat)]
     (if (nil? cax)
@@ -216,7 +212,7 @@
     (let [unock (by-get (lark +>+ cax) (string->cord s))]
     (if (zero? unock)
       (recur (fragment (lark +<+>- cax) cor))
-    [cor (tail unock)])))))))
+    (Hook. cor (tail unock)))))))))
 
 (def empty-dashboard (map->DashRec {:hot  {}
                                     :warm {}
