@@ -10,6 +10,12 @@
   (:import (jaque.interpreter Dashboard Result Hook)
            (jaque.noun Atom)))
 
+(defn calx-key [bat]
+  (System/identityHashCode bat))
+
+(defn battery->calx [d bat]
+  (get (:warm d) (calx-key bat)))
+
 (defn skip-hints [formula]
   (loop [f formula]
   (if-not (and (cell? f) (= a10 (head f)))
@@ -115,7 +121,7 @@
                   (not (cell? parent)))
             nil
           (let [parent-battery (head parent)
-                parent-calx    (get (:warm d) parent-battery)]
+                parent-calx    (battery->calx d parent-battery)]
           (if (nil? parent-calx)
             nil
           (let [parent-bash (lark +<- parent-calx)
@@ -143,7 +149,7 @@
         calf       (cell a0 axis->name label a0)
         calx       (cell calf (cell bash cope) club)]
     (println "new jet: " (clojure.string/join "/" (reverse (map cord->string (seq label)))))
-  (assoc-in d [:warm battery] calx)))))
+  (assoc-in d [:warm (calx-key battery)] calx)))))
 
 (defn fine? [d corp cope core]
   (loop [cup corp
@@ -159,7 +165,7 @@
   (let [pac (fragment pax cor)]
   (if (or (nil? pac) (not (cell? pac)))
     false
-  (let [cax ((:warm d) (head pac))]
+  (let [cax (battery->calx d (head pac))]
   (if (nil? cax)
     false
   (recur (lark +>- cax) 
@@ -170,11 +176,11 @@
 
   Dashboard
   (install [d jet]
-    (assoc-in d [:hot (.hot-key jet)] jet))
+    (assoc-in d [:hot (.hotKey jet)] jet))
 
   (declare [d core clue]
     (let [bat (head core)
-          cax (get warm bat)]
+          cax (battery->calx d bat)]
     (if-not (nil? cax)
       d
     (let [cey (fsck clue)]
@@ -185,7 +191,7 @@
   ;; Jet or nil
   (find [d core axis]
     (let [bat (head core)
-          cax (get warm bat)]
+          cax (battery->calx d bat)]
     (if (nil? cax)
       nil
     (if-not (fine? d (lark +>- cax)
@@ -206,7 +212,7 @@
   (hook [d core s]
     (loop [cor core]
     (let [bat (head cor)
-          cax (get warm bat)]
+          cax (battery->calx d bat)]
     (if (nil? cax)
       nil
     (let [unock (by-get (lark +>+ cax) (string->cord s))]

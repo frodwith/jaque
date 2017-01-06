@@ -109,7 +109,7 @@
            :fsck (fsck clue)})))
 
 (defn mined [old reg]
-  {:warm (assoc (:warm old) (:batt reg) (:calx reg))
+  {:warm (assoc (:warm old) (calx-key (:batt reg)) (:calx reg))
    :cold (by-put (:cold old) (:bash reg) (:clog reg))})
 
 (def fake   {:warm {}, :cold a0})
