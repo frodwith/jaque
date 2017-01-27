@@ -4,9 +4,6 @@ import jaque.noun.*;
 import gnu.math.MPN;
 
 public final class Interpreter {
-  public static final class Bail extends Exception {
-  }
-
   private static Noun frag_word(int a, Noun b) {
     int dep = 31 - MPN.count_leading_zeros(a);
 

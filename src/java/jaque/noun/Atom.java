@@ -251,6 +251,26 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
         }
     }
 
+    // TODO: make efficient versions of bump, mas, cap for direct atoms
+    public Atom bump() {
+      return add(ONE);
+    }
+
+    public Atom mas() {
+      int b = met((byte)0);
+      if ( b < 2 ) return null;
+      int  c = 1 << (b - 1),
+           d = 1 << (b - 2);
+      Atom e = sub(fromLong(c));
+      return con(e, fromLong(d));
+    }
+
+    public int cap() {
+      int b = met((byte)0);
+      if ( b < 2 ) return -1;
+      return bit(b - 2) ? 3 : 2;
+    }
+
     public Atom add(Atom b) {
         Square s   = new Square(this, b);
         int[] dst  = new int[s.len+1];

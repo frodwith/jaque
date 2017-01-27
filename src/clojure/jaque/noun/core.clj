@@ -96,22 +96,16 @@
   (lsh a0 a a1))
 
 (defn cap [^Atom a]
-  (let [m (.met a 0)]
-    (cond (< m 2)
-            (e/exit)
-          (.bit a (- m 2))
-            a3
-          :else
-            a2)))
+  (case (.cap a)
+    2 a2
+    3 a3
+    (e/exit)))
 
 (defn mas [^Atom a]
-  (let [b (.met a 0)]
-    (if (< b 2)
+  (let [a (.mas a)]
+    (if (nil? a)
       (e/exit)
-      (let [c (bex (Atom/fromLong (- b 1)))
-            d (bex (Atom/fromLong (- b 2)))
-            e (.sub a c)]
-        (Atom/con e d)))))
+      a)))
 
 (defn fragment-path [^Atom axis]
   (loop [a axis, p nil]
