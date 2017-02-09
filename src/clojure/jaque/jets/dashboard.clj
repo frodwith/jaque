@@ -172,6 +172,15 @@
          (lark +<+ cax)
          pac))))))))))
 
+(defn fine-help [d core]
+  (let [bat (head core)
+        cax (battery->calx bat)
+        fin (and (not nil? cax) 
+                 (fine? d (lark +>- cax) 
+                          (lark +<+ cax)
+                          core))]
+    [cax fin]))
+
 (defrecord DashRec [hot warm cold]
 
   Dashboard
@@ -188,16 +197,14 @@
       d
     (mine d core cey))))))
 
+  (fine [d core]
+    (let [[cax fin] (fine-help d core)]
+      fin))
+
   ;; Jet or nil
   (find [d core axis]
-    (let [bat (head core)
-          cax (battery->calx d bat)]
-    (if (nil? cax)
-      nil
-    (if-not (fine? d (lark +>- cax)
-                     (lark +<+ cax)
-                     core)
-      nil
+    (let [[cax fin] (fine-help d core)]
+    (if-not fin nil
     (let [label   (lark ->+< cax)
           by-axis (hot [label :axis axis])]
     (if-not (nil? by-axis)
@@ -206,7 +213,7 @@
           uname      (by-get axis->name axis)]
     (if (zero? uname)
       nil
-    (hot [label :name (tail uname)])))))))))
+    (hot [label :name (tail uname)]))))))))
 
   ;; [core nock-formula] or nil
   (hook [d core s]

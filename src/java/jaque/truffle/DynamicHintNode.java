@@ -4,26 +4,21 @@ import jaque.interpreter.Result;
 import jaque.noun.*;
 
 public final class DynamicHintNode extends HintNode {
-  public final Atom    kind;
-  public final Formula hintF;
-  public final Formula nextF;
+  @Child private Formula hintF;
+  @Child private Formula nextF;
 
   public DynamicHintNode(Atom kind, Formula hintF, Formula nextF) {
-    this.kind  = kind;
+    super(kind);
     this.hintF = hintF;
     this.nextF = nextF;
   }
 
-  public Result clue(Environment e) {
-    return hintF.apply(e);
+  public Noun clue(VirtualFrame frame) {
+    return hintF.executeNoun(frame);
   }
 
   public Cell rawNext() {
     return nextF.toNoun();
-  }
-
-  public Atom kind() {
-    return kind;
   }
 
   public Formula next() {

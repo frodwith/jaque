@@ -428,4 +428,65 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
     public static int[] slaq(int met, int len) {
         return new int[((len << met) + 31) >>> 5];
     }
+
+
+
+  private static Noun frag_word(int a, Noun b) {
+    int dep = 31 - MPN.count_leading_zeros(a);
+
+    while ( dep > 0 ) {
+      if ( !(b instanceof Cell) ) {
+        return null;
+      }
+      else {
+        Cell c = (Cell) b;
+        b = ( 0 == (1 & (a >>> --dep)) )
+          ? c.p
+          : c.q;
+      }
+    }
+
+    return b;
+  }
+
+  private static Noun frag_deep(int a, Noun b) {
+    int dep = 32;
+
+    while ( dep > 0 ) {
+      if ( !(b instanceof Cell) ) {
+        return null;
+      }
+      else {
+        Cell c = (Cell) b;
+        b = ( 0 == (1 & (a >>> --dep)) )
+          ? c.p
+          : c.q;
+      }
+    }
+
+    return b;
+  }
+
+  protected static void fragIn(Queue<boolean> q, int a, int dep) {
+    while ( dep > 0 ) {
+      q.add( 0 != (1 & (a >>> --dep)) );
+    }
+  }
+
+  protected static void fragIn(Queue<boolean> q, int a) {
+    fragIn(q, 31 - MPN.count_leading_zeros(a));
+  }
+
+  protected abstract void fragOut(Queue<boolean> q);
+
+  public List<boolean> fragments() {
+    if ( this == Atom.ZERO ) {
+      return null;
+    } 
+    else {
+      Queue<boolean> q = new Queue<boolean>();
+      fragOut(q);
+      return q;
+    }
+  }
 }

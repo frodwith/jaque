@@ -3,9 +3,65 @@ package jaque.truffle;
 import jaque.interpreter.Result;
 import jaque.noun.*;
 
-public abstract class Formula {
-  public abstract Result apply(Environment e);
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.frame.VirtualFrame;
+
+@TypeSystemReference(NockTypes.class)
+public abstract class Formula extends Node {
+  private final Cell src;
+
   public abstract Cell toNoun();
+  public abstract Object execute(VirtualFrame frame);
+
+  public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
+    NockTypesGen.NOCKTYPES.expectLong(execute(frame));
+  }
+
+  public boolean executeBoolean(VirtualFrame frame) throws UnexpectedResultException {
+    NockTypesGen.NOCKTYPES.expectBoolean(execute(frame));
+  }
+
+  public Atom executeAtom(VirtualFrame frame) throws UnexpectedResultException {
+    NockTypesGen.NOCKTYPES.expectAtom(execute(frame));
+  }
+
+  public Cell executeCell(VirtualFrame frame) throws UnexpectedResultException {
+    NockTypesGen.NOCKTYPES.expectCell(execute(frame));
+  }
+
+  public Noun executeNoun(VirtualFrame frame) throws UnexpectedResultException {
+    NockTypesGen.NOCKTYPES.expectNoun(execute(frame));
+  }
+
+  public Cell source() {
+    if ( null == src ) {
+      src = toNoun();
+    }
+    return src;
+  }
+
+  public Noun getSubject(VirtualFrame frame) {
+     return (Noun) frame.getArguments()[0];
+  }
+
+  @ExplodeLoop
+  public static Noun fragment(Atom axis, Noun r) {
+    for ( boolean b : axis.fragments() ) {
+      if ( !(r instanceof Cell) ) {
+        throw new Bail();
+      }
+      else {
+        Cell c = r;
+        if ( b ) {
+          r = c.q;
+        }
+        else {
+          r = c.p;
+        }
+      }
+    }
+    return r;
+  }
 
   private static final Cell forceCell(Noun n) {
     if (n instanceof Cell) {

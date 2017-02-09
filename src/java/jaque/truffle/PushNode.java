@@ -3,18 +3,16 @@ package jaque.truffle;
 import jaque.interpreter.Result;
 import jaque.noun.*;
 
+@NodeInfo(shortName = "push")
 public final class PushNode extends Formula {
-  public final Formula f;
-  public final Formula g;
+  @Child private Formula f;
+  @Child private Formula g;
 
-  public PushNode(Formula f, Formula g) {
-    this.f = f;
-    this.g = g;
-  }
-
-  public Result apply(Environment e) {
-    Result r = f.apply(e);
-    return g.apply(new Environment(r.m, new Cell(r.r, e.subject)));
+  public Noun execute(VirtualFrame frame) {
+    Noun head  = f.executeNoun(frame);
+    Object[] a = frame.getArguments();
+    a[0] = new Cell(head, a[0]);
+    return g.executeNoun(frame);
   }
 
   public Cell toNoun() {

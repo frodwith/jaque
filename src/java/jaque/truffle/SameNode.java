@@ -3,21 +3,34 @@ package jaque.truffle;
 import jaque.interpreter.Result;
 import jaque.noun.*;
 
+@NodeInfo(shortName = "same")
 public final class SameNode extends Formula {
-  public final Formula headF;
-  public final Formula tailF;
+  @Child private Formula a;
+  @Child private Formula b;
 
-  public SameNode(Formula headF, Formula tailF) {
-    this.headF = headF;
-    this.tailF = tailF;
+  @Specialization
+  protected boolean same(boolean a, boolean b) {
+    return a == b;
   }
 
-  public Result apply(Environment e) {
-    Result headR = headF.apply(e);
-    Result tailR = tailF.apply(new Environment(headR.m, e.subject));
-    Atom   pro   = headR.r.equals(tailR.r) ? Atom.YES : Atom.NO;
+  @Specialization
+  protected boolean same(long a, long b) {
+    return a == b;
+  }
+  
+  @Specialization
+  protected boolean same(Atom a, Atom b) {
+    return a.equals(b);
+  }
 
-    return new Result(tailR.m, pro);
+  @Specialization
+  protected boolean same(Cell a, Cell b) {
+    a.equals(b);
+  }
+
+  @Specialization(guards = {"a.getClass() != b.getClass()"})
+  protected boolean same(Object a, Object b) {
+    return false;
   }
 
   public Cell toNoun() {

@@ -3,29 +3,24 @@ package jaque.truffle;
 import jaque.interpreter.*;
 import jaque.noun.*;
 
+@NodeInfo(shortName = "nock")
 public final class NockNode extends Formula {
-  public final Formula subjectF;
-  public final Formula formulaF;
+  @Child private Formula subject;
+  @Child private Formula formula;
+  @Child private NockDispatchNode dispatch;
 
-  public NockNode(Formula subjectF, Formula formulaF) {
+  public NockNode(Formula subject, Formula formula) {
     this.subjectF = subjectF;
     this.formulaF = formulaF;
+    this.dispatch = NockDispatchNodeGen.create();
   }
 
-  public Result apply(Environment e) {
-    Result  subjectR = subjectF.apply(e);
-    Result  formulaR = formulaF.apply(new Environment(subjectR.m, e.subject));
-    Noun    formulaN = formulaR.r;
-    if ( !(formulaN instanceof Cell) ) {
-      throw new Bail();
-    }
-    else {
-      Formula cont = Formula.fromNoun((Cell) formulaN);
-      return cont.apply(new Environment(formulaR.m, subjectR.r));
-    }
+  @Specialization
+  public Noun nock(VirtualFrame frame, Noun subject, Cell formula) {
+    return dispatch.executeNock(frame, subject, formula);
   }
 
   public Cell toNoun() {
-    return new Cell(Atom.fromLong(2), new Cell(subjectF.toNoun(), formulaF.toNoun()));
+    return new Cell(Atom.fromLong(2), new Cell(subject.toNoun(), formula.toNoun()));
   }
 }

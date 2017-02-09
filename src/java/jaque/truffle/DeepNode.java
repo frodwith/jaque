@@ -3,16 +3,28 @@ package jaque.truffle;
 import jaque.interpreter.Result;
 import jaque.noun.*;
 
-public final class DeepNode extends Formula {
-  public final Formula f;
+@NodeInfo(shortName = "3")
+public abstract class DeepNode extends Formula {
+  @Child private Formula f;
 
-  public DeepNode(Formula f) {
-    this.f = f;
+  @Specialization
+  protected boolean deep(boolean v) {
+    return false;
   }
 
-  public Result apply(Environment e) {
-    Result r   = f.apply(e);
-    return new Result(r.m, (r.r instanceof Cell ? Atom.YES : Atom.NO));
+  @Specialization
+  protected boolean deep(long v) {
+    return false;
+  }
+
+  @Specialization
+  protected boolean deep(Atom v) {
+    return false;
+  }
+
+  @Specialization
+  protected boolean deep(Cell v) {
+    return true;
   }
 
   public Cell toNoun() {

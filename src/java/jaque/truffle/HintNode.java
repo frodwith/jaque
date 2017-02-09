@@ -5,22 +5,29 @@ import jaque.interpreter.Hint;
 import jaque.noun.*;
 
 public abstract class HintNode extends Formula {
-  public abstract Result clue(Environment e);
-  public abstract Cell rawNext();
-  public abstract Atom kind();
+  @Child private Node contextNode;
+  @Child private Atom kind;
+
+  public abstract Noun clue(VirtualFrame frame);
   public abstract Formula next();
 
-  public Result apply(Environment e) {
-    Result  r = clue(e);
-    Hint    h = new Hint(kind(), r.r, e.subject, rawNext());
+  protected HintNode(Atom kind) {
+    this.kind        = kind;
+    this.contextNode = NockLanguage.createFindContextNode();
+  }
 
-    r = r.m.startHint(h);
-    if ( null != r.r ) {
-      return r;
+  public Noun executeNoun(VirtualFrame frame) {
+    NockContext c = NockLanguage.findContext(contextNode);
+    Formula nextF = next();
+    Noun  subject = frame.getArguments()[0];
+    Hint        h = new Hint(kind, clue(frame), subject, nextF.source());
+    Noun      pro = c.startHint(h);
+
+    if ( null == pro ) {
+      pro = nextF.executeNoun(frame);
+      c.endHint(h, pro);
     }
-    else {
-      r = next().apply(new Environment(r.m, e.subject));
-      return new Result(r.m.endHint(h, r.r), r.r);
-    }
+
+    return pro;
   }
 }

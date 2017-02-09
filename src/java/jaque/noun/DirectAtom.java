@@ -68,4 +68,8 @@ public class DirectAtom extends Atom {
         return (1 & (val >>> a)) > 0;
       }
     }
+
+    protected void fragOut(Queue<boolean> q) {
+        return fragIn(q, val);
+    }
 }

@@ -3,18 +3,14 @@ package jaque.truffle;
 import jaque.interpreter.Result;
 import jaque.noun.*;
 
+@NodeInfo(shortName = "comp")
 public final class ComposeNode extends Formula {
-  public final Formula f;
-  public final Formula g;
+  @Child private Formula f;
+  @Child private Formula g;
 
-  public ComposeNode(Formula f, Formula g) {
-    this.f = f;
-    this.g = g;
-  }
-
-  public Result apply(Environment e) {
-    Result r = f.apply(e);
-    return g.apply(new Environment(r.m, r.r));
+  public Noun execute(VirtualFrame frame) {
+    frame.getArguments()[0] = f.executeNoun(frame);
+    return g.executeNoun(frame);
   }
 
   public Cell toNoun() {

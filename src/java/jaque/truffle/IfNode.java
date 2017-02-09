@@ -3,35 +3,24 @@ package jaque.truffle;
 import jaque.interpreter.*;
 import jaque.noun.*;
 
+@NodeInfo(shortName = "if")
 public final class IfNode extends Formula {
-  public final Formula testF;
-  public final Formula yesF;
-  public final Formula noF;
+  @Child private Formula test;
+  @Child private Formula yes;
+  @Child private Formula no;
 
-  public IfNode(Formula testF, Formula yesF, Formula noF) {
-    this.testF = testF;
-    this.yesF  = yesF;
-    this.noF   = noF;
-  }
+  private final ConditionProfile condition = ConditionProfile.createCountingProfile();
 
-  public Result apply(Environment e) {
-    Result  testR = testF.apply(e);
-    Formula cont;
-
-    if ( testR.r.equals(Atom.YES) ) {
-      cont = yesF;
-    }
-    else if ( testR.r.equals(Atom.NO) ) {
-      cont = noF;
+  public Noun execute(VirtualFrame frame) {
+    if ( condition.profile(test.executeBoolean(frame)) ) {
+      return yes.execute(frame);
     }
     else {
-      throw new Bail();
+      return no.execute(frame);
     }
-  
-    return cont.apply(new Environment(testR.m, e.subject));
   }
 
   public Cell toNoun() {
-    return new Cell(Atom.fromLong(6), new Cell(testF.toNoun(), new Cell(yesF.toNoun(), noF.toNoun())));
+    return new Cell(Atom.fromLong(6), new Cell(test.toNoun(), new Cell(yes.toNoun(), no.toNoun())));
   }
 }

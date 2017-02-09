@@ -4,61 +4,22 @@ import jaque.noun.*;
 import gnu.math.MPN;
 
 public final class Interpreter {
-  private static Noun frag_word(int a, Noun b) {
-    int dep = 31 - MPN.count_leading_zeros(a);
-
-    while ( dep > 0 ) {
-      if ( !(b instanceof Cell) ) {
-        return null;
-      }
-      else {
-        Cell c = (Cell) b;
-        b = ( 0 == (1 & (a >>> --dep)) )
-          ? c.p
-          : c.q;
-      }
-    }
-
-    return b;
-  }
-
-  private static Noun frag_deep(int a, Noun b) {
-    int dep = 32;
-
-    while ( dep > 0 ) {
-      if ( !(b instanceof Cell) ) {
-        return null;
-      }
-      else {
-        Cell c = (Cell) b;
-        b = ( 0 == (1 & (a >>> --dep)) )
-          ? c.p
-          : c.q;
-      }
-    }
-
-    return b;
-  }
 
   public final static Noun fragment(Atom a, Noun b) {
-    if ( a instanceof DirectAtom ) {
-      int val = ((DirectAtom) a).val;
-      if (val == 0 ) {
-        return null;
-      }
-      else {
-        return frag_word(val, b);
-      }
+    List<boolean> path = a.fragments();
+    if ( null == path ) {
+      return null;
     }
     else {
-      int[] w = ((IndirectAtom) a).words;
-      int len = w.length;
-
-      b = frag_word(w[--len], b);
-      while ( len > 0 ) {
-        b = frag_deep(w[--len], b);
-        if ( null == b ) {
+      for ( boolean tail : path ) {
+        if ( !(b instanceof Cell) ) {
           return null;
+        }
+        else if ( tail ) {
+          b = b.q;
+        }
+        else {
+          b = b.p;
         }
       }
       return b;
@@ -206,7 +167,8 @@ public final class Interpreter {
         }
         case 11: {
           Result x = nock(machine, subject, arguments);
-          return x.m.escape(forceCell(x.r));
+          Cell   c = forceCell(x.r);
+          return x.m.escape(c.p, c.q);
         }
         default:
           throw new Bail();

@@ -3,21 +3,18 @@ package jaque.truffle;
 import jaque.interpreter.*;
 import jaque.noun.*;
 
+@NodeInfo(shortName = "bump")
 public final class BumpNode extends Formula {
-  public final Formula f;
+  @Child private Formula f;
 
-  public BumpNode(Formula f) {
-    this.f = f;
+  @Specialization(rewriteOn = ArithmeticException.class)
+  protected long bump(long v) {
+    return Math.incrementExact(v);
   }
 
-  public Result apply(Environment e) {
-    Result r = f.apply(e);
-    if ( !(r.r instanceof Atom) ) {
-      throw new Bail();
-    }
-    else {
-      return new Result(r.m, ((Atom) r.r).bump());
-    }
+  @Specialization
+  protected Atom bump(Atom v) {
+    return v.bump();
   }
 
   public Cell toNoun() {

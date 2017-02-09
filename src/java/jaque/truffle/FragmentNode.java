@@ -3,6 +3,7 @@ package jaque.truffle;
 import jaque.interpreter.*;
 import jaque.noun.*;
 
+@NodeInfo(shortName = "frag")
 public final class FragmentNode extends Formula {
   public final Atom axis;
 
@@ -10,14 +11,8 @@ public final class FragmentNode extends Formula {
     this.axis = axis;
   }
 
-  public Result apply(Environment e) {
-    Noun part = Interpreter.fragment(axis, e.subject);
-    if ( null == part ) {
-      throw new Bail();
-    }
-    else {
-      return new Result(e.machine, part);
-    }
+  public Noun execute(VirtualFrame frame) {
+    return Formula.fragment(axis, frame.getArguments()[0]);
   }
 
   public Cell toNoun() {

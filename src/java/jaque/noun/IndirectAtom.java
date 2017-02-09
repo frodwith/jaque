@@ -77,4 +77,13 @@ public class IndirectAtom extends Atom {
         return (1 & (words[pix] >>> (a & 31))) > 0;
       }
     }
+
+    protected void fragOut(Queue<boolean> q) {
+      int len = words.length;
+
+      fragIn(q, words[--len]);
+      while ( len > 0 ) {
+        fragIn(q, words[--len], 32);
+      }
+    }
 }

@@ -1,8 +1,8 @@
 package jaque.truffle;
 
-import jaque.interpreter.Result;
 import jaque.noun.*;
 
+@NodeInfo(shortName = "const")
 public final class ConstantNode extends Formula {
   public final Noun value;
 
@@ -10,8 +10,8 @@ public final class ConstantNode extends Formula {
     this.value = value;
   }
 
-  public Result apply(Environment e) {
-    return new Result(e.machine, value);
+  public Noun execute(VirtualFrame frame) {
+    return value;
   }
 
   public Cell toNoun() {

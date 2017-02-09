@@ -3,37 +3,20 @@ package jaque.truffle;
 import jaque.interpreter.*;
 import jaque.noun.*;
 
+@NodeInfo(shortName = "kick")
 public final class KickNode extends Formula {
-  public final Atom    axis;
-  public final Formula coreF;
+  private final Atom axis;
+  @Child private Formula coreF;
+  @Child private KickDispatchNode dispatch;
 
   public KickNode(Atom axis, Formula coreF) {
-    this.axis  = axis;
-    this.coreF = coreF;
+    this.axis        = axis;
+    this.coreF       = core;
+    this.dispatch    = KickDispatchNodeGen.create();
   }
 
-  public Result apply(Environment e) {
-    Result r   = coreF.apply(e);
-    if ( !(r.r instanceof Cell) ) {
-      throw new Bail();
-    }
-    else {
-      Cell cor = (Cell) r.r;
-      Jet  j   = r.m.dashboard().find(cor, axis);
-      if ( null == j ) {
-        Noun n = Interpreter.fragment(axis, cor);
-        if ( !(n instanceof Cell) ) {
-          throw new Bail();
-        }
-        else {
-          Formula f = Formula.fromNoun((Cell) n);
-          return f.apply(new Environment(r.m, cor));
-        }
-      }
-      else {
-        return j.applyCore(r.m, cor);
-      }
-    }
+  public Noun execute(VirtualFrame frame) {
+    return dispatch.executeKick(coreF.executeCell(frame), axis);
   }
 
   public Cell toNoun() {
