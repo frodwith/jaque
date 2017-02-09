@@ -3,6 +3,10 @@ package jaque.truffle;
 import jaque.interpreter.*;
 import jaque.noun.*;
 
+import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.ConditionProfile;
+
 @NodeInfo(shortName = "if")
 public final class IfNode extends Formula {
   @Child private Formula test;
@@ -11,7 +15,8 @@ public final class IfNode extends Formula {
 
   private final ConditionProfile condition = ConditionProfile.createCountingProfile();
 
-  public Noun execute(VirtualFrame frame) {
+  @Override
+  public Object execute(VirtualFrame frame) {
     if ( condition.profile(test.executeBoolean(frame)) ) {
       return yes.execute(frame);
     }

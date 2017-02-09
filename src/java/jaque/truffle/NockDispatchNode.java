@@ -1,17 +1,20 @@
+package jaque.truffle;
 
-/* Continuing evaluation of a 2 or 9 involves nocking on an unknown (at
- * compile time) formula. However, in many (probably all optimizable) cases,
- * the formula to be evaluated doesn't change on subsequent invocations, i.e.
- * it is constant. If we know it's constant, we can inline through it - we
- * have a tree of nodes for it. We can thus profitably assume that for any
- * given jumpNode, the first thing it is called with is the thing it will
- * always be called with - and if it is not, we bail out and do the slow path.
- * */
+import jaque.noun.*;
+
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.dsl.TypeSystemReference;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.dsl.Cached;
 
 @TypeSystemReference(NockTypes.class)
 public abstract class NockDispatchNode extends Node {
 
-  public abstract Noun executeNock(VirtualFrame frame, Noun subject, Cell formula);
+  public abstract Object executeNock(VirtualFrame frame, Noun subject, Cell formula);
 
   @Specialization(guards = {"formula.equals(cachedFormula)"})
   protected static Noun doStatic(VirtualFrame frame, Noun subject, Cell formula,
@@ -31,8 +34,8 @@ public abstract class NockDispatchNode extends Node {
   }
 
   protected static CallTarget targetFromCell(VirtualFrame frame, Cell cell) {
-    Map<Cell,CallTarget> map = frame.getArguments()[1];
-    CallTarget target = map.get(cell);
+    Map<Cell,CallTarget> map = (Map<Cell,CallTarget>) (frame.getArguments()[1]);
+    CallTarget        target = map.get(cell);
 
     if ( null == target ) {
       target = Truffle.getRuntime().createCallTarget(Formula.fromNoun(cell));

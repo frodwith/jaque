@@ -1,8 +1,10 @@
 package jaque.truffle;
 
-import jaque.interpreter.Result;
 import jaque.interpreter.Hint;
 import jaque.noun.*;
+
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.frame.VirtualFrame;
 
 public abstract class HintNode extends Formula {
   @Child private Node contextNode;
@@ -16,11 +18,11 @@ public abstract class HintNode extends Formula {
     this.contextNode = NockLanguage.createFindContextNode();
   }
 
-  public Noun executeNoun(VirtualFrame frame) {
+  @Override
+  public Object execute(VirtualFrame frame) {
     NockContext c = NockLanguage.findContext(contextNode);
     Formula nextF = next();
-    Noun  subject = frame.getArguments()[0];
-    Hint        h = new Hint(kind, clue(frame), subject, nextF.source());
+    Hint        h = new Hint(kind, clue(frame), getSubject(frame), nextF.toNoun());
     Noun      pro = c.startHint(h);
 
     if ( null == pro ) {

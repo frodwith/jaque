@@ -3,6 +3,8 @@ package jaque.truffle;
 import jaque.noun.*;
 import jaque.interpreter.*;
 
+import com.oracle.truffle.api.TruffleLanguage;
+
 public final class NockContext {
   private Machine m;
   private final TruffleLanguage.Env env;

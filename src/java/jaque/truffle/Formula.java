@@ -1,63 +1,55 @@
 package jaque.truffle;
 
-import jaque.interpreter.Result;
+import jaque.interpreter.Bail;
 import jaque.noun.*;
 
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.dsl.TypeSystemReference;
 
 @TypeSystemReference(NockTypes.class)
 public abstract class Formula extends Node {
-  private final Cell src;
-
   public abstract Cell toNoun();
   public abstract Object execute(VirtualFrame frame);
+  private static final Atom maxLongAtom = Atom.fromLong(Long.MAX_VALUE);
 
   public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
-    NockTypesGen.NOCKTYPES.expectLong(execute(frame));
+    NockTypesGen.expectLong(execute(frame));
   }
 
   public boolean executeBoolean(VirtualFrame frame) throws UnexpectedResultException {
-    NockTypesGen.NOCKTYPES.expectBoolean(execute(frame));
+    NockTypesGen.expectBoolean(execute(frame));
   }
 
   public Atom executeAtom(VirtualFrame frame) throws UnexpectedResultException {
-    NockTypesGen.NOCKTYPES.expectAtom(execute(frame));
+    NockTypesGen.expectAtom(execute(frame));
   }
 
   public Cell executeCell(VirtualFrame frame) throws UnexpectedResultException {
-    NockTypesGen.NOCKTYPES.expectCell(execute(frame));
+    NockTypesGen.expectCell(execute(frame));
   }
 
   public Noun executeNoun(VirtualFrame frame) throws UnexpectedResultException {
-    NockTypesGen.NOCKTYPES.expectNoun(execute(frame));
+    NockTypesGen.expectNoun(execute(frame));
   }
 
-  public Cell source() {
-    if ( null == src ) {
-      src = toNoun();
-    }
-    return src;
-  }
-
-  public Noun getSubject(VirtualFrame frame) {
+  public static Noun getSubject(VirtualFrame frame) {
      return (Noun) frame.getArguments()[0];
   }
 
   @ExplodeLoop
   public static Noun fragment(Atom axis, Noun r) {
-    for ( boolean b : axis.fragments() ) {
+    for ( Boolean tail : axis.fragments() ) {
       if ( !(r instanceof Cell) ) {
         throw new Bail();
       }
+      else if ( tail.booleanValue() ) {
+        r = ((Cell) r).q;
+      }
       else {
-        Cell c = r;
-        if ( b ) {
-          r = c.q;
-        }
-        else {
-          r = c.p;
-        }
+        r = ((Cell) r).p;
       }
     }
     return r;
@@ -87,8 +79,20 @@ public abstract class Formula extends Node {
         case 0: {
           return new FragmentNode((Atom) arg);
         }
-        case 1:
-          return new ConstantNode(arg);
+        case 1: {
+          if ( arg instanceof Cell ) {
+            return new LiteralCell((Cell) arg);
+          }
+          else {
+            Atom a = (Atom) arg;
+            if ( 1 > a.compareTo(maxLongAtom) ) {
+              return new LiteralLong(a.longValue());
+            }
+            else {
+              return new LiteralAtom(a);
+            }
+          }
+        }
         case 2: {
           Cell c = forceCell(arg);
           return new NockNode(

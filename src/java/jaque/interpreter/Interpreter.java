@@ -1,25 +1,26 @@
 package jaque.interpreter;
 
 import jaque.noun.*;
+import java.util.List;
 import gnu.math.MPN;
 
 public final class Interpreter {
 
   public final static Noun fragment(Atom a, Noun b) {
-    List<boolean> path = a.fragments();
+    List<Boolean> path = a.fragments();
     if ( null == path ) {
       return null;
     }
     else {
-      for ( boolean tail : path ) {
+      for ( Boolean tail : path ) {
         if ( !(b instanceof Cell) ) {
           return null;
         }
-        else if ( tail ) {
-          b = b.q;
+        else if ( tail.booleanValue() ) {
+          b = ((Cell) b).q;
         }
         else {
-          b = b.p;
+          b = ((Cell) b).p;
         }
       }
       return b;

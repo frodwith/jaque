@@ -8,6 +8,8 @@
   :source-paths      ["src/clojure"]
   :java-source-paths ["src/java"]
   :dependencies [[org.clojure/clojure "1.8.0"]
+                 [com.oracle.truffle/truffle-api "0.23"]
+;                 [com.oracle.truffle/truffle-dsl-processor "0.23"]
 ;                 [primitive-math "0.1.3"]
 ;                 [criterium "0.4.4"]
                  [slingshot "0.12.2"]])

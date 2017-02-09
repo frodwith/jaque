@@ -1,19 +1,16 @@
 package jaque.truffle;
 
-import jaque.interpreter.*;
 import jaque.noun.*;
 
+import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.dsl.Specialization;
+
 @NodeInfo(shortName = "nock")
-public final class NockNode extends Formula {
+@NodeField(value = "dispatch", type = NockDispatchNode.class)
+public abstract class NockNode extends Formula {
   @Child private Formula subject;
   @Child private Formula formula;
-  @Child private NockDispatchNode dispatch;
-
-  public NockNode(Formula subject, Formula formula) {
-    this.subjectF = subjectF;
-    this.formulaF = formulaF;
-    this.dispatch = NockDispatchNodeGen.create();
-  }
 
   @Specialization
   public Noun nock(VirtualFrame frame, Noun subject, Cell formula) {

@@ -1,17 +1,14 @@
 package jaque.truffle;
 
-import jaque.interpreter.Result;
 import jaque.noun.*;
 
+import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.api.dsl.Specialization;
+
 @NodeInfo(shortName = "same")
-public final class SameNode extends Formula {
+public abstract class SameNode extends Formula {
   @Child private Formula a;
   @Child private Formula b;
-
-  @Specialization
-  protected boolean same(boolean a, boolean b) {
-    return a == b;
-  }
 
   @Specialization
   protected boolean same(long a, long b) {

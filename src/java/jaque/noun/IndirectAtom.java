@@ -2,6 +2,7 @@ package jaque.noun;
 
 import gnu.math.MPN;
 import java.util.Arrays;
+import java.util.Queue;
 
 public class IndirectAtom extends Atom {
     public final int[] words;
@@ -78,7 +79,7 @@ public class IndirectAtom extends Atom {
       }
     }
 
-    protected void fragOut(Queue<boolean> q) {
+    protected void fragOut(Queue<Boolean> q) {
       int len = words.length;
 
       fragIn(q, words[--len]);

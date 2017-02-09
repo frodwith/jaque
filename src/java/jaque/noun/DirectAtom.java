@@ -1,5 +1,7 @@
 package jaque.noun;
 
+import java.util.Queue;
+
 public class DirectAtom extends Atom {
     public final int val;
 
@@ -69,7 +71,7 @@ public class DirectAtom extends Atom {
       }
     }
 
-    protected void fragOut(Queue<boolean> q) {
-        return fragIn(q, val);
+    protected void fragOut(Queue<Boolean> q) {
+        fragIn(q, val);
     }
 }

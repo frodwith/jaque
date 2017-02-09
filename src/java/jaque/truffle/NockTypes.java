@@ -2,27 +2,25 @@ package jaque.truffle;
 
 import jaque.noun.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.dsl.TypeSystem;
+import com.oracle.truffle.api.dsl.ImplicitCast;
+import com.oracle.truffle.api.dsl.TypeCast;
 
-@TypeSystem(boolean.class, long.class, Atom.class, Cell.class, Noun.class)
-public class NockTypes {
+@TypeSystem({boolean.class, long.class, Atom.class, Cell.class, Noun.class})
+public abstract class NockTypes {
 
   @ImplicitCast
-  public long castLong(boolean value) {
+  public static long castLong(boolean value) {
     return value ? 0 : 1;
   }
 
   @ImplicitCast
-  public Atom castAtom(boolean value) {
-    return value ? Atom.YES : Atom.NO;
-  }
-
-  @ImplicitCast
-  public Atom castAtom(long value) {
+  public static Atom castAtom(long value) {
     return Atom.fromLong(value);
   }
 
-  @TypeCast
-  public boolean asBoolean(Noun value) {
+  @TypeCast(Boolean.class)
+  public static boolean asBoolean(Noun value) throws UnexpectedResultException {
     if ( value == Atom.YES ) {
       return true;
     }

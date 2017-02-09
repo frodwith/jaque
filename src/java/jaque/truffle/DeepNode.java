@@ -1,21 +1,14 @@
 package jaque.truffle;
 
-import jaque.interpreter.Result;
 import jaque.noun.*;
 
-@NodeInfo(shortName = "3")
+import com.oracle.truffle.api.TruffleLanguage;
+import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.api.dsl.Specialization;
+
+@NodeInfo(shortName = "deep")
 public abstract class DeepNode extends Formula {
   @Child private Formula f;
-
-  @Specialization
-  protected boolean deep(boolean v) {
-    return false;
-  }
-
-  @Specialization
-  protected boolean deep(long v) {
-    return false;
-  }
 
   @Specialization
   protected boolean deep(Atom v) {
@@ -25,6 +18,11 @@ public abstract class DeepNode extends Formula {
   @Specialization
   protected boolean deep(Cell v) {
     return true;
+  }
+
+  @Specialization
+  protected boolean deep(Noun v) {
+    return (v instanceof Cell);
   }
 
   public Cell toNoun() {

@@ -1,8 +1,10 @@
 package jaque.noun;
 
 import gnu.math.MPN;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 import java.util.Arrays;
-import java.util.Collections;
 import clojure.lang.Cons;
 import clojure.lang.ISeq;
 
@@ -467,24 +469,24 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
     return b;
   }
 
-  protected static void fragIn(Queue<boolean> q, int a, int dep) {
+  protected static void fragIn(Queue<Boolean> q, int a, int dep) {
     while ( dep > 0 ) {
       q.add( 0 != (1 & (a >>> --dep)) );
     }
   }
 
-  protected static void fragIn(Queue<boolean> q, int a) {
+  protected static void fragIn(Queue<Boolean> q, int a) {
     fragIn(q, 31 - MPN.count_leading_zeros(a));
   }
 
-  protected abstract void fragOut(Queue<boolean> q);
+  protected abstract void fragOut(Queue<Boolean> q);
 
-  public List<boolean> fragments() {
+  public List<Boolean> fragments() {
     if ( this == Atom.ZERO ) {
       return null;
     } 
     else {
-      Queue<boolean> q = new Queue<boolean>();
+      LinkedList<Boolean> q = new LinkedList<Boolean>();
       fragOut(q);
       return q;
     }

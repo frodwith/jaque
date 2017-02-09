@@ -1,9 +1,21 @@
+package jaque.truffle;
+
+import jaque.noun.*;
+import jaque.interpreter.Jet;
+
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.dsl.TypeSystemReference;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.dsl.Cached;
+
 @TypeSystemReference(NockTypes.class)
 public abstract class KickDispatchNode extends Node {
 
-  public abstract Noun executeKick(VirtualFrame frame, Cell core, Atom axis);
+  public abstract Object executeKick(VirtualFrame frame, Cell core, Atom axis);
 
-  @Specialization(limit  = 1,
+  @Specialization(limit  = "1",
                   guards = {"null != jet",
                             "core.p == cachedBattery",
                             "NockLanguage.findContext(contextNode).fineCore(core)"})
@@ -15,7 +27,7 @@ public abstract class KickDispatchNode extends Node {
     return NockLanguage.findContext(contextNode).applyJet(jet, core);
   }
 
-  @Specialization(limit    = 1,
+  @Specialization(limit    = "1",
                   replaces = "doFast",
                   guards   = {"core.p == cachedBattery"})
   protected static Noun doArm(VirtualFrame frame, Cell core, Atom axis,

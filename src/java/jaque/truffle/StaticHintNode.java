@@ -3,6 +3,10 @@ package jaque.truffle;
 import jaque.interpreter.Result;
 import jaque.noun.*;
 
+import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.api.frame.VirtualFrame;
+
+@NodeInfo(shortName = "static-hint")
 public final class StaticHintNode extends HintNode {
   @Child private Formula f;
 

@@ -3,6 +3,9 @@ package jaque.truffle;
 import jaque.interpreter.Result;
 import jaque.noun.*;
 
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.frame.VirtualFrame;
+
 public final class EscapeNode extends Formula {
   @Child private Formula ref;
   @Child private Formula sam;
@@ -14,6 +17,7 @@ public final class EscapeNode extends Formula {
     this.contextNode = NockLanguage.createFindContextNode();
   }
 
+  @Override
   public Noun execute(VirtualFrame frame) {
     Noun r = ref.executeNoun(frame);
     Noun s = sam.executeNoun(frame);
