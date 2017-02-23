@@ -3,12 +3,15 @@ package jaque.truffle;
 import jaque.noun.*;
 
 import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 
 @NodeInfo(shortName = "same")
-public abstract class SameNode extends Formula {
-  @Child private Formula a;
-  @Child private Formula b;
+@NodeChildren({@NodeChild("a"), @NodeChild("b")})
+public abstract class SameFormula extends Formula {
+  public abstract Formula getA();
+  public abstract Formula getB();
 
   @Specialization
   protected boolean same(long a, long b) {
@@ -22,7 +25,7 @@ public abstract class SameNode extends Formula {
 
   @Specialization
   protected boolean same(Cell a, Cell b) {
-    a.equals(b);
+    return a.equals(b);
   }
 
   @Specialization(guards = {"a.getClass() != b.getClass()"})
@@ -31,6 +34,6 @@ public abstract class SameNode extends Formula {
   }
 
   public Cell toNoun() {
-    return new Cell(Atom.fromLong(5), new Cell(headF.toNoun(), tailF.toNoun()));
+    return new Cell(Atom.fromLong(5), new Cell(getA().toNoun(), getB().toNoun()));
   }
 }

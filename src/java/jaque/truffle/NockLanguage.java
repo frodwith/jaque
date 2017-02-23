@@ -1,17 +1,31 @@
 package jaque.truffle;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.source.*;
-import jaque.noun.*;
+import com.oracle.truffle.api.TruffleLanguage;
 
 public class NockLanguage extends TruffleLanguage<NockContext> {
-  protected NockContext createContext (TruffleLanguage.Env env) {
-    return new NockContext(env);
+
+  @Override
+  protected NockContext createContext(com.oracle.truffle.api.TruffleLanguage.Env env) {
+    // TODO Auto-generated method stub
+    return null;
   }
 
-  protected CallTarget parse(TruffleLanguage.ParsingRequest r) throws Exception {
-    Noun src = Noun.read(r.getSource().getCode());
-    assert src instanceof Cell;
-    return nounToAst((Cell) src);
+  @Override
+  protected Object findExportedSymbol(NockContext context, String globalName, boolean onlyExplicit) {
+    // TODO Auto-generated method stub
+    return null;
   }
+
+  @Override
+  protected Object getLanguageGlobal(NockContext context) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  protected boolean isObjectOfLanguage(Object object) {
+    // TODO Auto-generated method stub
+    return false;
+  }
+
 }

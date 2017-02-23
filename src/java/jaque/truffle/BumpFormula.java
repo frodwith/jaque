@@ -2,11 +2,12 @@ package jaque.truffle;
 
 import jaque.noun.*;
 
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.dsl.Specialization;
 
 @NodeInfo(shortName = "bump")
-public abstract class BumpNode extends Formula {
+public abstract class BumpFormula extends Formula {
   @Child private Formula f;
 
   @Specialization(rewriteOn = ArithmeticException.class)

@@ -4,15 +4,16 @@ import jaque.interpreter.*;
 import jaque.noun.*;
 
 import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 @NodeInfo(shortName = "kick")
-public final class KickNode extends Formula {
+public final class KickFormula extends Formula {
   private final Atom axis;
   @Child private Formula core;
   @Child private KickDispatchNode dispatch;
 
-  public KickNode(Atom axis, Formula core) {
+  public KickFormula(Atom axis, Formula core) {
     this.axis     = axis;
     this.core     = core;
     this.dispatch = KickDispatchNodeGen.create();
@@ -20,7 +21,14 @@ public final class KickNode extends Formula {
 
   @Override
   public Object execute(VirtualFrame frame) {
-    return dispatch.executeKick(core.executeCell(frame), axis);
+    Cell c;
+    try {
+      c = core.executeCell(frame);
+    }
+    catch (UnexpectedResultException e){
+      throw new Bail();
+    }
+    return dispatch.executeKick(frame, c, axis);
   }
 
   public Cell toNoun() {

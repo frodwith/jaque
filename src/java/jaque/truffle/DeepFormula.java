@@ -7,7 +7,7 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.dsl.Specialization;
 
 @NodeInfo(shortName = "deep")
-public abstract class DeepNode extends Formula {
+public abstract class DeepFormula extends Formula {
   @Child private Formula f;
 
   @Specialization

@@ -4,16 +4,21 @@ import jaque.interpreter.Bail;
 import jaque.noun.*;
 
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 
-@TypeSystemReference(NockTypes.class)
-public abstract class Formula extends Node {
+public abstract class Formula extends NockNode {
+  
   public abstract Cell toNoun();
   public abstract Object execute(VirtualFrame frame);
   private static final Atom maxLongAtom = Atom.fromLong(Long.MAX_VALUE);
+
 
   public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
     NockTypesGen.expectLong(execute(frame));
@@ -39,21 +44,6 @@ public abstract class Formula extends Node {
      return (Noun) frame.getArguments()[0];
   }
 
-  @ExplodeLoop
-  public static Noun fragment(Atom axis, Noun r) {
-    for ( Boolean tail : axis.fragments() ) {
-      if ( !(r instanceof Cell) ) {
-        throw new Bail();
-      }
-      else if ( tail.booleanValue() ) {
-        r = ((Cell) r).q;
-      }
-      else {
-        r = ((Cell) r).p;
-      }
-    }
-    return r;
-  }
 
   private static final Cell forceCell(Noun n) {
     if (n instanceof Cell) {
@@ -69,7 +59,7 @@ public abstract class Formula extends Node {
          arg = formula.q;
 
     if ( op instanceof Cell ) {
-      return new ConsNode(fromNoun((Cell) op), fromNoun(forceCell(arg)));
+      return ConsNodeGen.create(fromNoun((Cell) op), fromNoun(forceCell(arg)));
     }
     else {
       if ( !(op instanceof DirectAtom) ) {
@@ -77,36 +67,36 @@ public abstract class Formula extends Node {
       }
       switch ( ((DirectAtom) op).val ) {
         case 0: {
-          return new FragmentNode((Atom) arg);
+          return new FragFormula((Atom) arg);
         }
         case 1: {
           if ( arg instanceof Cell ) {
-            return new LiteralCell((Cell) arg);
+            return new LiteralCellFormula((Cell) arg);
           }
           else {
             Atom a = (Atom) arg;
             if ( 1 > a.compareTo(maxLongAtom) ) {
-              return new LiteralLong(a.longValue());
+              return new LiteralLongFormula(a.longValue());
             }
             else {
-              return new LiteralAtom(a);
+              return new LiteralAtomFormula(a);
             }
           }
         }
         case 2: {
           Cell c = forceCell(arg);
-          return new NockNode(
+          return NockNodeGen.create(
             fromNoun(forceCell(c.p)),
             fromNoun(forceCell(c.q)));
         }
         case 3:
-          return new DeepNode(fromNoun(forceCell(arg)));
+          return DeepNodeGen.create(fromNoun(forceCell(arg)));
         case 4:
           assert arg instanceof Cell;
-          return new BumpNode(fromNoun(forceCell(arg)));
+          return BumpNodeGen.create(fromNoun(forceCell(arg)));
         case 5: {
           Cell c = forceCell(arg);
-          return new SameNode(
+          return SameNodeGen.create(
             fromNoun(forceCell(c.p)),
             fromNoun(forceCell(c.q)));
         }
@@ -114,20 +104,20 @@ public abstract class Formula extends Node {
           Cell trel = forceCell(arg);
           Cell pair = forceCell(trel.q);
 
-          return new IfNode(
+          return new CondFormula(
             fromNoun(forceCell(trel.p)),
             fromNoun(forceCell(pair.p)),
             fromNoun(forceCell(pair.q)));
         }
         case 7: {
           Cell c = forceCell(arg);
-          return new ComposeNode(
+          return new ComposeFormula(
             fromNoun(forceCell(c.p)),
             fromNoun(forceCell(c.q)));
         }
         case 8: {
           Cell c = forceCell(arg);
-          return new PushNode(
+          return new PushFormula(
             fromNoun(forceCell(c.p)),
             fromNoun(forceCell(c.q)));
         }
@@ -136,13 +126,13 @@ public abstract class Formula extends Node {
           if ( !(c.p instanceof Atom) ) {
             throw new IllegalArgumentException();
           }
-          return new KickNode((Atom) c.p, fromNoun(forceCell(c.q)));
+          return new KickFormula((Atom) c.p, fromNoun(forceCell(c.q)));
         }
         case 10: {
           Cell    c = forceCell(arg);
           Formula k = fromNoun(forceCell(c.q));
           if ( c.p instanceof Atom ) {
-            return new StaticHintNode((Atom) c.p, k);
+            return new StaticHintFormula((Atom) c.p, k);
           }
           else {
             Cell h = forceCell(c.p);
@@ -150,13 +140,13 @@ public abstract class Formula extends Node {
               throw new IllegalArgumentException();
             }
             else {
-              return new DynamicHintNode((Atom) h.p, fromNoun(forceCell(h.q)), k);
+              return new DynamicHintFormula((Atom) h.p, fromNoun(forceCell(h.q)), k);
             }
           }
         }
         case 11: {
           Cell c = forceCell(arg);
-          return new EscapeNode(
+          return EscapeFormulaGen.create(
             fromNoun(forceCell(c.p)),
             fromNoun(forceCell(c.q)));
         }

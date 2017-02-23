@@ -1,58 +1,56 @@
 package jaque.truffle;
 
 import jaque.noun.*;
-import jaque.interpreter.Jet;
 
+import jaque.interpreter.Jet;
+import jaque.interpreter.Bail;
+
+import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.dsl.Specialization;
+
+import java.util.Map;
+
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 
-@TypeSystemReference(NockTypes.class)
-public abstract class KickDispatchNode extends Node {
+public abstract class KickDispatchNode extends NockNode {
 
   public abstract Object executeKick(VirtualFrame frame, Cell core, Atom axis);
+  
+  /* TODO: integrate builtin nodes esp. for arithmetic, e.g. dec/add/sub/mul/div */
 
   @Specialization(limit  = "1",
                   guards = {"null != jet",
                             "core.p == cachedBattery",
-                            "NockLanguage.findContext(contextNode).fineCore(core)"})
-  protected static Noun doFast(VirtualFrame frame, Cell core, Atom axis,
+                            "getContext(frame).fineCore(core)"})
+  protected static Noun doJet(VirtualFrame frame, Cell core, Atom axis,
     @Cached("core.p") Noun cachedBattery,
-    @Cached("NockLanguage.createFindContextNode()") Node contextNode,
-    @Cached("NockLanguage.findContext(contextNode).findJet(core, axis)") Jet jet)
+    @Cached("getContext(frame).findJet(core, axis)") Jet jet)
   {
-    return NockLanguage.findContext(contextNode).applyJet(jet, core);
+    return getContext(frame).applyJet(jet, core);
   }
 
   @Specialization(limit    = "1",
-                  replaces = "doFast",
+                  replaces = "doJet",
                   guards   = {"core.p == cachedBattery"})
-  protected static Noun doArm(VirtualFrame frame, Cell core, Atom axis,
+  protected static Object doDirect(VirtualFrame frame, Cell core, Atom axis,
     @Cached("core.p") Noun cachedBattery,
-    @Cached("getArm(core, axis)") Cell arm,
-    @Cached("create()") NockDispatchNode dispatch)
+    @Cached("create(getContext(frame).getKickTarget(core, axis))") DirectCallNode callNode)
   {
-    return dispatch.executeNock(frame, core, arm);
+    return callNode.call(new Object[] {getContext(frame), core});
   }
 
-  @Specialization(replaces = {"doFast", "doArm"})
-  protected static Noun doSlow(VirtualFrame frame, Cell core, Atom axis,
-    @Cached("create()") NockDispatchNode dispatch)
+  @Specialization(replaces = "doDirect")
+  protected static Object doIndirect(VirtualFrame frame, Cell core, Atom axis,
+    @Cached("create()") IndirectCallNode callNode)
   {
-    return dispatch.executeNock(frame, core, getArm(core, axis));
+    CallTarget target = getContext(frame).getKickTarget(core, axis);
+    return callNode.call(target, new Object[] {getContext(frame), core});
   }
-
-  protected static Cell getArm(Cell core, Atom axis) throws UnexpectedResultException {
-    Noun f = Formula.fragment(axis, core);
-    if ( arm instanceof Cell ) {
-      return (Cell) f;
-    }
-    else {
-      throw new UnexpectedResultException();
-    }
-  }
-
 }

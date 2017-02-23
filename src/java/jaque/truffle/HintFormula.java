@@ -1,32 +1,37 @@
 package jaque.truffle;
 
+import jaque.interpreter.Bail;
 import jaque.interpreter.Hint;
 import jaque.noun.*;
 
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.Node.Child;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-public abstract class HintNode extends Formula {
-  @Child private Node contextNode;
-  @Child private Atom kind;
+public abstract class HintFormula extends Formula {
+  protected Atom kind;
 
   public abstract Noun clue(VirtualFrame frame);
   public abstract Formula next();
 
-  protected HintNode(Atom kind) {
-    this.kind        = kind;
-    this.contextNode = NockLanguage.createFindContextNode();
+  protected HintFormula(Atom kind) {
+    this.kind = kind;
   }
 
   @Override
   public Object execute(VirtualFrame frame) {
-    NockContext c = NockLanguage.findContext(contextNode);
+    NockContext c = getContext(frame);
     Formula nextF = next();
     Hint        h = new Hint(kind, clue(frame), getSubject(frame), nextF.toNoun());
     Noun      pro = c.startHint(h);
 
     if ( null == pro ) {
-      pro = nextF.executeNoun(frame);
+      try {
+        pro = nextF.executeNoun(frame);
+      } catch (UnexpectedResultException e) {
+        throw new Bail();
+      }
       c.endHint(h, pro);
     }
 

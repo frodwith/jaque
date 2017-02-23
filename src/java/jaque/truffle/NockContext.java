@@ -3,15 +3,19 @@ package jaque.truffle;
 import jaque.noun.*;
 import jaque.interpreter.*;
 
-import com.oracle.truffle.api.TruffleLanguage;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.Truffle;
 
 public final class NockContext {
   private Machine m;
-  private final TruffleLanguage.Env env;
+  private Map<KickLabel,CallTarget> kickRecord;
 
-  public NockContext(TruffleLanguage.Env env, Machine m) {
-    this.env = env;
+  public NockContext(Machine m) {
     this.m   = m;
+    this.kickRecord = new HashMap<KickLabel, CallTarget>();
   }
 
   public final Noun startHint(Hint h) {
@@ -47,4 +51,17 @@ public final class NockContext {
     this.m   = r.m;
     return r.r;
   }
+  
+  public CallTarget getKickTarget(Cell core, Atom axis) {
+    KickLabel label = new KickLabel((Cell) core.p, axis);
+    CallTarget target = kickRecord.get(label);
+    if ( null == target ) {
+      Cell c = (Cell) NockNode.fragment(axis, core);
+      NockRootNode root = new NockRootNode(Formula.fromNoun(c));
+      target = Truffle.getRuntime().createCallTarget(root);
+      kickRecord.put(label, target);
+    }
+    return target;
+  }
+
 }

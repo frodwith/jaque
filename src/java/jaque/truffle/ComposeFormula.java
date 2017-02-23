@@ -1,15 +1,20 @@
 package jaque.truffle;
 
-import jaque.interpreter.Result;
 import jaque.noun.*;
 
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 @NodeInfo(shortName = "comp")
-public final class ComposeNode extends Formula {
+public final class ComposeFormula extends Formula {
   @Child private Formula f;
   @Child private Formula g;
+
+  public ComposeFormula(Formula f, Formula g) {
+    this.f = f;
+    this.g = g;
+  }
 
   @Override
   public Object execute(VirtualFrame frame) {

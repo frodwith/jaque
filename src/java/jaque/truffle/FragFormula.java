@@ -7,10 +7,10 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 @NodeInfo(shortName = "frag")
-public final class FragmentNode extends Formula {
+public final class FragFormula extends Formula {
   public final Atom axis;
 
-  public FragmentNode(Atom axis) {
+  public FragFormula(Atom axis) {
     this.axis = axis;
   }
 

@@ -1,23 +1,48 @@
 package jaque.truffle;
 
+import java.util.Map;
+
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.TypeSystemReference;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.nodes.Node;
+
+import jaque.interpreter.Bail;
 import jaque.noun.*;
 
-import com.oracle.truffle.api.nodes.NodeInfo;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.dsl.Specialization;
+@TypeSystemReference(NockTypes.class)
+public abstract class NockNode extends Node {
+  private static final int CONTEXT_INDEX = 0;
+  private static final int SUBJECT_INDEX = 1;
+  private static final int KICKREC_INDEX = 2;
 
-@NodeInfo(shortName = "nock")
-@NodeField(value = "dispatch", type = NockDispatchNode.class)
-public abstract class NockNode extends Formula {
-  @Child private Formula subject;
-  @Child private Formula formula;
-
-  @Specialization
-  public Noun nock(VirtualFrame frame, Noun subject, Cell formula) {
-    return dispatch.executeNock(frame, subject, formula);
+  protected static NockContext getContext(VirtualFrame frame) {
+    return (NockContext) frame.getArguments()[CONTEXT_INDEX];
   }
-
-  public Cell toNoun() {
-    return new Cell(Atom.fromLong(2), new Cell(subject.toNoun(), formula.toNoun()));
+  
+  protected static Noun getSubject(VirtualFrame frame) {
+    return (Noun) frame.getArguments()[SUBJECT_INDEX];
+  }
+  
+  protected static Map<KickLabel,CallTarget> getKickRecord(VirtualFrame frame) {
+    return (Map<KickLabel,CallTarget>) frame.getArguments()[KICKREC_INDEX];
+  }
+  
+  @ExplodeLoop
+  public static Noun fragment(Atom axis, Noun r) {
+    for ( Boolean tail : axis.fragments() ) {
+      if ( !(r instanceof Cell) ) {
+        throw new Bail();
+      }
+      else if ( tail.booleanValue() ) {
+        r = ((Cell) r).q;
+      }
+      else {
+        r = ((Cell) r).p;
+      }
+    }
+    return r;
   }
 }

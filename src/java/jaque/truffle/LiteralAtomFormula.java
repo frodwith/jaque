@@ -5,10 +5,10 @@ import jaque.noun.*;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-public final class LiteralAtom extends Formula {
+public final class LiteralAtomFormula extends Formula {
   public final Atom value;
 
-  public LiteralAtom(Noun value) {
+  public LiteralAtomFormula(Atom value) {
     this.value = value;
   }
 

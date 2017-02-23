@@ -7,10 +7,10 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 @NodeInfo(shortName = "static-hint")
-public final class StaticHintNode extends HintNode {
+public final class StaticHintFormula extends HintFormula {
   @Child private Formula f;
 
-  public StaticHintNode(Atom kind, Formula f) {
+  public StaticHintFormula(Atom kind, Formula f) {
     super(kind);
     this.f = f;
   }

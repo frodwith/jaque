@@ -5,10 +5,10 @@ import jaque.noun.*;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-public final class LiteralCell extends Formula {
+public final class LiteralCellFormula extends Formula {
   public final Cell value;
 
-  public LiteralCell(Cell value) {
+  public LiteralCellFormula(Cell value) {
     this.value = value;
   }
 
