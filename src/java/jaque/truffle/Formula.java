@@ -1,17 +1,9 @@
 package jaque.truffle;
 
-import jaque.interpreter.Bail;
 import jaque.noun.*;
 
-import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.RootNode;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.TruffleLanguage;
-import com.oracle.truffle.api.dsl.TypeSystemReference;
 
 public abstract class Formula extends NockNode {
   
@@ -21,23 +13,23 @@ public abstract class Formula extends NockNode {
 
 
   public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
-    NockTypesGen.expectLong(execute(frame));
+    return NockTypesGen.expectLong(execute(frame));
   }
 
   public boolean executeBoolean(VirtualFrame frame) throws UnexpectedResultException {
-    NockTypesGen.expectBoolean(execute(frame));
+    return NockTypesGen.expectBoolean(execute(frame));
   }
 
   public Atom executeAtom(VirtualFrame frame) throws UnexpectedResultException {
-    NockTypesGen.expectAtom(execute(frame));
+    return NockTypesGen.expectAtom(execute(frame));
   }
 
   public Cell executeCell(VirtualFrame frame) throws UnexpectedResultException {
-    NockTypesGen.expectCell(execute(frame));
+    return NockTypesGen.expectCell(execute(frame));
   }
 
-  public Noun executeNoun(VirtualFrame frame) throws UnexpectedResultException {
-    NockTypesGen.expectNoun(execute(frame));
+  public Noun executeNoun(VirtualFrame frame) {
+    return (Noun) execute(frame);
   }
 
   public static Noun getSubject(VirtualFrame frame) {
@@ -54,12 +46,12 @@ public abstract class Formula extends NockNode {
     }
   }
 
-  public static final Formula fromNoun(Cell formula) {
+  public static final Formula fromCell(Cell formula) {
     Noun op  = formula.p,
          arg = formula.q;
 
     if ( op instanceof Cell ) {
-      return ConsNodeGen.create(fromNoun((Cell) op), fromNoun(forceCell(arg)));
+      return ConsFormulaNodeGen.create(fromCell((Cell) op), fromCell(forceCell(arg)));
     }
     else {
       if ( !(op instanceof DirectAtom) ) {
@@ -85,52 +77,52 @@ public abstract class Formula extends NockNode {
         }
         case 2: {
           Cell c = forceCell(arg);
-          return NockNodeGen.create(
-            fromNoun(forceCell(c.p)),
-            fromNoun(forceCell(c.q)));
+          return NockFormulaNodeGen.create(
+            fromCell(forceCell(c.p)),
+            fromCell(forceCell(c.q)));
         }
         case 3:
-          return DeepNodeGen.create(fromNoun(forceCell(arg)));
+          return DeepFormulaNodeGen.create(fromCell(forceCell(arg)));
         case 4:
           assert arg instanceof Cell;
-          return BumpNodeGen.create(fromNoun(forceCell(arg)));
+          return BumpFormulaNodeGen.create(fromCell(forceCell(arg)));
         case 5: {
           Cell c = forceCell(arg);
-          return SameNodeGen.create(
-            fromNoun(forceCell(c.p)),
-            fromNoun(forceCell(c.q)));
+          return SameFormulaNodeGen.create(
+            fromCell(forceCell(c.p)),
+            fromCell(forceCell(c.q)));
         }
         case 6: {
           Cell trel = forceCell(arg);
           Cell pair = forceCell(trel.q);
 
           return new CondFormula(
-            fromNoun(forceCell(trel.p)),
-            fromNoun(forceCell(pair.p)),
-            fromNoun(forceCell(pair.q)));
+            fromCell(forceCell(trel.p)),
+            fromCell(forceCell(pair.p)),
+            fromCell(forceCell(pair.q)));
         }
         case 7: {
           Cell c = forceCell(arg);
           return new ComposeFormula(
-            fromNoun(forceCell(c.p)),
-            fromNoun(forceCell(c.q)));
+            fromCell(forceCell(c.p)),
+            fromCell(forceCell(c.q)));
         }
         case 8: {
           Cell c = forceCell(arg);
           return new PushFormula(
-            fromNoun(forceCell(c.p)),
-            fromNoun(forceCell(c.q)));
+            fromCell(forceCell(c.p)),
+            fromCell(forceCell(c.q)));
         }
         case 9: {
           Cell c = forceCell(arg);
           if ( !(c.p instanceof Atom) ) {
             throw new IllegalArgumentException();
           }
-          return new KickFormula((Atom) c.p, fromNoun(forceCell(c.q)));
+          return new KickFormula((Atom) c.p, fromCell(forceCell(c.q)));
         }
         case 10: {
           Cell    c = forceCell(arg);
-          Formula k = fromNoun(forceCell(c.q));
+          Formula k = fromCell(forceCell(c.q));
           if ( c.p instanceof Atom ) {
             return new StaticHintFormula((Atom) c.p, k);
           }
@@ -140,15 +132,15 @@ public abstract class Formula extends NockNode {
               throw new IllegalArgumentException();
             }
             else {
-              return new DynamicHintFormula((Atom) h.p, fromNoun(forceCell(h.q)), k);
+              return new DynamicHintFormula((Atom) h.p, fromCell(forceCell(h.q)), k);
             }
           }
         }
         case 11: {
           Cell c = forceCell(arg);
-          return EscapeFormulaGen.create(
-            fromNoun(forceCell(c.p)),
-            fromNoun(forceCell(c.q)));
+          return EscapeFormulaNodeGen.create(
+            fromCell(forceCell(c.p)),
+            fromCell(forceCell(c.q)));
         }
         default: {
           throw new IllegalArgumentException();

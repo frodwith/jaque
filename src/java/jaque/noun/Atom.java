@@ -79,8 +79,7 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
         }
 
         int[]  wor = words();
-        int    len = wor.length,
-               bel = met((byte)3);
+        int    bel = met((byte)3);
         byte[] buf = new byte[bel];
         int    w, i, b;
         for (i = 0, b = 0;;) {
@@ -143,7 +142,6 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
         char[] car = s.toCharArray();
         int    len = car.length,
                cpw = MPN.chars_per_word(radix),
-               siz,
                i;
         byte[] dig = new byte[len];
         int[]  wor = new int[(len / cpw) + 1];
@@ -152,7 +150,7 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
             dig[i] = (byte) Character.digit(car[i], radix);
         }
 
-        siz = MPN.set_str(wor, dig, len, radix);
+        MPN.set_str(wor, dig, len, radix);
 
         return malt(wor);
     }
@@ -430,44 +428,6 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
     public static int[] slaq(int met, int len) {
         return new int[((len << met) + 31) >>> 5];
     }
-
-
-
-  private static Noun frag_word(int a, Noun b) {
-    int dep = 31 - MPN.count_leading_zeros(a);
-
-    while ( dep > 0 ) {
-      if ( !(b instanceof Cell) ) {
-        return null;
-      }
-      else {
-        Cell c = (Cell) b;
-        b = ( 0 == (1 & (a >>> --dep)) )
-          ? c.p
-          : c.q;
-      }
-    }
-
-    return b;
-  }
-
-  private static Noun frag_deep(int a, Noun b) {
-    int dep = 32;
-
-    while ( dep > 0 ) {
-      if ( !(b instanceof Cell) ) {
-        return null;
-      }
-      else {
-        Cell c = (Cell) b;
-        b = ( 0 == (1 & (a >>> --dep)) )
-          ? c.p
-          : c.q;
-      }
-    }
-
-    return b;
-  }
 
   protected static void fragIn(Queue<Boolean> q, int a, int dep) {
     while ( dep > 0 ) {

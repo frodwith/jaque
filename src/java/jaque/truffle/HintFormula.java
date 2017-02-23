@@ -1,12 +1,8 @@
 package jaque.truffle;
 
-import jaque.interpreter.Bail;
 import jaque.interpreter.Hint;
 import jaque.noun.*;
 
-import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.Node.Child;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 public abstract class HintFormula extends Formula {
@@ -27,11 +23,7 @@ public abstract class HintFormula extends Formula {
     Noun      pro = c.startHint(h);
 
     if ( null == pro ) {
-      try {
-        pro = nextF.executeNoun(frame);
-      } catch (UnexpectedResultException e) {
-        throw new Bail();
-      }
+      pro = nextF.executeNoun(frame);
       c.endHint(h, pro);
     }
 

@@ -3,7 +3,6 @@ package jaque.truffle;
 import java.util.Map;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
@@ -26,6 +25,7 @@ public abstract class NockNode extends Node {
     return (Noun) frame.getArguments()[SUBJECT_INDEX];
   }
   
+  @SuppressWarnings("unchecked")
   protected static Map<KickLabel,CallTarget> getKickRecord(VirtualFrame frame) {
     return (Map<KickLabel,CallTarget>) frame.getArguments()[KICKREC_INDEX];
   }

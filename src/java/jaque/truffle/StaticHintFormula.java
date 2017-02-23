@@ -1,6 +1,5 @@
 package jaque.truffle;
 
-import jaque.interpreter.Result;
 import jaque.noun.*;
 
 import com.oracle.truffle.api.nodes.NodeInfo;

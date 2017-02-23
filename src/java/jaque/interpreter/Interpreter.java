@@ -2,7 +2,6 @@ package jaque.interpreter;
 
 import jaque.noun.*;
 import java.util.List;
-import gnu.math.MPN;
 
 public final class Interpreter {
 

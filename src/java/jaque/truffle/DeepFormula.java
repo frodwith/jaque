@@ -2,13 +2,14 @@ package jaque.truffle;
 
 import jaque.noun.*;
 
-import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 
 @NodeInfo(shortName = "deep")
+@NodeChild("f")
 public abstract class DeepFormula extends Formula {
-  @Child private Formula f;
+  public abstract Formula getF();
 
   @Specialization
   protected boolean deep(Atom v) {
@@ -26,6 +27,6 @@ public abstract class DeepFormula extends Formula {
   }
 
   public Cell toNoun() {
-    return new Cell(Atom.fromLong(3), f.toNoun());
+    return new Cell(Atom.fromLong(3), getF().toNoun());
   }
 }

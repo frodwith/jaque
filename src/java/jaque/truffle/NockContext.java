@@ -57,7 +57,7 @@ public final class NockContext {
     CallTarget target = kickRecord.get(label);
     if ( null == target ) {
       Cell c = (Cell) NockNode.fragment(axis, core);
-      NockRootNode root = new NockRootNode(Formula.fromNoun(c));
+      NockRootNode root = new NockRootNode(Formula.fromCell(c));
       target = Truffle.getRuntime().createCallTarget(root);
       kickRecord.put(label, target);
     }

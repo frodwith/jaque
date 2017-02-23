@@ -2,7 +2,6 @@ package jaque.truffle;
 
 import jaque.noun.*;
 
-import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 public final class LiteralLongFormula extends Formula {

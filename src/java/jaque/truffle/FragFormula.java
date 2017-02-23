@@ -1,6 +1,5 @@
 package jaque.truffle;
 
-import jaque.interpreter.*;
 import jaque.noun.*;
 
 import com.oracle.truffle.api.nodes.NodeInfo;
@@ -15,7 +14,7 @@ public final class FragFormula extends Formula {
   }
 
   public Object execute(VirtualFrame frame) {
-    return Formula.fragment(axis, getSubject(frame));
+    return fragment(axis, getSubject(frame));
   }
 
   public Cell toNoun() {

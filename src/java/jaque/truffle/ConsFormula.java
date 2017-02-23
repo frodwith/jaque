@@ -2,14 +2,16 @@ package jaque.truffle;
 
 import jaque.noun.*;
 
-import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 
 @NodeInfo(shortName = "cons")
+@NodeChildren({@NodeChild("head"), @NodeChild("tail")})
 public abstract class ConsFormula extends Formula {
-  @Child private Formula head;
-  @Child private Formula tail;
+  public abstract Formula getHead();
+  public abstract Formula getTail();
 
   @Specialization
   protected Cell cons(Noun a, Noun b) {
@@ -17,6 +19,6 @@ public abstract class ConsFormula extends Formula {
   }
 
   public Cell toNoun() {
-    return new Cell(head.toNoun(), tail.toNoun());
+    return new Cell(getHead().toNoun(), getTail().toNoun());
   }
 }

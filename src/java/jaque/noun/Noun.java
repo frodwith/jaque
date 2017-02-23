@@ -108,7 +108,7 @@ public abstract class Noun implements Seqable {
           if ( s.isEmpty() ) {
             throw new IllegalArgumentException("unbalanced ] at position " + i);
           }
-          ArrayList fin = s.pop();
+          ArrayList<Object> fin = s.pop();
           if ( fin.size() < 2 ) {
             throw new IllegalArgumentException("cell with less than 2 elements at position" + i);
           }
@@ -134,7 +134,7 @@ public abstract class Noun implements Seqable {
       throw new IllegalArgumentException("too many ]");
     }
     else {
-      ArrayList tree = s.pop();
+      ArrayList<Object> tree = s.pop();
       if ( !s.isEmpty() ) {
         throw new IllegalArgumentException("missing ]");
       }
@@ -145,12 +145,13 @@ public abstract class Noun implements Seqable {
     }
   }
 
+  @SuppressWarnings("unchecked")
   private static Noun readRec(Object o) throws IllegalArgumentException {
     if (o instanceof String) {
       return Atom.fromString((String) o);
     }
-    else if (o instanceof ArrayList) {
-      ArrayList a = (ArrayList) o;
+    else if (o instanceof ArrayList<?>) {
+      ArrayList<Object> a = (ArrayList<Object>) o;
       int len = a.size();
       Noun cdr = readRec(a.remove(--len)),
            car = readRec(a.remove(--len));

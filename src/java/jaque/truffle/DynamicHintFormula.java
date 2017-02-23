@@ -2,11 +2,7 @@ package jaque.truffle;
 
 import jaque.noun.*;
 
-import com.oracle.truffle.api.dsl.UnsupportedSpecializationException;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.Node.Child;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
 public final class DynamicHintFormula extends HintFormula {
   @Child private Formula hintF;
@@ -19,11 +15,7 @@ public final class DynamicHintFormula extends HintFormula {
   }
 
   public Noun clue(VirtualFrame frame) {
-    try {
-    	return hintF.executeNoun(frame);
-    } catch (UnexpectedResultException e) {
-      throw new UnsupportedSpecializationException(this, new Node[] {hintF}, e);
-    }
+    return hintF.executeNoun(frame);
   }
 
   public Cell rawNext() {

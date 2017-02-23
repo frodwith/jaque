@@ -2,13 +2,14 @@ package jaque.truffle;
 
 import jaque.noun.*;
 
-import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 
 @NodeInfo(shortName = "bump")
+@NodeChild("f")
 public abstract class BumpFormula extends Formula {
-  @Child private Formula f;
+  public abstract Formula getF();
 
   @Specialization(rewriteOn = ArithmeticException.class)
   protected long bump(long v) {
@@ -21,6 +22,6 @@ public abstract class BumpFormula extends Formula {
   }
 
   public Cell toNoun() {
-    return new Cell(Atom.fromLong(4), f.toNoun());
+    return new Cell(Atom.fromLong(4), getF().toNoun());
   }
 }
