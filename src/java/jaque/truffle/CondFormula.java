@@ -1,12 +1,13 @@
 package jaque.truffle;
 
-import jaque.interpreter.*;
-import jaque.noun.*;
-
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
+
+import jaque.interpreter.Bail;
+import jaque.noun.Atom;
+import jaque.noun.Cell;
 
 @NodeInfo(shortName = "cond")
 public final class CondFormula extends Formula {
@@ -39,7 +40,7 @@ public final class CondFormula extends Formula {
     }
   }
 
-  public Cell toNoun() {
-    return new Cell(Atom.fromLong(6), new Cell(test.toNoun(), new Cell(yes.toNoun(), no.toNoun())));
+  public Cell toCell() {
+    return new Cell(6, new Cell(test.toCell(), new Cell(yes.toCell(), no.toCell())));
   }
 }

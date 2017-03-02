@@ -11,11 +11,16 @@
 ;                "-Dcom.sun.management.jmxremote.authenticate=false"
 ;                "-Dcom.sun.management.jmxremote.port=43210"]
   :main         jaque.vm
-  :source-paths      ["src/clojure"]
+
+  ;; leinigen's invocation of javac causes some problems for truffle's
+  ;; compiler detection. To mitigate this, please run an annotation processor
+  ;; separately (say, with eclipse) and point it at the "gen" folder. we
+  ;; simply don't depend on the dsl processor as a temporary workaround.
+  :source-paths      ["src/clojure" "gen"] 
   :java-source-paths ["src/java"]
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [com.oracle.truffle/truffle-api "0.22"]
-                 [com.oracle.truffle/truffle-dsl-processor "0.22"]
+;                 [com.oracle.truffle/truffle-dsl-processor "0.22"]
 ;                 [com.oracle.truffle/truffle-tck "0.20"]
 ;                 [primitive-math "0.1.3"]
 ;                 [criterium "0.4.4"]

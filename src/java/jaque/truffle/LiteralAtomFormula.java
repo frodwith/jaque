@@ -1,27 +1,22 @@
 package jaque.truffle;
 
-import jaque.noun.*;
+import jaque.noun.Atom;
+import com.oracle.truffle.api.dsl.Specialization;
 
-import com.oracle.truffle.api.frame.VirtualFrame;
 
-public final class LiteralAtomFormula extends Formula {
-  public final Atom value;
+public abstract class LiteralAtomFormula extends LiteralFormula {
+  private final Atom a;
 
   public LiteralAtomFormula(Atom value) {
-    this.value = value;
+    this.a = value;
   }
-
-  @Override
-  public Object execute(VirtualFrame frame) {
-    return value;
+  
+  @Specialization
+  public Atom atom() {
+    return a;
   }
-
-  @Override
-  public Atom executeAtom(VirtualFrame frame) {
-    return value;
-  }
-
-  public Cell toNoun() {
-    return new Cell(Atom.fromLong(1), value);
+  
+  public Object getValue() {
+    return a;
   }
 }

@@ -40,7 +40,7 @@ public abstract class NockFormula extends Formula {
     return Truffle.getRuntime().createCallTarget(new NockRootNode(Formula.fromCell(formula)));
   }
 
-  public Cell toNoun() {
-    return new Cell(Atom.fromLong(2), new Cell(getSubject().toNoun(), getFormula().toNoun()));
+  public Cell toCell() {
+    return new Cell(Atom.fromLong(2), new Cell(getSubject().toCell(), getFormula().toCell()));
   }
 }

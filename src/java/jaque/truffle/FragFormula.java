@@ -17,7 +17,7 @@ public final class FragFormula extends Formula {
     return fragment(axis, getSubject(frame));
   }
 
-  public Cell toNoun() {
+  public Cell toCell() {
     return new Cell(Atom.fromLong(0), axis);
   }
 }

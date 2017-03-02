@@ -174,8 +174,8 @@
 
 (defn fine-help [d core]
   (let [bat (head core)
-        cax (battery->calx bat)
-        fin (and (not nil? cax) 
+        cax (battery->calx d bat)
+        fin (and (not (nil? cax))
                  (fine? d (lark +>- cax) 
                           (lark +<+ cax)
                           core))]

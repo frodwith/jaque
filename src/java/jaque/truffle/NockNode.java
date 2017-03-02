@@ -13,34 +13,25 @@ import jaque.noun.*;
 
 @TypeSystemReference(NockTypes.class)
 public abstract class NockNode extends Node {
-  private static final int CONTEXT_INDEX = 0;
-  private static final int SUBJECT_INDEX = 1;
-  private static final int KICKREC_INDEX = 2;
-
   protected static NockContext getContext(VirtualFrame frame) {
-    return (NockContext) frame.getArguments()[CONTEXT_INDEX];
+    return (NockContext) frame.getArguments()[0];
   }
   
-  protected static Noun getSubject(VirtualFrame frame) {
-    return (Noun) frame.getArguments()[SUBJECT_INDEX];
-  }
-  
-  @SuppressWarnings("unchecked")
-  protected static Map<KickLabel,CallTarget> getKickRecord(VirtualFrame frame) {
-    return (Map<KickLabel,CallTarget>) frame.getArguments()[KICKREC_INDEX];
+  protected static Object getSubject(VirtualFrame frame) {
+    return frame.getArguments()[1];
   }
   
   @ExplodeLoop
-  public static Noun fragment(Atom axis, Noun r) {
+  public static Object fragment(Atom axis, Object r) {
     for ( Boolean tail : axis.fragments() ) {
       if ( !(r instanceof Cell) ) {
         throw new Bail();
       }
       else if ( tail.booleanValue() ) {
-        r = ((Cell) r).q;
+        r = ((Cell) r).getTail();
       }
       else {
-        r = ((Cell) r).p;
+        r = ((Cell) r).getHead();
       }
     }
     return r;

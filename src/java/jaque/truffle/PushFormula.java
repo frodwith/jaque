@@ -21,12 +21,11 @@ public final class PushFormula extends Formula {
 
   @Override
   public Object execute(VirtualFrame frame) {
-    Noun head = f.executeNoun(frame);
-    Cell subject = new Cell(head, getSubject(frame));
+    Cell subject = new Cell(f.execute(frame), getSubject(frame));
     return callNode.call(frame, new Object[] { getContext(frame), subject });
   }
 
-  public Cell toNoun() {
-    return new Cell(Atom.fromLong(8), new Cell(f.toNoun(), g.toNoun()));
+  public Cell toCell() {
+    return new Cell(8, new Cell(f.toCell(), g.toCell()));
   }
 }

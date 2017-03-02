@@ -1,9 +1,11 @@
 package jaque.truffle;
 
-import jaque.noun.*;
-
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.NodeInfo;
+
+import jaque.noun.Atom;
+import jaque.noun.Cell;
+
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
@@ -24,7 +26,7 @@ public final class ComposeFormula extends Formula {
     return callNode.call(frame, new Object[] { getContext(frame), f.execute(frame) });
   }
 
-  public Cell toNoun() {
-    return new Cell(Atom.fromLong(7), new Cell(f.toNoun(), g.toNoun()));
+  public Cell toCell() {
+    return new Cell(7, new Cell(f.toCell(), g.toCell()));
   }
 }

@@ -1,8 +1,7 @@
 package jaque.interpreter;
 
-import jaque.noun.*;
+import jaque.noun.Noun;
 
 public interface Jet {
-  public Object hotKey();
-  public Result applyCore(Machine m, Cell core);
+  public Result apply(Machine m, Noun subject);
 }

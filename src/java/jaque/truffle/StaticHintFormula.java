@@ -1,32 +1,33 @@
 package jaque.truffle;
 
+import jaque.interpreter.Hint;
 import jaque.noun.*;
 
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 @NodeInfo(shortName = "static-hint")
-public final class StaticHintFormula extends HintFormula {
+public final class StaticHintFormula extends Formula {
   @Child private Formula f;
+  private final Atom kind;
 
   public StaticHintFormula(Atom kind, Formula f) {
-    super(kind);
+    this.kind = kind;
     this.f = f;
   }
-
-  public Atom clue(VirtualFrame frame) {
-    return Atom.ZERO;
-  }
-
-  public Cell rawNext() {
-    return f.toNoun();
-  }
   
-  public Formula next() {
-    return f;
+  public Object execute(VirtualFrame frame) {
+    NockContext c = getContext(frame);
+    Hint h = new Hint(kind, 0, getSubject(frame), f.source());
+    Object product = c.startHint(h);
+    if ( null == product) {
+      product = f.execute(frame);
+      c.endHint(h, product);
+    }
+    return product;
   }
 
-  public Cell toNoun() {
-    return new Cell(Atom.fromLong(10), new Cell(this.kind, f.toNoun()));
+  public Cell toCell() {
+    return new Cell(10, new Cell(this.kind, f.toCell()));
   }
 }

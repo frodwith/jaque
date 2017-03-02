@@ -1,9 +1,12 @@
 package jaque.noun;
 
 import gnu.math.MPN;
+import jaque.interpreter.Bail;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import clojure.lang.Cons;
 import clojure.lang.ISeq;
@@ -428,6 +431,18 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
     public static int[] slaq(int met, int len) {
         return new int[((len << met) + 31) >>> 5];
     }
+    
+  public static Atom coerceAtom(Object o) {
+    if (o instanceof Atom) {
+      return (Atom) o;
+    }
+    else if (o instanceof Long) {
+      return Atom.fromLong((long) o);
+    }
+    else if (o instanceof Boolean) {
+      return ((boolean) o) ? Atom.YES : Atom.NO;
+    }
+  }
 
   protected static void fragIn(Queue<Boolean> q, int a, int dep) {
     while ( dep > 0 ) {
@@ -436,10 +451,19 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
   }
 
   protected static void fragIn(Queue<Boolean> q, int a) {
-    fragIn(q, 31 - MPN.count_leading_zeros(a));
+    fragIn(q, a, 31 - MPN.count_leading_zeros(a));
   }
 
   protected abstract void fragOut(Queue<Boolean> q);
+  
+  public static Atom mote(String s) {
+    try {
+      return fromByteArray(s.getBytes("UTF-8"));
+    }
+    catch (UnsupportedEncodingException e) {
+      return null;
+    }
+  }
 
   public List<Boolean> fragments() {
     if ( this == Atom.ZERO ) {

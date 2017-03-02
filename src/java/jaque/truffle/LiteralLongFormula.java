@@ -1,27 +1,20 @@
 package jaque.truffle;
 
-import jaque.noun.*;
+import com.oracle.truffle.api.dsl.Specialization;
 
-import com.oracle.truffle.api.frame.VirtualFrame;
-
-public final class LiteralLongFormula extends Formula {
-  public final long value;
+public abstract class LiteralLongFormula extends LiteralFormula {
+  private final long value;
 
   public LiteralLongFormula(long value) {
     this.value = value;
   }
-
-  @Override
-  public Object execute(VirtualFrame frame) {
+  
+  @Specialization
+  public long value() {
     return value;
   }
-
-  @Override
-  public long executeLong(VirtualFrame frame) {
+  
+  public Object getValue() {
     return value;
-  }
-
-  public Cell toNoun() {
-    return new Cell(Atom.fromLong(1), Atom.fromLong(value));
   }
 }

@@ -144,6 +144,15 @@ public abstract class Noun implements Seqable {
       return readRec(tree.get(0));
     }
   }
+  
+  public static Noun coerceNoun(Object o) {
+    if (o instanceof Cell) {
+      return (Cell) o;
+    }
+    else {
+      return Atom.coerceAtom(o);
+    }
+  }
 
   @SuppressWarnings("unchecked")
   private static Noun readRec(Object o) throws IllegalArgumentException {

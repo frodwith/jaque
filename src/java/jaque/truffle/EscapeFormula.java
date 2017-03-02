@@ -1,8 +1,10 @@
 package jaque.truffle;
 
-import jaque.noun.*;
-
 import com.oracle.truffle.api.nodes.NodeInfo;
+
+import jaque.noun.Cell;
+import jaque.noun.Noun;
+
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -15,11 +17,11 @@ public abstract class EscapeFormula extends Formula {
   public abstract Formula getSam();
 
   @Specialization
-  public Noun escape(VirtualFrame frame, Noun ref, Noun sam) {
-    return getContext(frame).escape(ref, sam);
+  public Object escape(VirtualFrame frame, Object ref, Object sam) {
+    return getContext(frame).escape(Noun.coerceNoun(ref), Noun.coerceNoun(sam));
   }
 
-  public Cell toNoun() {
-    return new Cell(Atom.fromLong(11), new Cell(getRef().toNoun(), getSam().toNoun()));
+  public Cell toCell() {
+    return new Cell(11, new Cell(getRef().toCell(), getSam().toCell()));
   }
 }

@@ -1,27 +1,23 @@
 package jaque.truffle;
 
-import jaque.noun.*;
-
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-public final class LiteralCellFormula extends Formula {
-  public final Cell value;
+import jaque.noun.Cell;
+
+public abstract class LiteralCellFormula extends LiteralFormula {
+  private final Cell c;
 
   public LiteralCellFormula(Cell value) {
-    this.value = value;
+    this.c = value;
   }
-
-  @Override
-  public Object execute(VirtualFrame frame) {
-    return value;
+  
+  @Specialization
+  public Cell cell() {
+    return c;
   }
-
-  @Override
-  public Cell executeCell(VirtualFrame frame) {
-    return value;
-  }
-
-  public Cell toNoun() {
-    return new Cell(Atom.fromLong(1), value);
+  
+  public Object getValue() {
+    return c;
   }
 }

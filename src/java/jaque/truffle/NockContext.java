@@ -10,7 +10,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 
 public final class NockContext {
-  private Machine m;
+  public Machine m;
   private Map<KickLabel,CallTarget> kickRecord;
 
   public NockContext(Machine m) {
@@ -24,7 +24,7 @@ public final class NockContext {
     return r.r;
   }
 
-  public final void endHint(Hint h, Noun product) {
+  public final void endHint(Hint h, Object product) {
     m = m.endHint(h, product);
   }
 
@@ -33,27 +33,27 @@ public final class NockContext {
     m = r.m;
     return r.r;
   }
-
-  public final Dashboard dashboard() {
-    return m.dashboard();
+  
+  public final void declare(Cell core, Object clue) {
+    m = m.declare(core, clue);
   }
 
-  public boolean fineCore(Cell core) {
-    return dashboard().fine(core);
+  public boolean fine(Cell core) {
+    return m.fine(core);
   }
 
-  public final Jet findJet(Cell core, Atom axis) {
-    return dashboard().find(core, axis);
+  public final Jet find(Cell core, Atom axis) {
+    return m.find(core, axis);
   }
 
-  public final Noun applyJet(Jet j, Cell core) {
-    Result r = j.applyCore(m, core);
-    this.m   = r.m;
+  public final Object apply(Jet j, Noun subject) {
+    Result r = j.apply(m, subject);
+    m = r.m;
     return r.r;
   }
   
   public CallTarget getKickTarget(Cell core, Atom axis) {
-    KickLabel label = new KickLabel((Cell) core.p, axis);
+    KickLabel label = new KickLabel((Cell) core.getHead(), axis);
     CallTarget target = kickRecord.get(label);
     if ( null == target ) {
       Cell c = (Cell) NockNode.fragment(axis, core);
@@ -63,5 +63,14 @@ public final class NockContext {
     }
     return target;
   }
-
+  
+  private class KickLabel {
+    public final Cell battery;
+    public final Atom axis;
+    
+    public KickLabel(Cell battery, Atom axis) {
+      this.battery = battery;
+      this.axis = axis;
+    }
+  }
 }

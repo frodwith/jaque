@@ -33,7 +33,7 @@ public abstract class SameFormula extends Formula {
     return false;
   }
 
-  public Cell toNoun() {
-    return new Cell(Atom.fromLong(5), new Cell(getA().toNoun(), getB().toNoun()));
+  public Cell toCell() {
+    return new Cell(Atom.fromLong(5), new Cell(getA().toCell(), getB().toCell()));
   }
 }

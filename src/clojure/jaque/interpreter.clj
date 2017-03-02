@@ -6,7 +6,7 @@
             [jaque.jets.dashboard :refer [empty-dashboard]]
             [jaque.error :as e])
   (:import (jaque.noun Atom Noun)
-           (jaque.interpreter Dashboard Hint Interpreter Interpreter$Bail Machine Result)))
+           (jaque.interpreter Dashboard Hint Interpreter Bail Machine Result)))
 
 (defrecord MachineRec [dash]
   Machine
@@ -16,7 +16,7 @@
     (case (cord->string (.kind h))
       "fast" (assoc m :dash (.declare ^Dashboard dash product (.clue h)))
       m))
-  (^Result escape [^Machine m ^Noun wish] (prn wish) (e/exit))
+  (^Result escape [^Machine m ^Noun gat ^Noun sam] (prn sam) (e/exit))
   (^Dashboard dashboard [^Machine m] dash))
 
 (def empty-machine (->MachineRec empty-dashboard))
@@ -25,7 +25,7 @@
   (try
     (let [x (Interpreter/nock machine subject formula)]
       [(.m x) (.r x)])
-    (catch Interpreter$Bail _
+    (catch Bail _
       (e/exit))))
 
 ;;(defn nock [machine subject formula]

@@ -20,20 +20,20 @@ public abstract class KickDispatchNode extends NockNode {
 
   @Specialization(limit  = "1",
                   guards = {"!(jet == null)",
-                            "core.p == cachedBattery",
-                            "getContext(frame).fineCore(core)"})
-  protected static Noun doJet(VirtualFrame frame, Cell core, Atom axis,
-    @Cached("core.p") Noun cachedBattery,
-    @Cached("getContext(frame).findJet(core, axis)") Jet jet)
+                            "core.getHead() == cachedBattery",
+                            "getContext(frame).fine(core)"})
+  protected static Object doJet(VirtualFrame frame, Cell core, Atom axis,
+    @Cached("core.getHead()") Object cachedBattery,
+    @Cached("getContext(frame).find(core, axis)") Jet jet)
   {
-    return getContext(frame).applyJet(jet, core);
+    return getContext(frame).apply(jet, core);
   }
 
   @Specialization(limit    = "1",
                   replaces = "doJet",
-                  guards   = {"core.p == cachedBattery"})
+                  guards   = {"core.getHead() == cachedBattery"})
   protected static Object doDirect(VirtualFrame frame, Cell core, Atom axis,
-    @Cached("core.p") Noun cachedBattery,
+    @Cached("core.getHead()") Object cachedBattery,
     @Cached("create(getContext(frame).getKickTarget(core, axis))") DirectCallNode callNode)
   {
     return callNode.call(frame, new Object[] {getContext(frame), core});

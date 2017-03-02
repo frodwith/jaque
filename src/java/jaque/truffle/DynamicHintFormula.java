@@ -1,32 +1,36 @@
 package jaque.truffle;
 
-import jaque.noun.*;
-
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-public final class DynamicHintFormula extends HintFormula {
+import jaque.interpreter.Hint;
+import jaque.noun.Atom;
+import jaque.noun.Cell;
+import jaque.noun.Noun;
+
+public final class DynamicHintFormula extends Formula {
   @Child private Formula hintF;
   @Child private Formula nextF;
+  private final Atom kind;
 
   public DynamicHintFormula(Atom kind, Formula hintF, Formula nextF) {
-    super(kind);
+    this.kind  = kind;
     this.hintF = hintF;
     this.nextF = nextF;
   }
-
-  public Noun clue(VirtualFrame frame) {
-    return hintF.executeNoun(frame);
+  
+  public Object execute(VirtualFrame frame) {
+    NockContext c = getContext(frame);
+    Hint h = new Hint(kind, hintF.execute(frame), getSubject(frame), nextF.source());
+    Object product = c.startHint(h);
+    if ( null == product ) {
+      product = nextF.execute(frame);
+      c.endHint(h, product);
+    }
+    return product;
   }
 
-  public Cell rawNext() {
-    return nextF.toNoun();
-  }
-
-  public Formula next() {
-    return nextF;
-  }
-
-  public Cell toNoun() {
-    return new Cell(Atom.fromLong(10), new Cell(hintF.toNoun(), nextF.toNoun()));
+  @Override
+  public Cell toCell() {
+    return new Cell(10, new Cell(hintF.toCell(), nextF.toCell()));
   }
 }

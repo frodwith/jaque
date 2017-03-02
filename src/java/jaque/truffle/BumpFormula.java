@@ -1,8 +1,10 @@
 package jaque.truffle;
 
-import jaque.noun.*;
-
 import com.oracle.truffle.api.nodes.NodeInfo;
+
+import jaque.noun.Atom;
+import jaque.noun.Cell;
+
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 
@@ -21,7 +23,7 @@ public abstract class BumpFormula extends Formula {
     return v.bump();
   }
 
-  public Cell toNoun() {
-    return new Cell(Atom.fromLong(4), getF().toNoun());
+  public Cell toCell() {
+    return new Cell(4, getF().toCell());
   }
 }

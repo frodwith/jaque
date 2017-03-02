@@ -81,19 +81,6 @@ public abstract class NockTypes {
 
   @TypeCast(Atom.class)
   public static Atom asAtom(Object value) {
-    if ( value instanceof Boolean ) {
-      if ((boolean) value) {
-        return Atom.YES;
-      }
-      else {
-        return Atom.NO;
-      }
-    }
-    else if ( value instanceof Long ) {
-      return Atom.fromLong((long) value);
-    }
-    else {
-      return (Atom) value;
-    }
+    return Atom.coerceAtom(value);
   }
 }

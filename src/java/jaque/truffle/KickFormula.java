@@ -31,7 +31,7 @@ public final class KickFormula extends Formula {
     return dispatch.executeKick(frame, c, axis);
   }
 
-  public Cell toNoun() {
-    return new Cell(Atom.fromLong(9), new Cell(axis, core.toNoun()));
+  public Cell toCell() {
+    return new Cell(Atom.fromLong(9), new Cell(axis, core.toCell()));
   }
 }

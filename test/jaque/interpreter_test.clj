@@ -9,8 +9,7 @@
             [jaque.error :as e]
             [jaque.interpreter :refer [empty-machine]]
             [jaque.jets.dashboard :refer [empty-dashboard]])
-  (:import jaque.truffle.Formula
-           jaque.truffle.Environment
+  (:import jaque.truffle.NockLanguage
            jaque.noun.Atom
            jaque.interpreter.Interpreter
            jaque.interpreter.Bail
@@ -103,5 +102,5 @@
 (deftest u3-inspired
   (test-nock (wrap #(Interpreter/nock %1 %2 %3))))
 
-(deftest ast
-  (test-nock (wrap #(.apply (Formula/fromNoun %3) (Environment. %1 %2)))))
+(deftest truffle
+  (test-nock (wrap #(NockLanguage/nock %1 %2 %3))))
