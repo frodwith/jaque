@@ -185,7 +185,7 @@
 
   Dashboard
   (install [d jet]
-    (assoc-in d [:hot (.hotKey jet)] jet))
+    (assoc-in d [:hot (:hot-key jet)] jet))
 
   (declare [d core clue]
     (let [bat (head core)

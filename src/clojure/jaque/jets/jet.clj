@@ -7,10 +7,11 @@
 
 (defrecord JetRec [hot-key arg-axes fun]
   Jet
-  (hotKey [j] hot-key)
-  (applyCore [jet machine core]
-    (apply (partial fun machine)
-           (apply (partial mean core) arg-axes))))
+  (apply [rec m core]
+    (clojure.core/apply (partial fun m)
+                        (clojure.core/apply 
+                          (partial mean core) 
+                          arg-axes))))
 
 (defn ignore-machine [f]
   (fn [m & args] (Result. m (apply f args))))

@@ -442,6 +442,9 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
     else if (o instanceof Boolean) {
       return ((boolean) o) ? Atom.YES : Atom.NO;
     }
+    else {
+      throw new Bail();
+    }
   }
 
   protected static void fragIn(Queue<Boolean> q, int a, int dep) {
@@ -467,7 +470,7 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
 
   public List<Boolean> fragments() {
     if ( this == Atom.ZERO ) {
-      return null;
+      throw new Bail();
     } 
     else {
       LinkedList<Boolean> q = new LinkedList<Boolean>();

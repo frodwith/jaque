@@ -5,19 +5,24 @@
             [jaque.noun.box :refer :all]
             [jaque.jets.dashboard :refer [empty-dashboard]]
             [jaque.error :as e])
-  (:import (jaque.noun Atom Noun)
-           (jaque.interpreter Dashboard Hint Interpreter Bail Machine Result)))
+  (:import (jaque.noun Atom Noun Cell)
+           (jaque.interpreter Dashboard Hint Interpreter Bail Machine Result Jet)))
 
-(defrecord MachineRec [dash]
+(defrecord MachineRec [^Dashboard dash]
   Machine
   (^Result startHint [^Machine m ^Hint h]
     (Result. m nil))
-  (^Machine endHint [^Machine m ^Hint h ^Noun product]
+  (^Machine endHint [^Machine m ^Hint h product]
     (case (cord->string (.kind h))
       "fast" (assoc m :dash (.declare ^Dashboard dash product (.clue h)))
       m))
   (^Result escape [^Machine m ^Noun gat ^Noun sam] (prn sam) (e/exit))
-  (^Dashboard dashboard [^Machine m] dash))
+  (^Machine declare [m ^Cell core clue]
+    (.declare dash core clue))
+  (^boolean fine [^Machine m ^Cell core]
+    (.fine dash core))
+  (^Jet find [^Machine m ^Cell core ^Atom axis]
+    (.find dash core axis)))
 
 (def empty-machine (->MachineRec empty-dashboard))
 

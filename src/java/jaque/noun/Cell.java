@@ -75,17 +75,17 @@ public class Cell extends Noun {
 
   public final boolean equals(Object o) {
     if (o == this) {
-        return true;
+      return true;
     }
     if (!(o instanceof Cell)) {
-        return false;
+      return false;
     }
     Cell c = (Cell) o;
     if (hashed && c.hashed && hash != c.hash) {
-        return false;
+      return false;
     }
     else {
-        return p.equals(c.p) && q.equals(c.q);
+      return p().equals(c.p()) && q().equals(c.q());
     }
   }
 }

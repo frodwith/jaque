@@ -47,7 +47,7 @@ public abstract class Formula extends NockNode {
       return ConsFormulaNodeGen.create(fromCell((Cell) op), fromCell((Cell) arg));
     }
     else {
-      switch ( (int) op ) {
+      switch ( (int) NockTypesGen.asLong(op) ) {
         case 0: {
           return new FragFormula(NockTypesGen.asAtom(arg));
         }
