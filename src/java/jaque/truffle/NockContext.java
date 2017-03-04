@@ -56,7 +56,7 @@ public final class NockContext {
     KickLabel label = new KickLabel((Cell) core.getHead(), axis);
     CallTarget target = kickRecord.get(label);
     if ( null == target ) {
-      Cell c = (Cell) NockNode.fragment(axis, core);
+      Cell c = (Cell) Interpreter.fragment(axis, core);
       NockRootNode root = new NockRootNode(Formula.fromCell(c));
       target = Truffle.getRuntime().createCallTarget(root);
       kickRecord.put(label, target);
@@ -71,6 +71,15 @@ public final class NockContext {
     public KickLabel(Cell battery, Atom axis) {
       this.battery = battery;
       this.axis = axis;
+    }
+    
+    public int hashCode() {
+      return battery.hashCode() ^ axis.hashCode();
+    }
+    
+    public boolean equals(Object o) {
+      KickLabel l = (KickLabel) o;
+      return battery.equals(l.battery) && axis.equals(l.axis);
     }
   }
 }

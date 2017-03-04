@@ -4,6 +4,7 @@ import jaque.noun.*;
 
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
@@ -18,11 +19,12 @@ public final class PushFormula extends Formula {
     this.g = g;
     this.callNode = DirectCallNode.create(Truffle.getRuntime().createCallTarget(new NockRootNode(g)));
   }
+  
 
   @Override
   public Object execute(VirtualFrame frame) {
-    Cell subject = new Cell(f.execute(frame), getSubject(frame));
-    return callNode.call(frame, new Object[] { getContext(frame), subject });
+    Cell subject = new Cell(f.executeSafe(frame), getSubject(frame));
+    throw new DirectJumpException(callNode, subject);
   }
 
   public Cell toCell() {

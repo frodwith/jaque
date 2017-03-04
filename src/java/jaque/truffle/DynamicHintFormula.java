@@ -18,12 +18,13 @@ public final class DynamicHintFormula extends Formula {
     this.nextF = nextF;
   }
   
+  @Override
   public Object execute(VirtualFrame frame) {
     NockContext c = getContext(frame);
     Hint h = new Hint(kind, hintF.execute(frame), getSubject(frame), nextF.source());
     Object product = c.startHint(h);
     if ( null == product ) {
-      product = nextF.execute(frame);
+      product = nextF.executeSafe(frame);
       c.endHint(h, product);
     }
     return product;

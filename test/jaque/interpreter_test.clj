@@ -82,6 +82,7 @@
               "decrement"]
              ]]
       (is (= (nock empty-machine (noun sub) (noun fom)) [empty-machine (noun res)]) msg)))
+  
   (testing "bad-fragment"
     (is (thrown+? [:type :jaque.error/bail :bail-type :exit]
                   (nock empty-machine a0 (noun [0 0])))))

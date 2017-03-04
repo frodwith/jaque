@@ -2,17 +2,23 @@ package jaque.truffle;
 
 import jaque.noun.Atom;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 
 
-public abstract class LiteralAtomFormula extends LiteralFormula {
+public class LiteralAtomFormula extends LiteralFormula {
   private final Atom a;
 
   public LiteralAtomFormula(Atom value) {
     this.a = value;
   }
   
-  @Specialization
-  public Atom atom() {
+  @Override
+  public Object execute(VirtualFrame frame) {
+    return executeAtom(frame);
+  }
+  
+  @Override
+  public Atom executeAtom(VirtualFrame f) {
     return a;
   }
   

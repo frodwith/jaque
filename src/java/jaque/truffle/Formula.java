@@ -3,6 +3,7 @@ package jaque.truffle;
 import jaque.noun.*;
 
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 public abstract class Formula extends NockNode {
@@ -22,29 +23,39 @@ public abstract class Formula extends NockNode {
     }
     return cellCache;
   }
+  
+  public Object executeSafe(VirtualFrame frame) {
+    try {
+      return execute(frame);
+    }
+    catch (NockJumpException e) {
+      return e.proceed(frame);
+    }
+  }
 
   public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
-    return NockTypesGen.expectLong(execute(frame));
+    return NockTypesGen.expectLong(executeSafe(frame));
   }
 
   public boolean executeBoolean(VirtualFrame frame) throws UnexpectedResultException {
-    return NockTypesGen.expectBoolean(execute(frame));
+    return NockTypesGen.expectBoolean(executeSafe(frame));
   }
 
   public Atom executeAtom(VirtualFrame frame) throws UnexpectedResultException {
-    return NockTypesGen.expectAtom(execute(frame));
+    return NockTypesGen.expectAtom(executeSafe(frame));
   }
 
   public Cell executeCell(VirtualFrame frame) throws UnexpectedResultException {
-    return NockTypesGen.expectCell(execute(frame));
+    return NockTypesGen.expectCell(executeSafe(frame));
   }
   
+  @TruffleBoundary
   public static final Formula fromCell(Cell formula) {
     Object op  = formula.getHead(),
            arg = formula.getTail();
 
     if ( op instanceof Cell ) {
-      return ConsFormulaNodeGen.create(fromCell((Cell) op), fromCell((Cell) arg));
+      return new ConsFormula(fromCell((Cell) op), fromCell((Cell) arg));
     }
     else {
       switch ( (int) NockTypesGen.asLong(op) ) {
@@ -53,21 +64,21 @@ public abstract class Formula extends NockNode {
         }
         case 1: {
           if ( arg instanceof Cell ) {
-            return LiteralCellFormulaNodeGen.create((Cell) arg);
+            return new LiteralCellFormula((Cell) arg);
           }
           else if ( arg instanceof Boolean ) {
-            return LiteralBooleanFormulaNodeGen.create((boolean) arg);
+            return new LiteralBooleanFormula((boolean) arg);
           }
           else if ( arg instanceof Long) {
-            return LiteralLongFormulaNodeGen.create((long) arg); 
+            return new LiteralLongFormula((long) arg); 
           }
           else {
-            return LiteralAtomFormulaNodeGen.create((Atom) arg);
+            return new LiteralAtomFormula((Atom) arg);
           }
         }
         case 2: {
           Cell c = (Cell) arg;
-          return NockFormulaNodeGen.create(
+          return new NockFormula(
             fromCell((Cell) c.getHead()),
             fromCell((Cell) c.getTail()));
         }
@@ -132,7 +143,7 @@ public abstract class Formula extends NockNode {
         }
         case 11: {
           Cell c = (Cell) arg;
-          return EscapeFormulaNodeGen.create(
+          return new EscapeFormula(
             fromCell((Cell) c.getHead()),
             fromCell((Cell) c.getTail()));
         }

@@ -7,19 +7,29 @@ import jaque.noun.Cell;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 
 @NodeInfo(shortName = "cons")
-@NodeChildren({@NodeChild("head"), @NodeChild("tail")})
-public abstract class ConsFormula extends Formula {
-  public abstract Formula getHead();
-  public abstract Formula getTail();
+public class ConsFormula extends Formula {
+  @Child private Formula head;
+  @Child private Formula tail;
+  
+  public ConsFormula(Formula head, Formula tail) {
+    this.head = head;
+    this.tail = tail;
+  }
 
-  @Specialization
-  protected Cell cons(Object a, Object b) {
-    return new Cell(a, b);
+  @Override
+  public Object execute(VirtualFrame frame) {
+    return executeCell(frame);
+  }
+  
+  @Override
+  public Cell executeCell(VirtualFrame frame) {
+    return new Cell(head.executeSafe(frame), tail.executeSafe(frame));
   }
 
   public Cell toCell() {
-    return new Cell(getHead().toCell(), getTail().toCell());
+    return new Cell(head.toCell(), tail.toCell());
   }
 }

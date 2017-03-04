@@ -21,7 +21,7 @@ public final class StaticHintFormula extends Formula {
     Hint h = new Hint(kind, 0, getSubject(frame), f.source());
     Object product = c.startHint(h);
     if ( null == product) {
-      product = f.execute(frame);
+      product = f.executeSafe(frame);
       c.endHint(h, product);
     }
     return product;

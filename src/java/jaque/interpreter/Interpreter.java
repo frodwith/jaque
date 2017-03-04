@@ -6,24 +6,18 @@ import java.util.List;
 public final class Interpreter {
 
   public final static Noun fragment(Atom a, Noun b) {
-    List<Boolean> path = a.fragments();
-    if ( null == path ) {
-      return null;
-    }
-    else {
-      for ( Boolean tail : path ) {
-        if ( !(b instanceof Cell) ) {
-          return null;
-        }
-        else if ( tail.booleanValue() ) {
-          b = ((Cell) b).q();
-        }
-        else {
-          b = ((Cell) b).p();
-        }
+    for ( boolean tail : a.fragments() ) {
+      if ( !(b instanceof Cell) ) {
+        throw new Bail();
       }
-      return b;
+      else if ( tail ) {
+        b = ((Cell) b).q();
+      }
+      else {
+        b = ((Cell) b).p();
+      }
     }
+    return b;
   }
 
   private static Cell forceCell(Noun n) throws Bail {
@@ -62,12 +56,7 @@ public final class Interpreter {
         case 0: {
           Atom axis = forceAtom(arguments);
           Noun part = fragment(axis, subject);
-          if ( null == part ) {
-            throw new Bail();
-          }
-          else {
-            return new Result(machine, part);
-          }
+          return new Result(machine, part);
         }
         case 1: {
           return new Result(machine, arguments);

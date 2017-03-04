@@ -10,7 +10,7 @@
 ;                "-Dcom.sun.management.jmxremote.ssl=false"
 ;                "-Dcom.sun.management.jmxremote.authenticate=false"
 ;                "-Dcom.sun.management.jmxremote.port=43210"]
-  :main         jaque.vm
+;  :main         jaque.vm
 
   ;; leinigen's invocation of javac causes some problems for truffle's
   ;; compiler detection. To mitigate this, please run an annotation processor

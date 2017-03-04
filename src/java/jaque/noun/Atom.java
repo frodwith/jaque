@@ -468,14 +468,19 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
     }
   }
 
-  public List<Boolean> fragments() {
+  public boolean[] fragments() {
     if ( this == Atom.ZERO ) {
       throw new Bail();
     } 
     else {
       LinkedList<Boolean> q = new LinkedList<Boolean>();
       fragOut(q);
-      return q;
+      boolean[] r = new boolean[q.size()];
+      int i = 0;
+      for ( Boolean b : q ) {
+        r[i++] = b.booleanValue();
+      }
+      return r;
     }
   }
 }

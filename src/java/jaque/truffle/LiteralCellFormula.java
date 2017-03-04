@@ -5,15 +5,20 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 
 import jaque.noun.Cell;
 
-public abstract class LiteralCellFormula extends LiteralFormula {
+public class LiteralCellFormula extends LiteralFormula {
   private final Cell c;
 
   public LiteralCellFormula(Cell value) {
     this.c = value;
   }
   
-  @Specialization
-  public Cell cell() {
+  @Override
+  public Object execute(VirtualFrame frame) {
+    return executeCell(frame);
+  }
+  
+  @Override
+  public Cell executeCell(VirtualFrame f) {
     return c;
   }
   

@@ -13,15 +13,14 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.dsl.Cached;
 
 public abstract class KickDispatchNode extends NockNode {
-
   public abstract Object executeKick(VirtualFrame frame, Cell core, Atom axis);
   
   /* TODO: integrate builtin nodes esp. for arithmetic, e.g. dec/add/sub/mul/div */
 
   @Specialization(limit  = "1",
-                  guards = {"!(jet == null)",
-                            "core.getHead() == cachedBattery",
-                            "getContext(frame).fine(core)"})
+                  guards = { "!(jet == null)", 
+                             "core.getHead() == cachedBattery",
+                             "getContext(frame).fine(core)" })
   protected static Object doJet(VirtualFrame frame, Cell core, Atom axis,
     @Cached("core.getHead()") Object cachedBattery,
     @Cached("getContext(frame).find(core, axis)") Jet jet)
@@ -36,14 +35,15 @@ public abstract class KickDispatchNode extends NockNode {
     @Cached("core.getHead()") Object cachedBattery,
     @Cached("create(getContext(frame).getKickTarget(core, axis))") DirectCallNode callNode)
   {
-    return callNode.call(frame, new Object[] {getContext(frame), core});
+    throw new DirectJumpException(callNode, core);
   }
 
-  @Specialization(replaces = "doDirect")
+  //@Specialization(replaces = "doDirect")
+  @Specialization(replaces = "doJet")
   protected static Object doIndirect(VirtualFrame frame, Cell core, Atom axis,
     @Cached("create()") IndirectCallNode callNode)
   {
     CallTarget target = getContext(frame).getKickTarget(core, axis);
-    return callNode.call(frame, target, new Object[] {getContext(frame), core});
+    throw new IndirectJumpException(callNode, target, core);
   }
 }

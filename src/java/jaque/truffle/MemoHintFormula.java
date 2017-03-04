@@ -28,7 +28,7 @@ public class MemoHintFormula extends Formula {
       r = cache.get(s);
     }
     else {
-      r = f.execute(frame);
+      r = f.executeSafe(frame);
       cache.put(s, r);
     }
     return r;

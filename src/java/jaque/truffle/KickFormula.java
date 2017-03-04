@@ -32,6 +32,6 @@ public final class KickFormula extends Formula {
   }
 
   public Cell toCell() {
-    return new Cell(Atom.fromLong(9), new Cell(axis, core.toCell()));
+    return new Cell(9, new Cell(axis, core.toCell()));
   }
 }

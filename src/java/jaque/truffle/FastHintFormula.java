@@ -18,8 +18,8 @@ public class FastHintFormula extends Formula {
 
   @Override
   public Object execute(VirtualFrame frame) {
-    Object c = clueF.execute(frame);
-    Object o = nextF.execute(frame);
+    Object c = clueF.executeSafe(frame);
+    Object o = nextF.executeSafe(frame);
     if (o instanceof Cell) {
       getContext(frame).declare((Cell) o, c);
     }

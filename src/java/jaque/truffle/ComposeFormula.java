@@ -6,6 +6,7 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import jaque.noun.Atom;
 import jaque.noun.Cell;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
@@ -23,7 +24,7 @@ public final class ComposeFormula extends Formula {
 
   @Override
   public Object execute(VirtualFrame frame) {
-    return callNode.call(frame, new Object[] { getContext(frame), f.execute(frame) });
+    throw new DirectJumpException(callNode, f.executeSafe(frame));
   }
 
   public Cell toCell() {
