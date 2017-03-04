@@ -10,6 +10,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -37,6 +38,7 @@ public class NockFormula extends Formula {
     catch (UnexpectedResultException e) {
       throw new Bail();
     }
+    CompilerDirectives.transferToInterpreter();
     return dispatch.executeNock(frame, subject, formula);
   }
 
