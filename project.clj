@@ -1,6 +1,8 @@
 (defproject jaque "0.1.0-SNAPSHOT"
   :description "Clojure implementation of nock"
   :jvm-opts     ["-server"
+; think your stack overflows are spurious? they're not, but...
+;                 "-Xss1024m"
                  "-XX:+UnlockExperimentalVMOptions" 
                  "-XX:+EnableJVMCI"
                  "-d64" 

@@ -17,6 +17,8 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
     public static final Atom ZERO, ONE, TWO, THREE, TEN, YES, NO;
     public static final boolean BIG_ENDIAN = true;
     public static final boolean LITTLE_ENDIAN = false;
+    public static final Atom FAST = mote("fast");
+    public static final Atom MEMO = mote("memo");
 
     static {
         fix = new DirectAtom[MAX_FIXNUM + 1];
@@ -443,6 +445,7 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
       return ((boolean) o) ? Atom.YES : Atom.NO;
     }
     else {
+      System.err.println("Cannot coerce atom: "+ o.toString());
       throw new Bail();
     }
   }

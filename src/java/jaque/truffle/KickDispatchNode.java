@@ -29,8 +29,18 @@ public abstract class KickDispatchNode extends NockNode {
     return getContext(frame).apply(jet, core);
   }
 
-  @Specialization(replaces = "doJet")
-  protected static Object doNock(VirtualFrame frame, Cell core, Atom axis) {
+  @Specialization(replaces = "doJet",
+                  limit = "1",
+                  guards = { "core.getHead() == cachedBattery" })
+  protected static Object doCached(VirtualFrame frame, Cell core, Atom axis,
+    @Cached("core.getHead()") Object cachedBattery,
+    @Cached("getContext(frame).getKickTarget(core, axis)") CallTarget target)
+  {
+    throw new NockCallException(target, core);
+  }
+
+  @Specialization(replaces = "doCached")
+  protected static Object doFirst(VirtualFrame frame, Cell core, Atom axis) {
     throw new NockCallException(getContext(frame).getKickTarget(core, axis), core);
   }
 }
