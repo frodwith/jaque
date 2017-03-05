@@ -5,10 +5,13 @@ import jaque.noun.*;
 
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.NodeInfo;
+
+import java.util.Arrays;
+
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 @NodeInfo(shortName = "frag")
-public final class FragFormula extends Formula {
+public final class FragFormula extends SafeFormula {
   private final Atom axis;
   private final boolean[] path;
 
@@ -43,6 +46,6 @@ public final class FragFormula extends Formula {
   }
 
   public Cell toCell() {
-    return new Cell(Atom.fromLong(0), axis);
+    return new Cell(0L, axis);
   }
 }

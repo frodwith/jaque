@@ -14,11 +14,11 @@ public class LiteralAtomFormula extends LiteralFormula {
   
   @Override
   public Object execute(VirtualFrame frame) {
-    return executeAtom(frame);
+    return a;
   }
   
   @Override
-  public Atom executeAtom(VirtualFrame f) {
+  public Atom executeAtom(VirtualFrame frame) {
     return a;
   }
   

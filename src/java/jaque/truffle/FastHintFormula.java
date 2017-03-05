@@ -4,10 +4,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
 import jaque.interpreter.Bail;
+import jaque.noun.Atom;
 import jaque.noun.Cell;
 import jaque.noun.Noun;
 
-public class FastHintFormula extends Formula {
+public class FastHintFormula extends SafeFormula {
   @Child private Formula nextF;
   @Child private Formula clueF;
   
@@ -28,6 +29,6 @@ public class FastHintFormula extends Formula {
 
   @Override
   public Cell toCell() {
-    return new Cell(10, new Cell(new Cell(FAST, clueF.toCell()), nextF.toCell()));
+    return new Cell(10L, new Cell(new Cell(Atom.FAST, clueF.toCell()), nextF.toCell()));
   }
 }

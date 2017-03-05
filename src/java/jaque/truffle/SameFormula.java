@@ -10,8 +10,10 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 @NodeInfo(shortName = "same")
-@NodeChildren({@NodeChild("a"), @NodeChild("b")})
-public abstract class SameFormula extends Formula {
+@NodeChildren({
+  @NodeChild(value = "a", type = Formula.class),
+  @NodeChild(value = "b", type = Formula.class)})
+public abstract class SameFormula extends SafeFormula {
   public abstract Formula getA();
   public abstract Formula getB();
   
@@ -44,10 +46,14 @@ public abstract class SameFormula extends Formula {
   
   @Override
   public boolean executeBoolean(VirtualFrame frame) {
-    return executeSame(frame, getA().executeSafe(frame), getB().executeSafe(frame));
+    Object subject = getSubject(frame);
+    Object a = getA().executeSafe(frame);
+    setSubject(frame, subject);
+    Object b = getB().executeSafe(frame);
+    return executeSame(frame, a, b);
   }
 
   public Cell toCell() {
-    return new Cell(5, new Cell(getA().toCell(), getB().toCell()));
+    return new Cell(5L, new Cell(getA().toCell(), getB().toCell()));
   }
 }

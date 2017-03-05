@@ -11,6 +11,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.NodeField;
 
 public abstract class KickDispatchNode extends NockNode {
   public abstract Object executeKick(VirtualFrame frame, Cell core, Atom axis);
@@ -28,22 +29,8 @@ public abstract class KickDispatchNode extends NockNode {
     return getContext(frame).apply(jet, core);
   }
 
-  @Specialization(limit    = "1",
-                  replaces = "doJet",
-                  guards   = {"core.getHead() == cachedBattery"})
-  protected static Object doDirect(VirtualFrame frame, Cell core, Atom axis,
-    @Cached("core.getHead()") Object cachedBattery,
-    @Cached("create(getContext(frame).getKickTarget(core, axis))") DirectCallNode callNode)
-  {
-    throw new DirectJumpException(callNode, core);
-  }
-
-  //@Specialization(replaces = "doDirect")
   @Specialization(replaces = "doJet")
-  protected static Object doIndirect(VirtualFrame frame, Cell core, Atom axis,
-    @Cached("create()") IndirectCallNode callNode)
-  {
-    CallTarget target = getContext(frame).getKickTarget(core, axis);
-    throw new IndirectJumpException(callNode, target, core);
+  protected static Object doNock(VirtualFrame frame, Cell core, Atom axis) {
+    throw new NockCallException(getContext(frame).getKickTarget(core, axis), core);
   }
 }

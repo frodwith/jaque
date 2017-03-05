@@ -11,8 +11,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 @NodeInfo(shortName = "deep")
-@NodeChild("f")
-public abstract class DeepFormula extends Formula {
+@NodeChild(value = "f", type = Formula.class)
+public abstract class DeepFormula extends SafeFormula {
   public abstract Formula getF();
   public abstract boolean executeDeep(VirtualFrame frame, Object o);
 
@@ -42,6 +42,6 @@ public abstract class DeepFormula extends Formula {
   }
 
   public Cell toCell() {
-    return new Cell(3, getF().toCell());
+    return new Cell(3L, getF().toCell());
   }
 }

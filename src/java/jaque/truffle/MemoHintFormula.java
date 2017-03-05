@@ -5,9 +5,10 @@ import java.util.Map;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 
+import jaque.noun.Atom;
 import jaque.noun.Cell;
 
-public class MemoHintFormula extends Formula {
+public class MemoHintFormula extends SafeFormula {
   @Child private Formula f;
   private Map<Object,Object> cache;
   
@@ -18,7 +19,7 @@ public class MemoHintFormula extends Formula {
 
   @Override
   public Cell toCell() {
-    return new Cell(10, new Cell(MEMO, f.toCell()));
+    return new Cell(10, new Cell(Atom.MEMO, f.toCell()));
   }
 
   @Override

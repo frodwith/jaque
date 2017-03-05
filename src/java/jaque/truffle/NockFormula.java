@@ -17,20 +17,20 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 
 @NodeInfo(shortName = "nock")
-public class NockFormula extends Formula {
+public class NockFormula extends UnsafeFormula {
   @Child private Formula subjectF;
   @Child private Formula formulaF;
-  @Child private NockDispatchNode dispatch;
   
   public NockFormula(Formula subjectF, Formula formulaF) {
     this.subjectF = subjectF;
     this.formulaF = formulaF;
-    this.dispatch = NockDispatchNodeGen.create();
   }
   
   @Override
   public Object execute(VirtualFrame frame) {
+    Object old = getSubject(frame);
     Object subject = subjectF.executeSafe(frame);
+    setSubject(frame, old);
     Cell formula;
     try {
       formula = formulaF.executeCell(frame);
@@ -38,11 +38,10 @@ public class NockFormula extends Formula {
     catch (UnexpectedResultException e) {
       throw new Bail();
     }
-    CompilerDirectives.transferToInterpreter();
-    return dispatch.executeNock(frame, subject, formula);
+    throw new NockCallException(getContext(frame).getNockTarget(formula), subject);
   }
 
   public Cell toCell() {
-    return new Cell(2, new Cell(subjectF.toCell(), formulaF.toCell()));
+    return new Cell(2L, new Cell(subjectF.toCell(), formulaF.toCell()));
   }
 }

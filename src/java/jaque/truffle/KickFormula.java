@@ -8,7 +8,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 @NodeInfo(shortName = "kick")
-public final class KickFormula extends Formula {
+public final class KickFormula extends UnsafeFormula {
   private final Atom axis;
   @Child private Formula core;
   @Child private KickDispatchNode dispatch;
@@ -32,6 +32,6 @@ public final class KickFormula extends Formula {
   }
 
   public Cell toCell() {
-    return new Cell(9, new Cell(axis, core.toCell()));
+    return new Cell(9L, new Cell(axis, core.toCell()));
   }
 }

@@ -9,16 +9,15 @@ import com.oracle.truffle.api.nodes.RootNode;
 @NodeInfo(shortName="root")
 public class NockRootNode extends RootNode {
   @Child private Formula f;
-  private final IndirectCallNode callNode;
   
   public NockRootNode(Formula f) {
-    super(NockLanguage.class, null, null);
+    super(NockLanguage.class, null, NockLanguage.frameDescriptor);
     this.f = f;
-    this.callNode = Truffle.getRuntime().createIndirectCallNode();
   }
 
   @Override
   public Object execute(VirtualFrame frame) {
+    NockLanguage.setSubject(frame, frame.getArguments()[1]);
     return f.executeSafe(frame);
   }
 }

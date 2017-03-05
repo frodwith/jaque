@@ -10,10 +10,9 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 @NodeInfo(shortName = "bump")
-@NodeChild("f")
-public abstract class BumpFormula extends Formula {
+@NodeChild(value = "f", type = Formula.class)
+public abstract class BumpFormula extends SafeFormula {
   public abstract Formula getF();
-  
   public abstract Object executeBump(VirtualFrame frame, Object atom);
 
   @Specialization(rewriteOn = ArithmeticException.class)
@@ -32,6 +31,6 @@ public abstract class BumpFormula extends Formula {
   }
 
   public Cell toCell() {
-    return new Cell(4, getF().toCell());
+    return new Cell(4L, getF().toCell());
   }
 }

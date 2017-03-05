@@ -10,7 +10,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 @NodeInfo(shortName = "cons")
-public class ConsFormula extends Formula {
+public class ConsFormula extends SafeFormula {
   @Child private Formula head;
   @Child private Formula tail;
   
@@ -26,7 +26,11 @@ public class ConsFormula extends Formula {
   
   @Override
   public Cell executeCell(VirtualFrame frame) {
-    return new Cell(head.executeSafe(frame), tail.executeSafe(frame));
+    Object subject = getSubject(frame);
+    Object h = head.executeSafe(frame);
+    setSubject(frame, subject);
+    Object t = tail.executeSafe(frame);
+    return new Cell(h, t);
   }
 
   public Cell toCell() {

@@ -1,6 +1,7 @@
 package jaque.truffle;
 
 import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.NodeInfo;
 
 import jaque.noun.Atom;
@@ -11,23 +12,22 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 @NodeInfo(shortName = "comp")
-public final class ComposeFormula extends Formula {
+public final class ComposeFormula extends UnsafeFormula {
   @Child private Formula f;
   @Child private Formula g;
-  private final DirectCallNode callNode;
 
   public ComposeFormula(Formula f, Formula g) {
     this.f = f;
     this.g = g;
-    this.callNode = DirectCallNode.create(Truffle.getRuntime().createCallTarget(new NockRootNode(g)));
   }
 
   @Override
   public Object execute(VirtualFrame frame) {
-    throw new DirectJumpException(callNode, f.executeSafe(frame));
+    NockLanguage.setSubject(frame, f.executeSafe(frame));
+    return g.execute(frame);
   }
 
   public Cell toCell() {
-    return new Cell(7, new Cell(f.toCell(), g.toCell()));
+    return new Cell(7L, new Cell(f.toCell(), g.toCell()));
   }
 }

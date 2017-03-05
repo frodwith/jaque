@@ -10,7 +10,7 @@ import jaque.noun.Atom;
 import jaque.noun.Cell;
 
 @NodeInfo(shortName = "cond")
-public final class CondFormula extends Formula {
+public final class CondFormula extends UnsafeFormula {
   @Child private Formula test;
   @Child private Formula yes;
   @Child private Formula no;
@@ -26,12 +26,14 @@ public final class CondFormula extends Formula {
   @Override
   public Object execute(VirtualFrame frame) {
     boolean t;
+    Object subject = getSubject(frame);
     try {
       t = condition.profile(test.executeBoolean(frame));
     }
     catch (UnexpectedResultException e) {
       throw new Bail();
     }
+    setSubject(frame, subject);
     if ( t ) {
       return yes.execute(frame);
     }
@@ -41,6 +43,6 @@ public final class CondFormula extends Formula {
   }
 
   public Cell toCell() {
-    return new Cell(6, new Cell(test.toCell(), new Cell(yes.toCell(), no.toCell())));
+    return new Cell(6L, new Cell(test.toCell(), new Cell(yes.toCell(), no.toCell())));
   }
 }

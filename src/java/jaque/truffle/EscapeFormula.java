@@ -11,7 +11,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 @NodeInfo(shortName = "esc")
-public class EscapeFormula extends Formula {
+public class EscapeFormula extends SafeFormula {
   @Child private Formula ref;
   @Child private Formula sam;
   
@@ -22,12 +22,14 @@ public class EscapeFormula extends Formula {
   
   @Override
   public Object execute(VirtualFrame frame) {
+    Object subject = getSubject(frame);
     Noun r = Noun.coerceNoun(ref.executeSafe(frame));
+    setSubject(frame, subject);
     Noun s = Noun.coerceNoun(sam.executeSafe(frame));
     return getContext(frame).escape(r, s);
   }
 
   public Cell toCell() {
-    return new Cell(11, new Cell(ref.toCell(), sam.toCell()));
+    return new Cell(11L, new Cell(ref.toCell(), sam.toCell()));
   }
 }
