@@ -24,9 +24,14 @@ public abstract class KickDispatchNode extends NockNode {
                              "getContext(frame).fine(core)" })
   protected static Object doJet(VirtualFrame frame, Cell core, Atom axis,
     @Cached("core.getHead()") Object cachedBattery,
-    @Cached("getContext(frame).find(core, axis)") Jet jet)
+    @Cached("getContext(frame).find(core, axis)") Jet jet,
+    @Cached("jetFrags(jet)") Fragmenter[] frags)
   {
-    return getContext(frame).apply(jet, core);
+    Object[] arguments = new Object[frags.length];
+    for ( int i = 0; i < frags.length; ++i ) {
+      arguments[i] = Noun.coerceNoun(frags[i].fragment(core));
+    }
+    return getContext(frame).apply(jet, arguments);
   }
 
   @Specialization(replaces = "doJet",
@@ -42,5 +47,14 @@ public abstract class KickDispatchNode extends NockNode {
   @Specialization(replaces = "doCached")
   protected static Object doFirst(VirtualFrame frame, Cell core, Atom axis) {
     throw new NockCallException(getContext(frame).getKickTarget(core, axis), core);
+  }
+  
+  protected static Fragmenter[] jetFrags(Jet j) {
+    Atom[] axes = j.argumentLocations();
+    Fragmenter[] frags = new Fragmenter[axes.length];
+    for ( int i = 0; i < axes.length; ++i ) {
+      frags[i] = new Fragmenter(axes[i]);
+    }
+    return frags;
   }
 }

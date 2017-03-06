@@ -14,10 +14,9 @@ public abstract class NockJumpNode extends NockNode {
                   guards = { "target == cachedTarget" })
   public Object jumpDirect(VirtualFrame frame, CallTarget target, Object subject,
     @Cached("target") CallTarget cachedTarget,
-    @Cached("makeArgs(frame, subject)") Object[] arguments,
     @Cached("create(target)") DirectCallNode callNode)
   {
-    return callNode.call(frame, arguments);
+    return callNode.call(frame, makeArgs(frame, subject));
   }
   
   @Specialization(replaces = "jumpDirect")

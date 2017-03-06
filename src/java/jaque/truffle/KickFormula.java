@@ -28,6 +28,9 @@ public final class KickFormula extends UnsafeFormula {
     catch (UnexpectedResultException e){
       throw new Bail();
     }
+    if ( axis.isZero() ) {
+      throw new Bail();
+    }
     return dispatch.executeKick(frame, c, axis);
   }
 

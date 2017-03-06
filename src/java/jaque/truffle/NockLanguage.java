@@ -12,8 +12,10 @@ import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 
+import jaque.interpreter.Bail;
 import jaque.interpreter.Machine;
 import jaque.interpreter.Result;
 import jaque.noun.Cell;
@@ -50,7 +52,7 @@ public class NockLanguage extends TruffleLanguage<NockContext> {
       throw new RuntimeException();
     }
   }
-  
+
   @Override
   protected NockContext createContext(com.oracle.truffle.api.TruffleLanguage.Env env) {
     // TODO: This isn't quite implemented...

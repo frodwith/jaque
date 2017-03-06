@@ -13,36 +13,16 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 @NodeInfo(shortName = "frag")
 public final class FragFormula extends SafeFormula {
   private final Atom axis;
-  private final boolean[] path;
+  private final Fragmenter f;
 
   public FragFormula(Atom axis) {
     this.axis = axis;
-    if ( Atom.ZERO.equals(axis) ) {
-      this.path = null;
-    }
-    else {
-      this.path = axis.fragments();
-    }
+    this.f    = new Fragmenter(axis);
   }
-
-  @ExplodeLoop
+  
+  @Override
   public Object execute(VirtualFrame frame) {
-    if ( null == this.path ) {
-      throw new Bail();
-    }
-    else {
-      Object r = getSubject(frame);
-      for ( boolean tail : path ) {
-        if (r instanceof Cell) {
-          Cell c = (Cell) r;
-          r = tail ? c.getTail() : c.getHead();
-        }
-        else {
-          throw new Bail();
-        }
-      }
-      return r;
-    }
+    return f.fragment(getSubject(frame));
   }
 
   public Cell toCell() {

@@ -445,7 +445,6 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
       return ((boolean) o) ? Atom.YES : Atom.NO;
     }
     else {
-      System.err.println("Cannot coerce atom: "+ o.toString());
       throw new Bail();
     }
   }

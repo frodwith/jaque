@@ -7,6 +7,7 @@
                  "-XX:+EnableJVMCI"
                  "-d64" 
                  "-Djvmci.class.path.append=/home/pdriver/graal/graal-core/mxbuild/dists/graal.jar"
+;                 "-Dgraal.Dump"
                  "-Xbootclasspath/a:/home/pdriver/graal/truffle/mxbuild/dists/truffle-api.jar"]
 ;  :jvm-opts    ["-Dcom.sun.management.jmxremote"
 ;                "-Dcom.sun.management.jmxremote.ssl=false"

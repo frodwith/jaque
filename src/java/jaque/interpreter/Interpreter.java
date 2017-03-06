@@ -133,7 +133,13 @@ public final class Interpreter {
             continue;
           }
           else {
-            return j.apply(x.m, forceCell(x.r));
+            Cell core = forceCell(x.r);
+            Atom[] axes = j.argumentLocations();
+            Object[] args = new Object[axes.length];
+            for ( int i = 0; i < axes.length; ++i ) {
+              args[i] = fragment(axes[i], core);
+            }
+            return j.apply(x.m, args);
           }
         }
         case 10: {

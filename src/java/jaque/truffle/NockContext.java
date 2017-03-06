@@ -8,6 +8,7 @@ import java.util.Map;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 
 public final class NockContext {
@@ -31,20 +32,32 @@ public final class NockContext {
     else {
       switch ( (int) NockTypesGen.asLong(op) ) {
         case 0: {
-          return new FragFormula(NockTypesGen.asAtom(arg));
+          Atom axis = NockTypesGen.asAtom(arg);
+          if ( axis.isZero() ) {
+            return new BailNode();
+          }
+          else {
+            return new FragFormula(axis);
+          }
         }
         case 1: {
           if ( arg instanceof Cell ) {
             return new LiteralCellFormula((Cell) arg);
           }
           else if ( arg instanceof Boolean ) {
-            return new LiteralBooleanFormula((boolean) arg);
+            return new LiteralLongFormula(NockTypesGen.asLong(arg));
           }
           else if ( arg instanceof Long) {
             return new LiteralLongFormula((long) arg); 
           }
           else {
-            return new LiteralAtomFormula((Atom) arg);
+            Atom a = (Atom) arg;
+            if ( a.words().length <= 2 ) {
+              return new LiteralLongFormula(a.longValue());
+            }
+            else {
+              return new LiteralAtomFormula((Atom) arg);
+            }
           }
         }
         case 2: {
@@ -145,7 +158,7 @@ public final class NockContext {
       t = kicks.get(label);
     }
     else {
-      Cell c = (Cell) Interpreter.fragment(axis, core);
+      Cell c = (Cell) new Fragmenter(axis).fragment(core);
       CompilerDirectives.transferToInterpreter();
       t = Truffle.getRuntime().createCallTarget(new NockRootNode(readFormula(c)));
       kicks.put(label, t);
@@ -153,51 +166,43 @@ public final class NockContext {
     return t;
   }
   
-  /*
-  public CallTarget getTarget(Formula formula) {
-    CallTarget target;
-    if ( targets.containsKey(formula) ) {
-      target = targets.get(formula);
-    }
-    else {
-      CompilerDirectives.transferToInterpreter();
-      target = Truffle.getRuntime().createCallTarget(new NockRootNode(formula));
-      targets.put(formula, target); 
-    }
-    return target;
-  }
-  */
-  
+  @TruffleBoundary
   public final Noun startHint(Hint h) {
     Result r = m.startHint(h);
     m = r.m;
     return r.r;
   }
 
+  @TruffleBoundary
   public final void endHint(Hint h, Object product) {
     m = m.endHint(h, product);
   }
 
+  @TruffleBoundary
   public final Noun escape(Noun ref, Noun sam) {
     Result r = m.escape(ref, sam);
     m = r.m;
     return r.r;
   }
   
+  @TruffleBoundary
   public final void declare(Cell core, Object clue) {
     m = m.declare(core, clue);
   }
 
+  @TruffleBoundary
   public boolean fine(Cell core) {
     return m.fine(core);
   }
 
+  @TruffleBoundary
   public final Jet find(Cell core, Atom axis) {
     return m.find(core, axis);
   }
 
-  public final Object apply(Jet j, Noun subject) {
-    Result r = j.apply(m, subject);
+  @TruffleBoundary
+  public final Object apply(Jet j, Object[] arguments) {
+    Result r = j.apply(m, arguments);
     m = r.m;
     return r.r;
   }
