@@ -106,7 +106,7 @@ public final class NockContext {
           Formula next = readFormula((Cell) cell.getTail());
           Object  head = cell.getHead();
           if ( head instanceof Atom ) {
-            if ( head.equals(Atom.MEMO) ) {
+            if ( Atom.MEMO.equals(head) ) {
               return new MemoHintFormula(next);
             }
             else {
@@ -115,13 +115,13 @@ public final class NockContext {
           }
           else {
             Cell dyn  = (Cell) head;
-            Atom kind = Atom.coerceAtom(dyn.getHead());
             Formula dynF = readFormula((Cell) dyn.getTail());
-            if ( kind.equals(Atom.FAST) ) {
+            Object kind = dyn.getHead();
+            if ( Atom.FAST.equals(kind) ) {
               return new FastHintFormula(dynF, next);
             }
             else {
-              return new DynamicHintFormula(kind, dynF, next);
+              return new DynamicHintFormula(Atom.coerceAtom(kind), dynF, next);
             }
           }
         }
@@ -167,7 +167,7 @@ public final class NockContext {
   }
   
   @TruffleBoundary
-  public final Noun startHint(Hint h) {
+  public final Object startHint(Hint h) {
     Result r = m.startHint(h);
     m = r.m;
     return r.r;
@@ -179,7 +179,7 @@ public final class NockContext {
   }
 
   @TruffleBoundary
-  public final Noun escape(Noun ref, Noun sam) {
+  public final Object escape(Noun ref, Noun sam) {
     Result r = m.escape(ref, sam);
     m = r.m;
     return r.r;

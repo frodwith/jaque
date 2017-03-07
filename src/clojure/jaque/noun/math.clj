@@ -1,6 +1,7 @@
 (ns jaque.noun.math
   (:refer-clojure :exclude [zero? inc dec])
   (:require [jaque.constants :refer :all]
+            [jaque.error :as e]
             [jaque.noun.core :refer [export mug lsh]]
             [jaque.noun.read :refer :all])
   (:import jaque.noun.Atom))
@@ -10,8 +11,12 @@
 (defn gth [^Atom a ^Atom b]
   (if (= 1 (.compareTo a b)) yes no))
 
-(defn add [^Atom a ^Atom b]
-  (.add a b))
+(defn add [a b]
+  (or (and (instance? Long a)
+           (instance? Long b)
+           (try (Math/addExact a b)
+             (catch ArithmeticException e false)))
+      (.add (Atom/coerceAtom a) (Atom/coerceAtom b))))
 
 (defn sub [^Atom a ^Atom b]
   (.sub a b))
@@ -19,8 +24,14 @@
 (defn inc [^Atom a]
   (.add a a1))
 
-(defn dec [^Atom b]
-  (.sub b a1))
+(defn dec [b]
+  (cond (instance? Boolean b)
+          (if b (e/exit) 0)
+        (instance? Long b)
+          (if (> b 0)
+            (clojure.core/dec b)
+            (e/exit))
+        :else (.sub ^Atom b a1)))
 
 (defn dor [a b]
   (loop [a a

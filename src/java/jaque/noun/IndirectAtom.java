@@ -31,12 +31,17 @@ public class IndirectAtom extends Atom {
     }
 
     public boolean equals(Object o) {
-        if (!(o instanceof IndirectAtom)) {
-            return false;
-        }
+      if ( (o instanceof Long) && words.length <= 2 ) {
+        return longValue() == (long) o;
+      }
+      else if ( o instanceof IndirectAtom ) {
         IndirectAtom a = (IndirectAtom) o;
         return (hashCode() == a.hashCode())
-            && (0 == compareTo(a));
+            || (0 == compareTo(a));
+      }
+      else {
+        return false;
+      }
     }
 
     public int hashCode() {

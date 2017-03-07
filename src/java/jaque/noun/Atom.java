@@ -463,7 +463,7 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
   
   public static Atom mote(String s) {
     try {
-      return fromByteArray(s.getBytes("UTF-8"));
+      return fromByteArray(s.getBytes("UTF-8"), Atom.LITTLE_ENDIAN);
     }
     catch (UnsupportedEncodingException e) {
       return null;
@@ -483,6 +483,74 @@ public abstract class Atom extends Noun implements Comparable<Atom> {
         r[i++] = b.booleanValue();
       }
       return r;
+    }
+  }
+  
+  public Atom lsh(byte bloq, int count) {
+    int len = met(bloq);
+    if ( 0 == len ) {
+      return ZERO;
+    }
+    else {
+      int lus = count + len;
+      if ( lus < len ) {
+        throw new Bail();
+      }
+      int[] sal = slaq(bloq, lus);
+      chop(bloq, 0, len, count, sal, this);
+      return malt(sal);
+    }
+  }
+  
+  public Atom rsh(byte bloq, int count) {
+    int len = met(bloq);
+    if ( count >= len ) {
+      return ZERO;
+    }
+    else {
+      int hep = len - count;
+      int[] sal = slaq(bloq, hep);
+      chop(bloq, count, hep, 0, sal, this);
+      return malt(sal);
+    }
+  }
+
+  public Atom peg(Atom b) {
+    if ( ONE == b ) {
+      return this;
+    }
+    
+    int  c = b.met((byte) 0),
+         d = c - 1,
+         e = d << 1;
+    Atom f = b.sub(Atom.fromLong(e)),
+         g = lsh((byte) 0, d);
+
+    return f.add(g);
+  }
+  
+  // inverse of peg
+  public Atom dig(Atom b) {
+    int m = met((byte)0),
+        n = b.met((byte)0),
+        d = m - n;
+
+    if ( d == 0 ) {
+      return equals(b) ? ONE : ZERO;
+    }
+    else if ( d < 0 ) {
+      return ZERO;
+    }
+    else {
+      Atom top = rsh((byte)0, d);
+      if ( !top.equals(b) ) {
+        return ZERO;
+      }
+      else {
+        Atom low  = sub(top.lsh((byte)0, d)),
+             mask = ONE.lsh((byte)0, d);
+        return con(mask, low);
+      }
     }
   }
 }

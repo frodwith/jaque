@@ -137,8 +137,16 @@
 (defmacro lark [sym n]
   (inline-fragment (lark->axis (name sym)) n))
 
-(defn lth [^Atom a ^Atom b]
-  (if (= -1 (.compareTo a b)) yes no))
+(defn lth [a b]
+  (if (if (and (instance? Long a) (instance? Long b))
+        ;; unsigned long comparison
+        (let [c (< a b)
+              d (not= (< a 0) (< b 0))]
+          (and (or c d)
+               (not (and c d))))
+        (= -1 (.compareTo (Atom/coerceAtom a) (Atom/coerceAtom b))))
+    yes
+    no))
 
 (defn dor [a b]
   (loop [a a

@@ -30,11 +30,18 @@ public class DirectAtom extends Atom {
     }
 
     public boolean equals(Object o) {
-        if (!(o instanceof DirectAtom)) {
-            return false;
-        }
-        DirectAtom a = (DirectAtom) o;
-        return val == a.val;
+      if ( o instanceof Long ) {
+        return val == (long) o;
+      }
+      else if ( o instanceof DirectAtom ) {
+        return val == ((DirectAtom) o).val;
+      }
+      else if ( o instanceof Boolean ) {
+        return (boolean) o ? val == 0 : val == 1;
+      }
+      else {
+        return false;
+      }
     }
 
     public int compareTo(Atom b) {

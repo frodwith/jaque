@@ -7,16 +7,16 @@ import jaque.noun.*;
 
 public final class Result implements Seqable {
   public Machine m;
-  public Noun r;
+  public Object r;
 
-  public Result(Machine m, Noun r) {
+  public Result(Machine m, Object r) {
     this.m = m;
     this.r = r;
   }
 
   public Result(ISeq s) {
     this.m = (Machine) s.first();
-    this.r = (Noun) s.next().first();
+    this.r = s.next().first();
   }
 
   public ISeq seq() {

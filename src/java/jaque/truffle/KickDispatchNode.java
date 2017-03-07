@@ -29,17 +29,32 @@ public abstract class KickDispatchNode extends NockNode {
   {
     Object[] arguments = new Object[frags.length];
     for ( int i = 0; i < frags.length; ++i ) {
-      arguments[i] = Noun.coerceNoun(frags[i].fragment(core));
+      arguments[i] = frags[i].fragment(core);
     }
     return getContext(frame).apply(jet, arguments);
   }
+  
+  /* Many frequently kicked cores (kernels and the like) are in fact static. In
+  * practice, however, kicks out of static cores are just consing a context onto
+  * a constant gate. Caching this just slows us down.
+  @Specialization(replaces = "doJet",
+                  limit = "1",
+                  guards = { "core == cachedCore" })
+  protected static Object doStatic(VirtualFrame frame, Cell core, Atom axis,
+    @Cached("core") Cell cachedCore,
+    @Cached("create(getTarget(frame, core, axis))") DirectCallNode callNode,
+    @Cached("staticCall(frame, callNode, core)") Object product)
+  {
+    return product;
+  }
+  */
 
   @Specialization(replaces = "doJet",
                   limit = "1",
                   guards = { "core.getHead() == cachedBattery" })
   protected static Object doCached(VirtualFrame frame, Cell core, Atom axis,
     @Cached("core.getHead()") Object cachedBattery,
-    @Cached("getContext(frame).getKickTarget(core, axis)") CallTarget target)
+    @Cached("getTarget(frame, core, axis)") CallTarget target)
   {
     throw new NockCallException(target, core);
   }
@@ -56,5 +71,13 @@ public abstract class KickDispatchNode extends NockNode {
       frags[i] = new Fragmenter(axes[i]);
     }
     return frags;
+  }
+  
+  protected static CallTarget getTarget(VirtualFrame frame, Cell core, Atom axis) {
+    return getContext(frame).getKickTarget(core, axis);
+  }
+  
+  protected static Object staticCall(VirtualFrame frame, DirectCallNode callNode, Cell core) {
+    return callNode.call(frame, new Object[] { getContext(frame), core });
   }
 }

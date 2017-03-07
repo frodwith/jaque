@@ -20,7 +20,7 @@ public final class Interpreter {
     return b;
   }
 
-  private static Cell forceCell(Noun n) throws Bail {
+  private static Cell forceCell(Object n) throws Bail {
     if (n instanceof Cell) {
       return (Cell) n;
     }
@@ -29,7 +29,7 @@ public final class Interpreter {
     }
   }
 
-  private static Atom forceAtom(Noun n) throws Bail {
+  private static Atom forceAtom(Object n) throws Bail {
     if (n instanceof Atom) {
       return (Atom) n;
     }
@@ -65,8 +65,8 @@ public final class Interpreter {
           Cell   a = forceCell(arguments);
           Result s = nock(machine, subject, a.p()),
                  f = nock(s.m, subject, a.q());
-          subject = s.r;
-          formula = f.r;
+          subject = (Noun) s.r;
+          formula = (Cell) f.r;
           machine = f.m;
           continue;
         }
@@ -103,7 +103,7 @@ public final class Interpreter {
         case 7: {
           Cell   c = forceCell(arguments);
           Result x = nock(machine, subject, c.p());
-          subject  = x.r;
+          subject  = (Noun) x.r;
           machine  = x.m;
           formula  = c.q();
           continue;
@@ -128,7 +128,7 @@ public final class Interpreter {
           Jet    j = x.m.find(forceCell(x.r), a);
           if ( null == j ) {
             machine = x.m;
-            subject = x.r;
+            subject = (Noun) x.r;
             formula = fragment(a, subject);
             continue;
           }
