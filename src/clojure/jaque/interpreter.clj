@@ -18,7 +18,7 @@
       m))
   (^Result escape [^Machine m ^Noun gat ^Noun sam] (prn sam) (e/exit))
   (^Machine declare [m ^Cell core clue]
-    (.declare dash core clue))
+    (assoc m :dash (.declare dash core clue)))
   (^boolean fine [^Machine m ^Cell core]
     (.fine dash core))
   (^Jet find [^Machine m ^Cell core ^Atom axis]
