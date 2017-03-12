@@ -2,14 +2,21 @@ package net.frodwith.jaque.truffle;
 
 import com.oracle.truffle.api.TruffleLanguage;
 
+import clojure.asm.Type;
 import net.frodwith.jaque.data.Cell;
+import net.frodwith.jaque.truffle.nodes.formula.BumpNodeGen;
+import net.frodwith.jaque.truffle.nodes.formula.ComposeNode;
 import net.frodwith.jaque.truffle.nodes.formula.ConsNodeGen;
+import net.frodwith.jaque.truffle.nodes.formula.DeepNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.Formula;
 import net.frodwith.jaque.truffle.nodes.formula.FragmentNode;
+import net.frodwith.jaque.truffle.nodes.formula.IfNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralCellNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralIntArrayNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralLongNode;
 import net.frodwith.jaque.truffle.nodes.formula.NockNode;
+import net.frodwith.jaque.truffle.nodes.formula.PushNode;
+import net.frodwith.jaque.truffle.nodes.formula.SameNodeGen;
 
 public class NockLanguage extends TruffleLanguage<Context> {
 
@@ -66,41 +73,42 @@ public class NockLanguage extends TruffleLanguage<Context> {
                t = TypesGen.asCell(c.tail);
           return new NockNode(parseCell(h), parseCell(t));
         }
-        // TODO: left off here
         case 3:
-          return DeepFormulaNodeGen.create(readFormula((Cell) arg));
+          return DeepNodeGen.create(parseCell(TypesGen.asCell(arg)));
         case 4:
-          return BumpFormulaNodeGen.create(readFormula((Cell) arg));
+          return BumpNodeGen.create(parseCell(TypesGen.asCell(arg)));
         case 5: {
-          Cell c = (Cell) arg;
-          return SameFormulaNodeGen.create(
-            readFormula((Cell) c.getHead()),
-            readFormula((Cell) c.getTail()));
+          Cell c = TypesGen.asCell(arg),
+               h = TypesGen.asCell(c.head),
+               t = TypesGen.asCell(c.tail);
+          return SameNodeGen.create(parseCell(h), parseCell(t));
         }
         case 6: {
-          Cell trel = (Cell) arg;
-          Cell pair = (Cell) trel.getTail();
+          Cell trel = TypesGen.asCell(arg),
+               pair = TypesGen.asCell(trel.tail),
+               one  = TypesGen.asCell(trel.head),
+               two  = TypesGen.asCell(pair.head),
+               tre  = TypesGen.asCell(pair.tail);
 
-          return new CondFormula(
-            readFormula((Cell) trel.getHead()),
-            readFormula((Cell) pair.getHead()),
-            readFormula((Cell) pair.getTail()));
+          return new IfNode(parseCell(one), parseCell(two), parseCell(tre));
         }
         case 7: {
-          Cell c = (Cell) arg;
-          return new ComposeFormula(
-            readFormula((Cell) c.getHead()),
-            readFormula((Cell) c.getTail()));
+          Cell c = TypesGen.asCell(arg),
+               h = TypesGen.asCell(c.head),
+               t = TypesGen.asCell(c.tail);
+
+          return new ComposeNode(parseCell(h), parseCell(t));
         }
         case 8: {
-          Cell c = (Cell) arg;
-          return new PushFormula(
-            readFormula((Cell) c.getHead()),
-            readFormula((Cell) c.getTail()));
+          Cell c = TypesGen.asCell(arg),
+               h = TypesGen.asCell(c.head),
+               t = TypesGen.asCell(c.tail);
+          return new PushNode(parseCell(h), parseCell(t));
         }
         case 9: {
-          Cell c = (Cell) arg;
-          return new KickFormula((Atom) c.getHead(), readFormula((Cell)c.getTail()));
+          Cell c = TypesGen.asCell(arg),
+               t = TypesGen.asCell(c.tail);
+          return new KickNode(c.head, parseCell(t));
         }
         case 10: {
           Cell    cell = (Cell) arg;

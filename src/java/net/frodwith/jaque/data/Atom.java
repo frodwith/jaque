@@ -26,6 +26,10 @@ public class Atom {
   private static final int[] MINIMUM_INDIRECT = new int[] {0, 0, 1};
   public static final long YES = 0L;
   public static final long NO = 1L;
+  
+  public static boolean isZero(Object atom) {
+    return (atom instanceof Long) && 0L == TypesGen.asLong(atom);
+  }
 
   public static boolean equals(Object a, Object b) {
     return ( TypesGen.isLong(a) 

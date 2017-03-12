@@ -15,12 +15,7 @@ public class LiteralLongNode extends SafeFormula {
   }
 
   @Override
-  public long executeLong(VirtualFrame frame, Object subject) {
-    return value;
-  }
-
-  @Override
-  public Object executeSubject(VirtualFrame frame, Object subject) {
+  public long executeLong(VirtualFrame frame) {
     return value;
   }
 

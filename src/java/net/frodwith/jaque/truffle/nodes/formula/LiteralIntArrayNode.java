@@ -15,12 +15,7 @@ public class LiteralIntArrayNode extends SafeFormula {
   }
   
   @Override
-  public int[] executeIntArray(VirtualFrame frame, Object subject) {
-    return value;
-  }
-
-  @Override
-  public Object executeSubject(VirtualFrame frame, Object subject) {
+  public int[] executeIntArray(VirtualFrame frame) {
     return value;
   }
 

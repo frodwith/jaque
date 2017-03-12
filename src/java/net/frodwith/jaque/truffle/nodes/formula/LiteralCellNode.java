@@ -17,11 +17,7 @@ public class LiteralCellNode extends SafeFormula {
   }
 
   @Override
-  public Object executeSubject(VirtualFrame frame, Object subject) {
-    return value;
-  }
-  
-  public Cell executeCell(VirtualFrame frame, Object subject) {
+  public Cell executeCell(VirtualFrame frame) {
     return value;
   }
 

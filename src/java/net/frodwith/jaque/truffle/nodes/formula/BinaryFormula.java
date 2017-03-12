@@ -10,13 +10,15 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 public abstract class BinaryFormula extends SafeFormula {
   protected abstract Formula getLeft();
   protected abstract Formula getRight();
-  protected abstract Object executeBinary(VirtualFrame frame, Object left, Object right);
+  protected abstract Object executeBinary(Object left, Object right);
 
   @Override
-  public Object executeSubject(VirtualFrame frame, Object subject) {
-    Object left = getLeft().executeSafe(frame, subject);
-    Object right = getRight().executeSafe(frame, subject);
+  public Object executeGeneric(VirtualFrame frame) {
+    Object subject = getSubject(frame);
+    Object left = getLeft().executeSafe(frame);
+    setSubject(frame, subject);
+    Object right = getRight().executeSafe(frame);
 
-    return executeBinary(frame, left, right);
+    return executeBinary(left, right);
   }
 }

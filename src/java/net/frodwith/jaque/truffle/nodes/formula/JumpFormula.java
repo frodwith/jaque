@@ -18,10 +18,11 @@ public abstract class JumpFormula extends Formula {
   }
   
   @Override
-  public Object executeSafe(VirtualFrame frame, Object subject) {
+  public Object executeSafe(VirtualFrame frame) {
     CallTarget target;
+    Object subject;
     try {
-      return executeSubject(frame, subject);
+      return executeGeneric(frame);
     }
     catch (KickException k) {
       target  = getContext().getKick(k.core, k.axis);

@@ -12,8 +12,8 @@ public class FragmentNode extends SafeFormula {
   }
 
   @Override
-  public Object executeSubject(VirtualFrame frame, Object subject) {
-    return Noun.fragment(axis, subject);
+  public Object executeGeneric(VirtualFrame frame) {
+    return Noun.fragment(axis, getSubject(frame));
   }
 
 }

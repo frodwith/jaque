@@ -17,7 +17,7 @@ public class JaqueRootNode extends RootNode {
   public Object execute(VirtualFrame frame) {
     Object subject = frame.getArguments()[0];
     JaqueNode.setSubject(frame, subject);
-    return root.executeSafe(frame, subject);
+    return root.executeSafe(frame);
   }
 
 }

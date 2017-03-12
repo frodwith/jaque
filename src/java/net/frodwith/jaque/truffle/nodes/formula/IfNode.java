@@ -1,6 +1,7 @@
 package net.frodwith.jaque.truffle.nodes.formula;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 
 import net.frodwith.jaque.truffle.Bail;
@@ -19,18 +20,23 @@ public class IfNode extends JumpFormula {
   }
 
   @Override
-  public Object executeSubject(VirtualFrame frame, Object subject) {
-    long answer = test.executeLong(frame, subject);
-    if ( 0L == answer ) {
-      condition.profile(true);
-      return yes.executeSubject(frame, subject);
+  public Object executeGeneric(VirtualFrame frame) {
+    Object subject = getSubject(frame);
+    long answer;
+    try {
+      answer = test.executeLong(frame);
+      setSubject(frame, subject);
+      if ( 0L == answer ) {
+        condition.profile(true);
+        return yes.executeGeneric(frame);
+      }
+      else if ( 1L == answer ) {
+        condition.profile(false);
+        return no.executeGeneric(frame);
+      }
     }
-    else if ( 1L == answer ) {
-      condition.profile(false);
-      return no.executeSubject(frame, subject);
+    catch (UnexpectedResultException e) {
     }
-    else {
-      throw new Bail();
-    }
+    throw new Bail();
   }
 }
