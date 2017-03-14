@@ -1,28 +1,49 @@
 package net.frodwith.jaque.truffle;
 
 import com.oracle.truffle.api.TruffleLanguage;
+import com.oracle.truffle.api.impl.FindContextNode;
+import com.oracle.truffle.api.nodes.Node;
 
-import clojure.asm.Type;
+import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
+import net.frodwith.jaque.truffle.driver.AxisArm;
+import net.frodwith.jaque.truffle.driver.Specification;
 import net.frodwith.jaque.truffle.nodes.formula.BumpNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.ComposeNode;
 import net.frodwith.jaque.truffle.nodes.formula.ConsNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.DeepNodeGen;
+import net.frodwith.jaque.truffle.nodes.formula.EscapeNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.Formula;
 import net.frodwith.jaque.truffle.nodes.formula.FragmentNode;
 import net.frodwith.jaque.truffle.nodes.formula.IfNode;
+import net.frodwith.jaque.truffle.nodes.formula.KickNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralCellNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralIntArrayNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralLongNode;
 import net.frodwith.jaque.truffle.nodes.formula.NockNode;
 import net.frodwith.jaque.truffle.nodes.formula.PushNode;
 import net.frodwith.jaque.truffle.nodes.formula.SameNodeGen;
+import net.frodwith.jaque.truffle.nodes.formula.hint.DiscardHintNode;
+import net.frodwith.jaque.truffle.nodes.formula.hint.FastHintNode;
+import net.frodwith.jaque.truffle.nodes.formula.hint.MemoHintNode;
+import net.frodwith.jaque.truffle.nodes.jet.DecrementNodeGen;
 
 public class NockLanguage extends TruffleLanguage<Context> {
+  
+  public static final NockLanguage INSTANCE = new NockLanguage();
 
   @Override
   protected Context createContext(com.oracle.truffle.api.TruffleLanguage.Env env) {
-    return new Context();
+    Specification[] jetDrivers = (Specification[]) env.getConfig().get("jetDrivers");
+    return new Context(jetDrivers);
+  }
+  
+  public Node contextNode() {
+    return createFindContextNode();
+  }
+  
+  public Context context(Node contextNode) {
+    return findContext(contextNode);
   }
 
   @Override
@@ -111,34 +132,35 @@ public class NockLanguage extends TruffleLanguage<Context> {
           return new KickNode(c.head, parseCell(t));
         }
         case 10: {
-          Cell    cell = (Cell) arg;
-          Formula next = readFormula((Cell) cell.getTail());
-          Object  head = cell.getHead();
-          if ( head instanceof Atom ) {
+          Cell    cell = TypesGen.asCell(arg);
+          Formula next = parseCell(TypesGen.asCell(cell.tail));
+          Object  head = cell.head;
+          if ( Atom.isAtom(head) ) {
             if ( Atom.MEMO.equals(head) ) {
-              return new MemoHintFormula(next);
+              return new MemoHintNode(next);
             }
             else {
-              return new StaticHintFormula(Atom.coerceAtom(head), next);
+              // What do you do with static hints you don't recognize? Nothing...
+              return next;
             }
           }
           else {
-            Cell dyn  = (Cell) head;
-            Formula dynF = readFormula((Cell) dyn.getTail());
-            Object kind = dyn.getHead();
+            Cell dyn     = TypesGen.asCell(head);
+            Formula dynF = parseCell(TypesGen.asCell(dyn.tail));
+            Object kind  = dyn.head;
             if ( Atom.FAST.equals(kind) ) {
-              return new FastHintFormula(dynF, next);
+              return new FastHintNode(dynF, next);
             }
             else {
-              return new DynamicHintFormula(Atom.coerceAtom(kind), dynF, next);
+              return new DiscardHintNode(dynF, next);
             }
           }
         }
         case 11: {
-          Cell c = (Cell) arg;
-          return new EscapeFormula(
-            readFormula((Cell) c.getHead()),
-            readFormula((Cell) c.getTail()));
+          Cell c = TypesGen.asCell(arg);
+          return EscapeNodeGen.create(
+              parseCell(TypesGen.asCell(c.head)),
+              parseCell(TypesGen.asCell(c.tail)));
         }
         default: {
           throw new IllegalArgumentException();

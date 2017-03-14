@@ -13,37 +13,37 @@ import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.driver.AxisArm;
 import net.frodwith.jaque.truffle.driver.NamedArm;
-import net.frodwith.jaque.truffle.driver.Driver;
 import net.frodwith.jaque.truffle.driver.Specification;
 import net.frodwith.jaque.truffle.nodes.JaqueRootNode;
+import net.frodwith.jaque.truffle.nodes.jet.JetNode;
 
 public class Context extends ExecutionContext {
   
   private final Map<KickLabel, CallTarget> kicks;
   private final Map<Cell, CallTarget> nocks;
   private final Map<Cell, Location> locations;
-  private final Map<KickLabel, Driver> drivers;
-  private final Map<AxisKey, Driver> installedByAxis;
-  private final Map<NameKey, Driver> installedByName;
+  private final Map<KickLabel,Class<? extends JetNode>> drivers;
+  private final Map<AxisKey,Class<? extends JetNode>> installedByAxis;
+  private final Map<NameKey,Class<? extends JetNode>> installedByName;
   
   public Context(Specification[] drivers) {
     this.kicks = new HashMap<KickLabel, CallTarget>();
     this.nocks = new HashMap<Cell, CallTarget>();
     this.locations = new HashMap<Cell, Location>();
-    this.drivers = new HashMap<KickLabel, Driver>();
-    this.installedByAxis = new HashMap<AxisKey, Driver>();
-    this.installedByName = new HashMap<NameKey, Driver>();
+    this.drivers = new HashMap<KickLabel, Class<? extends JetNode>>();
+    this.installedByAxis = new HashMap<AxisKey, Class<? extends JetNode>>();
+    this.installedByName = new HashMap<NameKey, Class<? extends JetNode>>();
     
     for ( Specification s : drivers ) {
       if ( s instanceof AxisArm ) {
         AxisArm a = (AxisArm) s;
         AxisKey k = new AxisKey(a.label, a.axis);
-        this.installedByAxis.put(k, a.driver);
+        this.installedByAxis.put(k, a.jetClass);
       }
       else {
         NamedArm n = (NamedArm) s;
         NameKey k = new NameKey(n.label, n.name);
-        this.installedByName.put(k, n.driver);
+        this.installedByName.put(k, n.jetClass);
       }
     }
   }
@@ -104,14 +104,14 @@ public class Context extends ExecutionContext {
     }
   }
   
-  public Driver find(Cell core, Object axis) {
+  public Class<? extends JetNode> find(Cell core, Object axis) {
     Cell battery = TypesGen.asCell(core.head);
     KickLabel label = new KickLabel(battery, axis);
     if ( drivers.containsKey(label) ) {
       return drivers.get(label);
     }
     else {
-      Driver driver;
+      Class<? extends JetNode> driver;
       Location loc = locations.get(battery);
       if ( null == loc ) {
         driver = null;

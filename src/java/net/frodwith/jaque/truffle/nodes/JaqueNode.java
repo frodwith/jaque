@@ -22,7 +22,6 @@ public class JaqueNode extends Node {
   }
   
   /* Nock's only local variable is the subject. */
-      
   public static Object getSubject(VirtualFrame frame) {
     try {
       return frame.getObject(SUBJECT_SLOT);

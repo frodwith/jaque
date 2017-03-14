@@ -1,5 +1,6 @@
 package net.frodwith.jaque.data;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
 import gnu.math.MPN;
@@ -24,11 +25,19 @@ import net.frodwith.jaque.truffle.TypesGen;
 
 public class Atom {
   private static final int[] MINIMUM_INDIRECT = new int[] {0, 0, 1};
+  public static final boolean BIG_ENDIAN = true;
+  public static final boolean LITTLE_ENDIAN = false;
   public static final long YES = 0L;
   public static final long NO = 1L;
+  public static final Object FAST = mote("fast");
+  public static final Object MEMO = mote("memo");
   
   public static boolean isZero(Object atom) {
-    return (atom instanceof Long) && 0L == TypesGen.asLong(atom);
+    return TypesGen.isLong(atom) && 0L == TypesGen.asLong(atom);
+  }
+
+  public static boolean isAtom(Object noun) {
+    return TypesGen.isLong(noun) || TypesGen.isIntArray(noun);
   }
 
   public static boolean equals(Object a, Object b) {
@@ -38,6 +47,94 @@ public class Atom {
         || ( TypesGen.isIntArray(a)
         && TypesGen.isIntArray(b)
         && Arrays.equals(TypesGen.asIntArray(a), TypesGen.asIntArray(b)));
+  }
+  
+  private static void reverseBytes(byte[] a) {
+    int i, j;
+    byte b;
+    for (i = 0, j = a.length - 1; j > i; ++i, --j) {
+      b = a[i];
+      a[i] = a[j];
+      a[j] = b;
+    }
+  }
+
+  public static Object fromByteArray(byte[] pill, boolean endian) {
+    int len  = pill.length;
+    int trim = len % 4;
+
+    if (endian == BIG_ENDIAN) {
+      pill = Arrays.copyOf(pill, len);
+      reverseBytes(pill);
+    }
+
+    if (trim > 0) {
+      int    nlen = len + (4-trim);
+      byte[] npil = new byte[nlen];
+      System.arraycopy(pill, 0, npil, 0, len);
+      pill = npil;
+      len = nlen;
+    }
+
+    int   size  = len / 4;
+    int[] words = new int[size];
+    int i, b, w;
+    for (i = 0, b = 0; i < size; ++i) {
+      w =  (pill[b++] << 0)  & 0x000000FF;
+      w ^= (pill[b++] << 8)  & 0x0000FF00;
+      w ^= (pill[b++] << 16) & 0x00FF0000;
+      w ^= (pill[b++] << 24) & 0xFF000000;
+      words[i] = w;
+    }
+
+    return normalize(words);
+  }
+  
+  public static byte[] toByteArray(Object atom, boolean endian) {
+    if (isZero(atom)) {
+      return new byte[1];
+    }
+    int[]  wor = TypesGen.asImplicitIntArray(atom);
+    int    bel = measure((byte)3, atom);
+    byte[] buf = new byte[bel];
+    int    w, i, b;
+    for (i = 0, b = 0;;) {
+      w = wor[i++];
+
+      buf[b++] = (byte) ((w & 0x000000FF) >>> 0);
+      if (b >= bel) break;
+
+      buf[b++] = (byte) ((w & 0x0000FF00) >>> 8);
+      if (b >= bel) break;
+
+      buf[b++] = (byte) ((w & 0x00FF0000) >>> 16);
+      if (b >= bel) break;
+
+      buf[b++] = (byte) ((w & 0xFF000000) >>> 24);
+      if (b >= bel) break;
+    }
+    if (endian == BIG_ENDIAN) {
+      reverseBytes(buf);
+    }
+    return buf;
+  }
+  
+  public static String cordToString(Object atom) {
+    try {
+      return new String(toByteArray(atom, LITTLE_ENDIAN), "UTF-8");
+    }
+    catch (UnsupportedEncodingException e) {
+      return null;
+    }
+  }
+
+  public static Object mote(String s) {
+    try {
+      return fromByteArray(s.getBytes("UTF-8"), LITTLE_ENDIAN);
+    }
+    catch (UnsupportedEncodingException e) {
+      return null;
+    }
   }
   
   public static long increment(long atom) throws ArithmeticException {
@@ -83,17 +180,17 @@ public class Atom {
     }
   }
   
-  public static int[] decrement(int[] atom) {
+  public static Object decrement(int[] atom) {
+    int[] result;
     if ( atom[0] == 0 ) {
-      int[] small = new int[atom.length - 1];
-      Arrays.fill(small, 0xFFFFFFFF);
-      return small;
+      result = new int[atom.length - 1];
+      Arrays.fill(result, 0xFFFFFFFF);
     }
     else {
-      int[] copy = Arrays.copyOf(atom, atom.length);
-      copy[0] -= 1;
-      return copy;
+      result = Arrays.copyOf(atom, atom.length);
+      result[0] -= 1;
     }
+    return normalize(result);
   }
   
   public static Object decrement(Object atom) {

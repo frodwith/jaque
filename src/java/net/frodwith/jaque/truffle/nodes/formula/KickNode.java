@@ -24,7 +24,7 @@ public class KickNode extends JumpFormula {
     Cell core;
     try {
       core = coreFormula.executeCell(frame);
-      return dispatchNode.executeKick(frame, core, axis);
+      return dispatchNode.executeKick(core, axis);
     } 
     catch (UnexpectedResultException e) {
       throw new Bail();
