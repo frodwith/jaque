@@ -1,31 +1,25 @@
 package net.frodwith.jaque.truffle.nodes;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.NodeField;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node;
 
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.truffle.Context;
-import net.frodwith.jaque.truffle.NockLanguage;
 import net.frodwith.jaque.truffle.TailException;
 import net.frodwith.jaque.truffle.nodes.jet.JetNode;
 
+@NodeField(name="context", type=Context.class)
 public abstract class KickDispatchNode extends JaqueNode {
-  @Child private Node contextNode;
-
-  protected KickDispatchNode() {
-    this.contextNode = NockLanguage.INSTANCE.contextNode();
-  }
 
   public abstract Object executeKick(Cell core, Object axis);
-  
-  public Context getContext() {
-    return NockLanguage.INSTANCE.context(contextNode);
-  }
+  public abstract Context getContext();
   
   @Specialization(limit  = "1",
                   guards = { "!(jetNode == null)", 
@@ -34,7 +28,7 @@ public abstract class KickDispatchNode extends JaqueNode {
   protected Object doJet(Cell core, Object axis,
     @Cached("core.head") Object cachedBattery,
     @Cached("find(core, axis)") JetNode jetNode) {
-    return jetNode.executeJet(core);
+    return jetNode.doJet(core);
   }
   
   @Specialization(replaces = "doJet",
@@ -60,23 +54,30 @@ public abstract class KickDispatchNode extends JaqueNode {
   }
   
   protected JetNode find(Cell core, Object axis) {
-    Class<? extends JetNode> driver = getContext().find(core, axis);
+    Context context = getContext();
+    Class<? extends JetNode> driver = context.find(core, axis);
     if ( null == driver ) {
       return null;
     }
     else {
       try {
         CompilerDirectives.transferToInterpreter();
-        return driver.newInstance();
+        Constructor<? extends JetNode> cons = driver.getConstructor(Context.class);
+        return cons.newInstance(context);
+      }
+      catch (NoSuchMethodException e) {
+        e.printStackTrace();
       }
       catch (IllegalAccessException e) {
         e.printStackTrace();
-        return null;
       }
       catch (InstantiationException e) {
         e.printStackTrace();
-        return null;
       }
+      catch (InvocationTargetException e) {
+        e.printStackTrace();
+      }
+      return null;
     }
   }
   

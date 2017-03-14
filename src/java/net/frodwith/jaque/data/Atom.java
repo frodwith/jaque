@@ -4,7 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
 import gnu.math.MPN;
-import net.frodwith.jaque.truffle.Bail;
+import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.truffle.TypesGen;
 
 /* Atoms are primitive (unboxed) longs unless they don't fit
@@ -29,15 +29,11 @@ public class Atom {
   public static final boolean LITTLE_ENDIAN = false;
   public static final long YES = 0L;
   public static final long NO = 1L;
-  public static final Object FAST = mote("fast");
-  public static final Object MEMO = mote("memo");
+  public static final Object FAST = stringToCord("fast");
+  public static final Object MEMO = stringToCord("memo");
   
   public static boolean isZero(Object atom) {
     return TypesGen.isLong(atom) && 0L == TypesGen.asLong(atom);
-  }
-
-  public static boolean isAtom(Object noun) {
-    return TypesGen.isLong(noun) || TypesGen.isIntArray(noun);
   }
 
   public static boolean equals(Object a, Object b) {
@@ -128,7 +124,7 @@ public class Atom {
     }
   }
 
-  public static Object mote(String s) {
+  public static Object stringToCord(String s) {
     try {
       return fromByteArray(s.getBytes("UTF-8"), LITTLE_ENDIAN);
     }
@@ -202,14 +198,24 @@ public class Atom {
     }
   }
   
+  public static boolean isLessThanUnsigned(long n1, long n2) {
+    boolean comp = (n1 < n2);
+    if ((n1 < 0) != (n2 < 0)) {
+      comp = !comp;
+    }
+    return comp;
+  }
+  
   public static int compare(long a, long b) {
-    if ( a == b ) {
+    
+    if (a == b) {
       return 0;
     }
     else {
-      boolean c = a < b,
-              d = (a < 0) != (b < 0),
-            lth = (c || d) || !(c && d);
+      boolean lth = a < b;
+      if ( (a < 0) != (b < 0) ) {
+        lth = !lth;
+      }
       return lth ? -1 : 1;
     }
   }
@@ -296,13 +302,22 @@ public class Atom {
   public static int measure(byte bloq, Object atom) {
     int gal, daz;
 
-    if ( atom instanceof Long ) {
+    if ( TypesGen.isLong(atom) ) {
       long v = (long) atom;
       if ( 0 == v ) {
         return 0;
       }
       else {
-        gal = ((int) v >>> 32) == 0 ? 0 : 1;
+        int left = (int) v >>> 32;
+        if ( left == 0 ) {
+          gal = 0;
+          daz = (int) v;
+        }
+        else {
+          gal = 1;
+          daz = left; 
+        }
+        gal = (v >>> 32) == 0 ? 0 : 1;
         daz = (int) v;
       }
     }
@@ -490,8 +505,8 @@ public class Atom {
     if ( b < 2 ) {
       throw new Bail();
     }
-    int c = 1 << (b - 1),
-        d = 1 << (b - 2);
+    long c = 1 << (b - 1),
+         d = 1 << (b - 2);
     Object e = subtract(atom, c);
     return bitwiseOr(e, d);
   }
@@ -507,7 +522,7 @@ public class Atom {
   public static Object normalize(int[] words) {
     int bad = 0;
 
-    for ( int i = words.length; i >= 0; --i) {
+    for ( int i = words.length - 1; i >= 0; --i) {
       if ( words[i] == 0 ) {
         ++bad;
       }
@@ -525,7 +540,9 @@ public class Atom {
     }
     else {
       long v = words[0];
-      v ^= words[1] << 32;
+      if (words.length > 1) {
+        v ^= words[1] << 32;
+      }
       return v;
     }
   }

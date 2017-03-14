@@ -1,4 +1,4 @@
-package net.frodwith.jaque.truffle;
+package net.frodwith.jaque;
 
 public class Bail extends RuntimeException {
 

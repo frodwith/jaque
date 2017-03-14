@@ -1,5 +1,7 @@
 package net.frodwith.jaque.data;
 
+import net.frodwith.jaque.truffle.TypesGen;
+
 /* Because we must use Object fields for the head and the tail to accomodate the atom
  * types that we are using, it is unfortunately possible to construct a cell of any
  * arbitrary Java objects (including, sometimes frustratingly, cells of ints instead of
@@ -54,10 +56,14 @@ public class Cell {
   }
 
   public boolean equals(Object o) {
-    return (o instanceof Cell) && equals(this, (Cell) o);
+    return TypesGen.isCell(o) && equals(this, TypesGen.asCell(o));
   }
   
   public int hashCode() {
     return mug(this);
+  }
+  
+  public String toString() {
+    return Noun.toString(this);
   }
 }

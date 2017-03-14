@@ -9,6 +9,13 @@ import net.frodwith.jaque.data.Cell;
 public class Types {
   @ImplicitCast
   public static int[] castIntArray(long v) {
-    return new int[] { (int) v, (int) v >>> 32 };
+    int low = (int) v;
+    int high = (int) (v >>> 32);
+    if ( high == 0 ) {
+      return new int[] { low };
+    }
+    else {
+      return new int[] { low, high };
+    }
   }
 }

@@ -8,18 +8,18 @@ import net.frodwith.jaque.truffle.TypesGen;
 import net.frodwith.jaque.truffle.nodes.JaqueNode;
 
 public abstract class Formula extends JaqueNode {
+  public abstract Object doSafe(VirtualFrame frame);
   public abstract Object executeGeneric(VirtualFrame frame);
-  public abstract Object executeSafe(VirtualFrame frame);
 
   public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
-    return TypesGen.expectLong(executeGeneric(frame));
+    return TypesGen.expectLong(executeSafe(frame));
   }
 
   public int[] executeIntArray(VirtualFrame frame) throws UnexpectedResultException {
-    return TypesGen.expectIntArray(executeGeneric(frame));
+    return TypesGen.expectIntArray(executeSafe(frame));
   }
   
   public Cell executeCell(VirtualFrame frame) throws UnexpectedResultException {
-    return TypesGen.expectCell(executeGeneric(frame));
+    return TypesGen.expectCell(executeSafe(frame));
   }
 }

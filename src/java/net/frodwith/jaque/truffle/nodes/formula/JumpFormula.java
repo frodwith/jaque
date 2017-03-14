@@ -10,7 +10,7 @@ public abstract class JumpFormula extends Formula {
   @Child private JumpNode jump = JumpNodeGen.create();
   
   @Override
-  public Object executeSafe(VirtualFrame frame) {
+  public Object doSafe(VirtualFrame frame) {
     try {
       return executeGeneric(frame);
     }

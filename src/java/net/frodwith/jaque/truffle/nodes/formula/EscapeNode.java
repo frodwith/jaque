@@ -1,9 +1,12 @@
 package net.frodwith.jaque.truffle.nodes.formula;
 
+import com.oracle.truffle.api.dsl.NodeField;
 import com.oracle.truffle.api.dsl.Specialization;
 
-import net.frodwith.jaque.truffle.Bail;
+import net.frodwith.jaque.Bail;
+import net.frodwith.jaque.truffle.Context;
 
+@NodeField(name="context", type=Context.class)
 public abstract class EscapeNode extends BinaryFormula {
   @Specialization
   public Object escape(Object gate, Object sample) {

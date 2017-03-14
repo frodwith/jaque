@@ -1,38 +1,25 @@
 (ns jaque.interpreter-test
   (:refer-clojure :exclude [atom])
   (:require [clojure.test :refer :all]
-            [slingshot.test :refer :all]
-            [jaque.jets.jet :refer [defjet ignore-machine]]
-            [jaque.constants :refer :all]
-            [jaque.noun.box :refer :all]
-            [jaque.noun.math :as math]
-            [jaque.error :as e]
-            [jaque.interpreter :refer [empty-machine]]
-            [jaque.jets.dashboard :refer [empty-dashboard]])
-  (:import jaque.truffle.NockLanguage
-           jaque.noun.Atom
-           jaque.interpreter.Interpreter
-           jaque.interpreter.Bail
-           jaque.interpreter.Result))
-
-(defjet math-add [add math kmat] - [+<- +<+] (ignore-machine math/add))
-(defjet math-sub [sub math kmat] - [+<- +<+] (ignore-machine math/sub))
-(defjet math-dec [dec math kmat] - [+<]
-  (fn [m a]
-    (Result. (assoc m :dec-count (inc (:dec-count m)))
-             (math/dec a))))
-(defjet math-lth [lth math kmat] - [+<- +<+] (ignore-machine math/lth))
+            [jaque.noun :refer :all])
+  (:import net.frodwith.jaque.Bail
+           net.frodwith.jaque.truffle.Context
+           (net.frodwith.jaque.truffle.driver Specification AxisArm)
+           (net.frodwith.jaque.truffle.nodes.jet DecrementNode AddNode SubtractNode LessThanNode)))
 
 (def math-kernel-formula
   (noun [7 [1 :kmat] 7 [8 [1 1 :kmat] 10 [:fast 1 :kmat [1 0] 0] 0 1] 8 [1 [7 [8 [1 0 0] [1 6 [5 [1 0] 0 12] [0 13] 9 2 [0 2] [[8 [9 47 0 7] 9 2 [0 4] [0 28] 0 11] 4 0 13] 0 7] 0 1] 10 [:fast 1 :add [0 7] 0] 0 1] [7 [8 [1 0 0] [1 6 [6 [5 [0 12] 0 13] [1 1] 1 0] [6 [8 [1 6 [5 [1 0] 0 28] [1 0] 6 [6 [6 [5 [1 0] 0 29] [1 1] 1 0] [6 [9 2 [0 2] [0 6] [[8 [9 47 0 15] 9 2 [0 4] [0 60] 0 11] 8 [9 47 0 15] 9 2 [0 4] [0 61] 0 11] 0 15] [1 0] 1 1] 1 1] [1 0] 1 1] 9 2 0 1] [1 0] 1 1] 1 1] 0 1] 10 [:fast 1 :lth [0 7] 0] 0 1] [7 [8 [1 0] [1 10 [:memo 1 0] 8 [1 6 [8 [9 10 0 15] 9 2 [0 4] [[0 30] 7 [0 3] 1 3] 0 11] [1 1] 8 [8 [9 47 0 15] 9 2 [0 4] [0 30] 0 11] 8 [9 4 0 31] 9 2 [0 4] [[7 [0 3] 9 2 [0 6] [0 14] [0 2] 0 31] 7 [0 3] 9 2 [0 6] [0 14] [8 [9 47 0 31] 9 2 [0 4] [0 6] 0 11] 0 31] 0 11] 9 2 0 1] 0 1] 10 [:fast 1 :fib [0 7] 0] 0 1] [7 [8 [1 0 0] [1 6 [5 [1 0] 0 13] [0 12] 9 2 [0 2] [[8 [9 47 0 7] 9 2 [0 4] [0 28] 0 11] 8 [9 47 0 7] 9 2 [0 4] [0 29] 0 11] 0 7] 0 1] 10 [:fast 1 :sub [0 7] 0] 0 1] 7 [8 [1 0] [1 6 [5 [1 0] 0 6] [0 0] 8 [1 0] 8 [1 6 [5 [0 30] 4 0 6] [0 6] 9 2 [0 2] [4 0 6] 0 7] 9 2 0 1] 0 1] 10 [:fast 1 :dec [0 7] 0] 0 1] 10 [:fast 1 :math [0 3] [:add 9 4 0 1] [:sub 9 46 0 1] [:dec 9 47 0 1] [:fib 9 22 0 1] 0] 0 1]))
 
-(def m0 (assoc empty-machine :dash (-> empty-dashboard
-                                       (.install math-add)
-                                       (.install math-sub)
-                                       (.install math-dec)
-                                       (.install math-lth))))
+(def context (Context. (into-array Specification 
+                                   [(AxisArm. "kmat/math/dec" 2 (class DecrementNode))
+                                    (AxisArm. "kmat/math/add" 2 (class AddNode))
+                                    (AxisArm. "kmat/math/sub" 2 (class SubtractNode))
+                                    (AxisArm. "kmat/math/lth" 2 (class LessThanNode))])))
 
-(defn test-nock [nock]
+(defn nock [bus fol]
+  (.nock context bus fol))
+
+(deftest test-nock
   (testing "examples from nock tutorial"
     (doseq [[[sub fom] res msg]
             [[[[[4 5] [6 14 15]] [0 7]]
@@ -68,6 +55,9 @@
              [[42 [7 [4 0 1] [4 0 1]]]
               44
               "composed (7) increment"]
+             [[[10 20] [8 [0 2] [5 [0 2] [0 6]]]]
+              0
+              "push equals"]
              [[42 [8 [4 0 1] [0 1]]]
               [43 42]
               "op 8"]
@@ -81,27 +71,12 @@
               41
               "decrement"]
              ]]
-      (is (= (nock empty-machine (noun sub) (noun fom)) [empty-machine (noun res)]) msg)))
-  
+      (is (= (nock (noun sub) (noun fom)) (noun res)) msg)))
+
   (testing "bad-fragment"
-    (is (thrown+? [:type :jaque.error/bail :bail-type :exit]
-                  (nock empty-machine a0 (noun [0 0])))))
+    (is (thrown? Bail (nock 0 (noun [0 0])))))
+
   (testing "math-kernel"
-    (let [[m1 ken] (nock m0 a0 math-kernel-formula)
-          [m2 r]   (nock (assoc m1 :dec-count 0) ken (noun [8 [9 22 0 1] 9 2 [0 4] [1 15] 0 11]))]
-      (is (> (:dec-count m2) 0))
-      (is (= (atom 610) r)))))
-
-(defn wrap [nock]
-  (fn [m s f]
-    (try
-      (let [^Result r (nock m s f)]
-        [(.m r) (.r r)])
-    (catch Bail ex
-      (e/exit)))))
-
-(deftest u3-inspired
-  (test-nock (wrap #(Interpreter/nock %1 %2 %3))))
-
-(deftest truffle
-  (test-nock (wrap #(NockLanguage/nock %1 %2 %3))))
+    (let [ken (nock 0 math-kernel-formula)
+          r   (nock ken (noun [8 [9 22 0 1] 9 2 [0 4] [1 15] 0 11]))]
+      (is (= 610 r)))))

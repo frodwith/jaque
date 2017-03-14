@@ -10,6 +10,8 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
+import net.frodwith.jaque.data.Noun;
+import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.NockLanguage;
 import net.frodwith.jaque.truffle.TypesGen;
 import net.frodwith.jaque.truffle.nodes.formula.Formula;
@@ -19,10 +21,11 @@ import net.frodwith.jaque.truffle.nodes.formula.Formula;
  */
 public class FastHintNode extends DynamicHintFormula {
   @Child private Node contextNode;
+  private final Context context;
 
-  public FastHintNode(Formula hint, Formula next) {
+  public FastHintNode(Context context, Formula hint, Formula next) {
     super(hint, next);
-    this.contextNode = NockLanguage.INSTANCE.contextNode();
+    this.context = context;
   }
 
   public Object executeGeneric(VirtualFrame frame) {
@@ -36,8 +39,7 @@ public class FastHintNode extends DynamicHintFormula {
     Clue clue = Clue.parse(rawClue);
     if ( TypesGen.isCell(product) && null != clue ) {
       Cell core = TypesGen.asCell(product);
-      NockLanguage.INSTANCE.context(contextNode)
-        .register(core, clue.name, clue.parentAxis, clue.hooks);
+      context.register(core, clue.name, clue.parentAxis, clue.hooks);
     }
 
     // possibly we could discard to next, but if hint is constant
@@ -114,7 +116,7 @@ public class FastHintNode extends DynamicHintFormula {
       if ( Cell.equals(CONSTANT_ZERO, f) ) {
         return 0L;
       }
-      if ( !Atom.isZero(f.head) || !Atom.isAtom(f.tail) ) {
+      if ( !Noun.isAtom(f.tail) || !Atom.isZero(f.head) ) {
         throw new ClueParsingException();
       }
       return f.tail;
@@ -124,15 +126,15 @@ public class FastHintNode extends DynamicHintFormula {
       nock = skipHints(nock);
       Cell f = TypesGen.asCell(nock);
       Object op = f.head;
-      if ( Atom.isAtom(op) ) {
+      if ( Noun.isAtom(op) ) {
         if ( Atom.equals(0L, op) ) {
-          if ( Atom.isAtom(f.tail) ) {
+          if ( Noun.isAtom(f.tail) ) {
             return f.tail;
           }
         }
         else if ( Atom.equals(9L, op) ) {
           Cell rest = TypesGen.asCell(f.tail);
-          if ( Atom.isAtom(rest.head) 
+          if ( Noun.isAtom(rest.head) 
               && Cell.equals(CONSTANT_FRAG, TypesGen.asCell(rest.tail)) )
           {
             return rest.head;
@@ -149,7 +151,7 @@ public class FastHintNode extends DynamicHintFormula {
         Cell pair = TypesGen.asCell(list);
         Cell i = TypesGen.asCell(pair.head);
         Object t = i.head;
-        if ( !Atom.isAtom(t) ) {
+        if ( !Noun.isAtom(t) ) {
           throw new ClueParsingException();
         }
         String term = Atom.cordToString(i.head);

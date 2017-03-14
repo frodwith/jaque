@@ -1,5 +1,6 @@
 package net.frodwith.jaque.truffle.nodes;
 
+import com.oracle.truffle.api.dsl.NodeField;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
@@ -8,6 +9,7 @@ import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 
+import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.Types;
 
 @TypeSystemReference(Types.class)

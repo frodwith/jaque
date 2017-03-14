@@ -1,25 +1,13 @@
 package net.frodwith.jaque.truffle.nodes.jet;
 
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.dsl.NodeField;
 
 import net.frodwith.jaque.data.Cell;
-import net.frodwith.jaque.truffle.TypesGen;
+import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.nodes.JaqueNode;
 
+@NodeField(name="context", type=Context.class)
 public abstract class JetNode extends JaqueNode {
-  public abstract Object executeJet(Cell core);
-  
-  public long executeLong(Cell core) throws UnexpectedResultException {
-    return TypesGen.expectLong(executeJet(core));
-  }
-
-  public int[] executeIntArray(Cell core) throws UnexpectedResultException {
-    return TypesGen.expectIntArray(executeJet(core));
-  }
-
-  public Cell executeCell(Cell core) throws UnexpectedResultException {
-    return TypesGen.expectCell(executeJet(core));
-  }
-  
+  public abstract Context getContext();
+  public abstract Object doJet(Cell core);
 }

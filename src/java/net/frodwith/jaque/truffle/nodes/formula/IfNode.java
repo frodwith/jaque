@@ -4,7 +4,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 
-import net.frodwith.jaque.truffle.Bail;
+import net.frodwith.jaque.Bail;
 
 public class IfNode extends JumpFormula {
   @Child private Formula test;
