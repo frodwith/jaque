@@ -4,7 +4,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.data.Noun;
 
-public class FragmentNode extends SafeFormula {
+public class FragmentNode extends FormulaNode {
   private Object axis;
   
   public FragmentNode(Object axis) {

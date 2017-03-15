@@ -8,32 +8,13 @@ import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
+import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.Types;
+import net.frodwith.jaque.truffle.TypesGen;
 
 @TypeSystemReference(Types.class)
-public class JaqueNode extends Node {
-  public static final FrameDescriptor DESCRIPTOR;
-  private static final FrameSlot SUBJECT_SLOT;
-
-  static {
-    DESCRIPTOR = new FrameDescriptor();
-    SUBJECT_SLOT = DESCRIPTOR.addFrameSlot("subject");
-    SUBJECT_SLOT.setKind(FrameSlotKind.Object);
-  }
-  
-  /* Nock's only local variable is the subject. */
-  public static Object getSubject(VirtualFrame frame) {
-    try {
-      return frame.getObject(SUBJECT_SLOT);
-    }
-    catch (FrameSlotTypeException e) {
-      throw new RuntimeException();
-    }
-  }
-
-  public static void setSubject(VirtualFrame frame, Object subject) {
-    frame.setObject(SUBJECT_SLOT, subject);
-  }
+public abstract class JaqueNode extends Node {
 }

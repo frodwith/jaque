@@ -5,14 +5,14 @@ import java.util.Map;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-import net.frodwith.jaque.truffle.nodes.formula.Formula;
+import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 import net.frodwith.jaque.truffle.nodes.formula.JumpFormula;
 
 public class MemoHintNode extends JumpFormula {
   private final Map<Object,Object> cache;
-  @Child private Formula next;
+  @Child private FormulaNode next;
   
-  public MemoHintNode(Formula next) {
+  public MemoHintNode(FormulaNode next) {
     this.next = next;
     this.cache = new HashMap<Object, Object>();
   }

@@ -1,13 +1,22 @@
 package net.frodwith.jaque.truffle.nodes.jet;
 
+import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeField;
+import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.truffle.Context;
+import net.frodwith.jaque.truffle.nodes.FunctionNode;
 import net.frodwith.jaque.truffle.nodes.JaqueNode;
 
-@NodeField(name="context", type=Context.class)
-public abstract class JetNode extends JaqueNode {
-  public abstract Context getContext();
-  public abstract Object doJet(Cell core);
+public class JetNode extends FunctionNode {
+  @Child private ImplementationNode impl;
+  
+  public JetNode(ImplementationNode impl) {
+    this.impl = impl;
+  }
+  
+  public Object executeGeneric(VirtualFrame frame) {
+    return impl.doJet(getSubject(frame));
+  }
 }

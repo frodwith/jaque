@@ -6,13 +6,13 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 
 import net.frodwith.jaque.Bail;
 
-public class IfNode extends JumpFormula {
-  @Child private Formula test;
-  @Child private Formula yes;
-  @Child private Formula no;
+public class IfNode extends FormulaNode {
+  @Child private FormulaNode test;
+  @Child private FormulaNode yes;
+  @Child private FormulaNode no;
   private final ConditionProfile condition; 
   
-  public IfNode(Formula test, Formula yes, Formula no) {
+  public IfNode(FormulaNode test, FormulaNode yes, FormulaNode no) {
     this.test = test;
     this.yes = yes;
     this.no = no;

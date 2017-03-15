@@ -27,13 +27,14 @@ import net.frodwith.jaque.truffle.nodes.formula.SameNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.hint.DiscardHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.FastHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.MemoHintNode;
-import net.frodwith.jaque.truffle.nodes.formula.Formula;
+import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 import net.frodwith.jaque.truffle.nodes.formula.FragmentNode;
 import net.frodwith.jaque.truffle.nodes.formula.IfNode;
 import net.frodwith.jaque.truffle.nodes.formula.KickNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralCellNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralIntArrayNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralLongNode;
+import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
 import net.frodwith.jaque.truffle.nodes.jet.JetNode;
 
 public class Context {
@@ -41,17 +42,17 @@ public class Context {
   private final Map<KickLabel, CallTarget> kicks;
   private final Map<Cell, CallTarget> nocks;
   private final Map<Cell, Location> locations;
-  private final Map<KickLabel,Class<? extends JetNode>> drivers;
-  private final Map<AxisKey,Class<? extends JetNode>> installedByAxis;
-  private final Map<NameKey,Class<? extends JetNode>> installedByName;
+  private final Map<KickLabel,Class<? extends ImplementationNode>> drivers;
+  private final Map<AxisKey,Class<? extends ImplementationNode>> installedByAxis;
+  private final Map<NameKey,Class<? extends ImplementationNode>> installedByName;
   
   public Context(Specification[] drivers) {
     this.kicks = new HashMap<KickLabel, CallTarget>();
     this.nocks = new HashMap<Cell, CallTarget>();
     this.locations = new HashMap<Cell, Location>();
-    this.drivers = new HashMap<KickLabel, Class<? extends JetNode>>();
-    this.installedByAxis = new HashMap<AxisKey, Class<? extends JetNode>>();
-    this.installedByName = new HashMap<NameKey, Class<? extends JetNode>>();
+    this.drivers = new HashMap<KickLabel, Class<? extends ImplementationNode>>();
+    this.installedByAxis = new HashMap<AxisKey, Class<? extends ImplementationNode>>();
+    this.installedByName = new HashMap<NameKey, Class<? extends ImplementationNode>>();
     
     if ( null != drivers ) {
       for ( Specification s : drivers ) {
@@ -69,14 +70,14 @@ public class Context {
     }
   }
   
-  public Formula parseCell(Cell src) {
+  public FormulaNode parseCell(Cell src, boolean tail) {
     Object op  = src.head,
            arg = src.tail;
 
     if ( TypesGen.isCell(op) ) {
       return ConsNodeGen.create(
-          parseCell(TypesGen.asCell(op)),
-          parseCell(TypesGen.asCell(arg)));
+          parseCell(TypesGen.asCell(op), false),
+          parseCell(TypesGen.asCell(arg), false));
     }
     else {
       switch ( (int) TypesGen.asLong(op) ) {
@@ -98,17 +99,19 @@ public class Context {
           Cell c = TypesGen.asCell(arg),
                h = TypesGen.asCell(c.head),
                t = TypesGen.asCell(c.tail);
-          return new NockNode(this, parseCell(h), parseCell(t));
+          return new NockNode(this, tail, parseCell(h, false), parseCell(t, false));
         }
         case 3:
-          return DeepNodeGen.create(parseCell(TypesGen.asCell(arg)));
+          return DeepNodeGen.create(parseCell(TypesGen.asCell(arg), false));
         case 4:
-          return BumpNodeGen.create(parseCell(TypesGen.asCell(arg)));
+          return BumpNodeGen.create(parseCell(TypesGen.asCell(arg), false));
         case 5: {
           Cell c = TypesGen.asCell(arg),
                h = TypesGen.asCell(c.head),
                t = TypesGen.asCell(c.tail);
-          return SameNodeGen.create(parseCell(h), parseCell(t));
+          return SameNodeGen.create(
+              parseCell(h, false),
+              parseCell(t, false));
         }
         case 6: {
           Cell trel = TypesGen.asCell(arg),
@@ -117,29 +120,36 @@ public class Context {
                two  = TypesGen.asCell(pair.head),
                tre  = TypesGen.asCell(pair.tail);
 
-          return new IfNode(parseCell(one), parseCell(two), parseCell(tre));
+          return new IfNode(
+              parseCell(one, false),
+              parseCell(two, tail),
+              parseCell(tre, tail));
         }
         case 7: {
           Cell c = TypesGen.asCell(arg),
                h = TypesGen.asCell(c.head),
                t = TypesGen.asCell(c.tail);
 
-          return new ComposeNode(parseCell(h), parseCell(t));
+          return new ComposeNode(
+              parseCell(h, false), 
+              parseCell(t, tail));
         }
         case 8: {
           Cell c = TypesGen.asCell(arg),
                h = TypesGen.asCell(c.head),
                t = TypesGen.asCell(c.tail);
-          return new PushNode(parseCell(h), parseCell(t));
+          return new PushNode(
+              parseCell(h, false), 
+              parseCell(t, tail));
         }
         case 9: {
           Cell c = TypesGen.asCell(arg),
                t = TypesGen.asCell(c.tail);
-          return new KickNode(this, c.head, parseCell(t));
+          return new KickNode(this, tail, c.head, parseCell(t, false));
         }
         case 10: {
           Cell    cell = TypesGen.asCell(arg);
-          Formula next = parseCell(TypesGen.asCell(cell.tail));
+          FormulaNode next = parseCell(TypesGen.asCell(cell.tail), tail);
           Object  head = cell.head;
           if ( Noun.isAtom(head) ) {
             if ( Atom.MEMO.equals(head) ) {
@@ -152,7 +162,7 @@ public class Context {
           }
           else {
             Cell dyn     = TypesGen.asCell(head);
-            Formula dynF = parseCell(TypesGen.asCell(dyn.tail));
+            FormulaNode dynF = parseCell(TypesGen.asCell(dyn.tail), false);
             Object kind  = dyn.head;
             if ( Atom.FAST.equals(kind) ) {
               return new FastHintNode(this, dynF, next);
@@ -165,8 +175,8 @@ public class Context {
         case 11: {
           Cell c = TypesGen.asCell(arg);
           return EscapeNodeGen.create(
-              parseCell(TypesGen.asCell(c.head)),
-              parseCell(TypesGen.asCell(c.tail)),
+              parseCell(TypesGen.asCell(c.head), false),
+              parseCell(TypesGen.asCell(c.tail), false),
               this);
         }
         default: {
@@ -182,7 +192,7 @@ public class Context {
 
   private CallTarget makeTarget(Cell formula) {
     CompilerDirectives.transferToInterpreter();
-    return Truffle.getRuntime().createCallTarget(new JaqueRootNode(parseCell(formula)));
+    return Truffle.getRuntime().createCallTarget(new JaqueRootNode(parseCell(formula, true)));
   }
   
   public CallTarget getNock(Cell c) {
@@ -236,14 +246,14 @@ public class Context {
     }
   }
   
-  public Class<? extends JetNode> find(Cell core, Object axis) {
+  public Class<? extends ImplementationNode> find(Cell core, Object axis) {
     Cell battery = TypesGen.asCell(core.head);
     KickLabel label = new KickLabel(battery, axis);
     if ( drivers.containsKey(label) ) {
       return drivers.get(label);
     }
     else {
-      Class<? extends JetNode> driver;
+      Class<? extends ImplementationNode> driver;
       Location loc = locations.get(battery);
       if ( null == loc ) {
         driver = null;

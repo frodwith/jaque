@@ -14,7 +14,7 @@ import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.NockLanguage;
 import net.frodwith.jaque.truffle.TypesGen;
-import net.frodwith.jaque.truffle.nodes.formula.Formula;
+import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 
 /* Fast hints are semantically only executed once, then rewritten
  * to a discard hint.
@@ -23,7 +23,7 @@ public class FastHintNode extends DynamicHintFormula {
   @Child private Node contextNode;
   private final Context context;
 
-  public FastHintNode(Context context, Formula hint, Formula next) {
+  public FastHintNode(Context context, FormulaNode hint, FormulaNode next) {
     super(hint, next);
     this.context = context;
   }
@@ -45,7 +45,7 @@ public class FastHintNode extends DynamicHintFormula {
     // possibly we could discard to next, but if hint is constant
     // truffle will optimize it away anyway and this more exactly
     // first the semantics if it is not
-    Formula discard = new DiscardHintNode(hint, next);
+    FormulaNode discard = new DiscardHintNode(hint, next);
     replace(discard);
     return product;
   }

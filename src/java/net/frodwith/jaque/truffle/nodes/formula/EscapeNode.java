@@ -7,7 +7,7 @@ import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.truffle.Context;
 
 @NodeField(name="context", type=Context.class)
-public abstract class EscapeNode extends BinaryFormula {
+public abstract class EscapeNode extends BinaryFormulaNode {
   @Specialization
   public Object escape(Object gate, Object sample) {
     System.err.println("TODO - ESCAPE UNIMPLEMENTED. gate: " + gate + ", sample: " + sample);

@@ -5,10 +5,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import net.frodwith.jaque.data.Cell;
 
 public class PushNode extends JumpFormula {
-  @Child private Formula f;
-  @Child private Formula g;
+  @Child private FormulaNode f;
+  @Child private FormulaNode g;
   
-  public PushNode(Formula f, Formula g) {
+  public PushNode(FormulaNode f, FormulaNode g) {
     this.f = f;
     this.g = g;
   }

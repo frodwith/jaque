@@ -5,7 +5,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Atom;
 
-public abstract class DecrementNode extends UnaryJet {
+public abstract class DecrementNode extends UnaryJetNode {
   @Specialization
   protected long decrement(long atom) {
     if ( atom == 0 ) {
