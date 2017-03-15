@@ -6,9 +6,8 @@ import java.util.Map;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
-import net.frodwith.jaque.truffle.nodes.formula.JumpFormula;
 
-public class MemoHintNode extends JumpFormula {
+public class MemoHintNode extends FormulaNode {
   private final Map<Object,Object> cache;
   @Child private FormulaNode next;
   
@@ -24,7 +23,7 @@ public class MemoHintNode extends JumpFormula {
       return cache.get(subject);
     }
     else {
-      Object product = next.executeSafe(frame);
+      Object product = next.executeGeneric(frame);
       cache.put(subject, product);
       return product;
     }

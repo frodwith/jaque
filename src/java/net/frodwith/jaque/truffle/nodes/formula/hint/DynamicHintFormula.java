@@ -1,9 +1,8 @@
 package net.frodwith.jaque.truffle.nodes.formula.hint;
 
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
-import net.frodwith.jaque.truffle.nodes.formula.JumpFormula;
 
-public abstract class DynamicHintFormula extends JumpFormula {
+public abstract class DynamicHintFormula extends FormulaNode {
   @Child protected FormulaNode hint;
   @Child protected FormulaNode next;
   

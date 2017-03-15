@@ -22,6 +22,7 @@ import net.frodwith.jaque.truffle.nodes.formula.ConsNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.DeepNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.EscapeNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.NockNode;
+import net.frodwith.jaque.truffle.nodes.formula.NockNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.PushNode;
 import net.frodwith.jaque.truffle.nodes.formula.SameNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.hint.DiscardHintNode;
@@ -31,6 +32,7 @@ import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 import net.frodwith.jaque.truffle.nodes.formula.FragmentNode;
 import net.frodwith.jaque.truffle.nodes.formula.IfNode;
 import net.frodwith.jaque.truffle.nodes.formula.KickNode;
+import net.frodwith.jaque.truffle.nodes.formula.KickNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralCellNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralIntArrayNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralLongNode;
@@ -99,7 +101,7 @@ public class Context {
           Cell c = TypesGen.asCell(arg),
                h = TypesGen.asCell(c.head),
                t = TypesGen.asCell(c.tail);
-          return new NockNode(this, tail, parseCell(h, false), parseCell(t, false));
+          return NockNodeGen.create(parseCell(h, false), parseCell(t, false), this, tail);
         }
         case 3:
           return DeepNodeGen.create(parseCell(TypesGen.asCell(arg), false));
@@ -145,7 +147,7 @@ public class Context {
         case 9: {
           Cell c = TypesGen.asCell(arg),
                t = TypesGen.asCell(c.tail);
-          return new KickNode(this, tail, c.head, parseCell(t, false));
+          return KickNodeGen.create(parseCell(t, false), this, tail, c.head);
         }
         case 10: {
           Cell    cell = TypesGen.asCell(arg);

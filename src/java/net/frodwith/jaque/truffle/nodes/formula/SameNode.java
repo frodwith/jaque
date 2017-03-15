@@ -4,8 +4,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
 
-public abstract class SameNode extends BinaryFormula {
-
+public abstract class SameNode extends BinaryFormulaNode {
   @Specialization
   protected long same(long a, long b) {
     return Atom.equals(a, b) ? Atom.YES : Atom.NO;

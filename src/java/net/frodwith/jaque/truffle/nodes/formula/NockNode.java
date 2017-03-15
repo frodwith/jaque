@@ -6,9 +6,7 @@ import com.oracle.truffle.api.dsl.NodeField;
 import com.oracle.truffle.api.dsl.NodeFields;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
-import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.TailException;
@@ -33,13 +31,6 @@ public abstract class NockNode extends BinaryFormulaNode {
     @Cached("getTarget(formula)") CallTarget target) {
     throw new TailException(target, subject);
   }
-  
-  @Specialization(
-    replaces = "doTailCached",
-      guards = { "getIsTail()" })
-  public Object doTailSlow(Object subject, Cell formula) {
-    throw new TailException(getTarget(formula), subject);
-  }
 
   @Specialization(
     limit = CACHE_SIZE,
@@ -51,7 +42,15 @@ public abstract class NockNode extends BinaryFormulaNode {
     return dispatch.executeDispatch(frame, target, subject);
   }
 
-  @Specialization
+  @Specialization(
+    replaces = "doTailCached",
+      guards = { "getIsTail()" })
+  public Object doTailSlow(Object subject, Cell formula) {
+    throw new TailException(getTarget(formula), subject);
+  }
+
+  @Specialization(
+    replaces = "doCachedCall")
   public Object doSlowCall(VirtualFrame frame, Object subject, Cell formula,
     @Cached("makeDispatch()") DispatchNode dispatch) {
     return dispatch.executeDispatch(frame, getTarget(formula), subject);

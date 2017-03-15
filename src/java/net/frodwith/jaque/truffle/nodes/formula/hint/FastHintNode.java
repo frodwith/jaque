@@ -6,13 +6,10 @@ import java.util.Map;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
-
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.Context;
-import net.frodwith.jaque.truffle.NockLanguage;
 import net.frodwith.jaque.truffle.TypesGen;
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 
@@ -30,9 +27,9 @@ public class FastHintNode extends DynamicHintFormula {
 
   public Object executeGeneric(VirtualFrame frame) {
     Object subject = getSubject(frame);
-    Object rawClue = hint.executeSafe(frame);
+    Object rawClue = hint.executeGeneric(frame);
     setSubject(frame, subject);
-    Object product = next.executeSafe(frame);
+    Object product = next.executeGeneric(frame);
 
     // We're on the slow path either way from here
     CompilerDirectives.transferToInterpreter();

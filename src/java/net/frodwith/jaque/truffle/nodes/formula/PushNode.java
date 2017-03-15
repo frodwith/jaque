@@ -4,7 +4,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.data.Cell;
 
-public class PushNode extends JumpFormula {
+public class PushNode extends FormulaNode {
   @Child private FormulaNode f;
   @Child private FormulaNode g;
   
@@ -16,7 +16,7 @@ public class PushNode extends JumpFormula {
   @Override
   public Object executeGeneric(VirtualFrame frame) {
     Object tail = getSubject(frame);
-    Object head = f.executeSafe(frame);
+    Object head = f.executeGeneric(frame);
     setSubject(frame, new Cell(head, tail));
     return g.executeGeneric(frame);
   }

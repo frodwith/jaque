@@ -1,12 +1,8 @@
 package net.frodwith.jaque.truffle.nodes.formula.hint;
 
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.NodeChildren;
-import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
-import net.frodwith.jaque.truffle.nodes.formula.JumpFormula;
 
 /* All dynamic hints must (per nock semantics) be computed and "discarded".
  * Other hint nodes (like FastHintNode) may do something with those hints,
@@ -21,7 +17,7 @@ public class DiscardHintNode extends DynamicHintFormula {
   @Override
   public Object executeGeneric(VirtualFrame frame) {
     Object subject = getSubject(frame);
-    hint.executeSafe(frame);
+    hint.executeGeneric(frame);
     setSubject(frame, subject);
     return next.executeGeneric(frame);
   }
