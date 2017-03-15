@@ -26,9 +26,7 @@ public class FastHintNode extends DynamicHintFormula {
   }
 
   public Object executeGeneric(VirtualFrame frame) {
-    Object subject = getSubject(frame);
     Object rawClue = hint.executeGeneric(frame);
-    setSubject(frame, subject);
     Object product = next.executeGeneric(frame);
 
     // We're on the slow path either way from here

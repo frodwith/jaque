@@ -13,7 +13,10 @@ public class ComposeNode extends FormulaNode {
 
   @Override
   public Object executeGeneric(VirtualFrame frame) {
+    Object old = getSubject(frame);
     setSubject(frame, f.executeGeneric(frame));
-    return g.executeGeneric(frame);
+    Object product = g.executeGeneric(frame);
+    setSubject(frame, old);
+    return product;
   }
 }

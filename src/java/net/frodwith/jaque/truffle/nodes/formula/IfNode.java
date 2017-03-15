@@ -21,11 +21,9 @@ public class IfNode extends FormulaNode {
 
   @Override
   public Object executeGeneric(VirtualFrame frame) {
-    Object subject = getSubject(frame);
     long answer;
     try {
       answer = test.executeLong(frame);
-      setSubject(frame, subject);
       if ( 0L == answer ) {
         condition.profile(true);
         return yes.executeGeneric(frame);

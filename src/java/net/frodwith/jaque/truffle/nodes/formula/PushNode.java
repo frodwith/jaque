@@ -15,9 +15,11 @@ public class PushNode extends FormulaNode {
 
   @Override
   public Object executeGeneric(VirtualFrame frame) {
-    Object tail = getSubject(frame);
+    Object old = getSubject(frame);
     Object head = f.executeGeneric(frame);
-    setSubject(frame, new Cell(head, tail));
-    return g.executeGeneric(frame);
+    setSubject(frame, new Cell(head, old));
+    Object product = g.executeGeneric(frame);
+    setSubject(frame, old);
+    return product;
   }
 }

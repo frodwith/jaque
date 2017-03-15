@@ -5,8 +5,9 @@ import java.util.Map;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.ExecutionContext;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.RootNode;
 
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Atom;
@@ -15,13 +16,15 @@ import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.driver.AxisArm;
 import net.frodwith.jaque.truffle.driver.NamedArm;
 import net.frodwith.jaque.truffle.driver.Specification;
+import net.frodwith.jaque.truffle.nodes.DispatchNode;
+import net.frodwith.jaque.truffle.nodes.DispatchNodeGen;
+import net.frodwith.jaque.truffle.nodes.FunctionNode;
 import net.frodwith.jaque.truffle.nodes.JaqueRootNode;
 import net.frodwith.jaque.truffle.nodes.formula.BumpNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.ComposeNode;
 import net.frodwith.jaque.truffle.nodes.formula.ConsNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.DeepNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.EscapeNodeGen;
-import net.frodwith.jaque.truffle.nodes.formula.NockNode;
 import net.frodwith.jaque.truffle.nodes.formula.NockNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.PushNode;
 import net.frodwith.jaque.truffle.nodes.formula.SameNodeGen;
@@ -31,13 +34,11 @@ import net.frodwith.jaque.truffle.nodes.formula.hint.MemoHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 import net.frodwith.jaque.truffle.nodes.formula.FragmentNode;
 import net.frodwith.jaque.truffle.nodes.formula.IfNode;
-import net.frodwith.jaque.truffle.nodes.formula.KickNode;
 import net.frodwith.jaque.truffle.nodes.formula.KickNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralCellNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralIntArrayNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralLongNode;
 import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
-import net.frodwith.jaque.truffle.nodes.jet.JetNode;
 
 public class Context {
   
@@ -147,7 +148,9 @@ public class Context {
         case 9: {
           Cell c = TypesGen.asCell(arg),
                t = TypesGen.asCell(c.tail);
-          return KickNodeGen.create(parseCell(t, false), this, tail, c.head);
+          Object axis = c.head;
+               
+          return KickNodeGen.create(parseCell(t, false), this, tail, (Atom.cap(axis) == 2), axis);
         }
         case 10: {
           Cell    cell = TypesGen.asCell(arg);
@@ -189,7 +192,16 @@ public class Context {
   }
 
   public Object nock(Object subject, Cell formula) {
-    return getNock(formula).call(subject);
+    CallTarget target = getNock(formula);
+    while ( true ) {
+      try {
+        return target.call(subject);
+      }
+      catch (TailException e) {
+        target = e.target;
+        subject = e.subject;
+      }
+    }
   }
 
   private CallTarget makeTarget(Cell formula) {
@@ -361,7 +373,7 @@ public class Context {
     public boolean equals(Object o) {
       if ( o instanceof NameKey ) {
         NameKey d = (NameKey) o;
-        return d.label == label && d.name == name;
+        return d.label.equals(label) && d.name.equals(name);
       }
       else {
         return false;
@@ -378,14 +390,16 @@ public class Context {
       this.axis = axis;
     }
     
+    @Override
     public int hashCode() {
       return label.hashCode() ^ Atom.mug(axis);
     }
     
+    @Override
     public boolean equals(Object o) {
       if ( o instanceof AxisKey ) {
         AxisKey d = (AxisKey) o;
-        return d.label == label && Atom.equals(d.axis, axis);
+        return d.label.equals(label) && Atom.equals(d.axis, axis);
       }
       else {
         return false;

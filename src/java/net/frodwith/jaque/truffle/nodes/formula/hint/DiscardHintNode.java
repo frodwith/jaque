@@ -16,9 +16,7 @@ public class DiscardHintNode extends DynamicHintFormula {
 
   @Override
   public Object executeGeneric(VirtualFrame frame) {
-    Object subject = getSubject(frame);
     hint.executeGeneric(frame);
-    setSubject(frame, subject);
     return next.executeGeneric(frame);
   }
 }
