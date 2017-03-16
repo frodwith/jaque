@@ -6,6 +6,8 @@ import com.oracle.truffle.api.dsl.NodeField;
 import com.oracle.truffle.api.dsl.NodeFields;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.truffle.Context;
@@ -38,8 +40,8 @@ public abstract class NockNode extends BinaryFormulaNode {
   public Object doCachedCall(VirtualFrame frame, Object subject, Cell formula,
     @Cached("formula") Cell cachedFormula,
     @Cached("getTarget(formula)") CallTarget target,
-    @Cached("makeDispatch()") DispatchNode dispatch) {
-    return dispatch.executeDispatch(frame, target, subject);
+    @Cached("getDispatch()") DispatchNode dispatch) {
+    return dispatch.call(frame, target, subject);
   }
 
   @Specialization(
@@ -52,16 +54,15 @@ public abstract class NockNode extends BinaryFormulaNode {
   @Specialization(
     replaces = "doCachedCall")
   public Object doSlowCall(VirtualFrame frame, Object subject, Cell formula,
-    @Cached("makeDispatch()") DispatchNode dispatch) {
-    return dispatch.executeDispatch(frame, getTarget(formula), subject);
-  }
-  
-  protected DispatchNode makeDispatch() {
-    return DispatchNodeGen.create();
+    @Cached("getDispatch()") DispatchNode dispatch) {
+    return dispatch.call(frame, getTarget(formula), subject);
   }
   
   protected CallTarget getTarget(Cell formula) {
     return getContext().getNock(formula);
   }
-    
+
+  protected DispatchNode getDispatch() {
+    return DispatchNodeGen.create();
+  }
 }

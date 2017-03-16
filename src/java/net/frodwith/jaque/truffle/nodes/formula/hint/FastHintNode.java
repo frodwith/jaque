@@ -8,6 +8,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
+import net.frodwith.jaque.data.Fragmenter;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.TypesGen;
@@ -34,7 +35,7 @@ public class FastHintNode extends DynamicHintFormula {
     Clue clue = Clue.parse(rawClue);
     if ( TypesGen.isCell(product) && null != clue ) {
       Cell core = TypesGen.asCell(product);
-      context.register(core, clue.name, clue.parentAxis, clue.hooks);
+      context.register(core, clue.name, new Fragmenter(clue.parentAxis), clue.hooks);
     }
 
     // possibly we could discard to next, but if hint is constant

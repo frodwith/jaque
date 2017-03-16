@@ -12,6 +12,7 @@ import com.oracle.truffle.api.nodes.RootNode;
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
+import net.frodwith.jaque.data.Fragmenter;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.driver.AxisArm;
 import net.frodwith.jaque.truffle.driver.NamedArm;
@@ -20,6 +21,7 @@ import net.frodwith.jaque.truffle.nodes.DispatchNode;
 import net.frodwith.jaque.truffle.nodes.DispatchNodeGen;
 import net.frodwith.jaque.truffle.nodes.FunctionNode;
 import net.frodwith.jaque.truffle.nodes.JaqueRootNode;
+import net.frodwith.jaque.truffle.nodes.TopRootNode;
 import net.frodwith.jaque.truffle.nodes.formula.BumpNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.ComposeNode;
 import net.frodwith.jaque.truffle.nodes.formula.ConsNodeGen;
@@ -85,7 +87,8 @@ public class Context {
     else {
       switch ( (int) TypesGen.asLong(op) ) {
         case 0: {
-          return new FragmentNode(arg);
+          Fragmenter fragmenter = new Fragmenter(arg);
+          return new FragmentNode(fragmenter);
         }
         case 1: {
           if ( TypesGen.isCell(arg) ) {
@@ -148,9 +151,9 @@ public class Context {
         case 9: {
           Cell c = TypesGen.asCell(arg),
                t = TypesGen.asCell(c.tail);
-          Object axis = c.head;
+          Fragmenter fragmenter = new Fragmenter(c.head);
                
-          return KickNodeGen.create(parseCell(t, false), this, tail, (Atom.cap(axis) == 2), axis);
+          return KickNodeGen.create(parseCell(t, false), this, tail, fragmenter.isLeft(), fragmenter);
         }
         case 10: {
           Cell    cell = TypesGen.asCell(arg);
@@ -192,16 +195,8 @@ public class Context {
   }
 
   public Object nock(Object subject, Cell formula) {
-    CallTarget target = getNock(formula);
-    while ( true ) {
-      try {
-        return target.call(subject);
-      }
-      catch (TailException e) {
-        target = e.target;
-        subject = e.subject;
-      }
-    }
+    TopRootNode top = new TopRootNode(getNock(formula));
+    return Truffle.getRuntime().createCallTarget(top).call(subject);
   }
 
   private CallTarget makeTarget(Cell formula) {
@@ -218,12 +213,12 @@ public class Context {
     return t;
   }
 
-  public CallTarget getKick(Cell core, Object axis) {
+  public CallTarget getKick(Cell core, Fragmenter fragmenter) {
     Cell battery    = TypesGen.asCell(core.head);
-    KickLabel label = new KickLabel(battery, axis);
+    KickLabel label = new KickLabel(battery, fragmenter.axis);
     CallTarget t    = kicks.get(label);
     if ( null == t ) {
-      Object obj = Noun.fragment(axis, core);
+      Object obj = fragmenter.fragment(core);
       if ( !TypesGen.isCell(obj) ) {
         throw new Bail();
       }
@@ -241,13 +236,13 @@ public class Context {
     return ( null != loc ) && loc.matches(core);
   }
   
-  public void register(Cell core, String name, Object parentAxis, Map<String, Object> hooks) {
+  public void register(Cell core, String name, Fragmenter toParent, Map<String, Object> hooks) {
     Cell battery = TypesGen.asCell(core.head);
-    if ( Atom.isZero(parentAxis) ) {
+    if ( toParent.isZero() ) {
       locations.put(battery, new StaticLocation(name, core, hooks));
     }
     else {
-      Cell parentCore = TypesGen.asCell(Noun.fragment(parentAxis, core));
+      Cell parentCore = TypesGen.asCell(toParent.fragment(core));
       Cell parentBattery = TypesGen.asCell(parentCore.head);
       Location parentLocation = locations.get(parentBattery);
       if ( null == parentLocation ) {
@@ -255,7 +250,7 @@ public class Context {
       }
       else {
         locations.put(battery, new DynamicLocation(
-            battery, name, parentAxis, parentLocation, hooks));
+            battery, name, toParent, parentLocation, hooks));
       }
     }
   }
@@ -334,22 +329,22 @@ public class Context {
   
   private class DynamicLocation extends Location {
     private final Cell battery;
-    private final Object parentAxis;
+    private final Fragmenter toParent;
     private final Location parent;
     private final String label;
     
     public DynamicLocation(Cell battery, String name,
-        Object parentAxis, Location parent, Map<String, Object> hooks) {
+        Fragmenter toParent, Location parent, Map<String, Object> hooks) {
       super(name, hooks);
       this.battery = battery;
       this.label = parent.getLabel() + "/" + name;
-      this.parentAxis = parentAxis;
+      this.toParent = toParent;
       this.parent = parent;
     }
     
     public boolean matches(Cell core) {
       return Noun.equals(core.head, battery)
-          && parent.matches(TypesGen.asCell(Noun.fragment(parentAxis, core)));
+          && parent.matches(TypesGen.asCell(toParent.fragment(core)));
     }
     
     public String getLabel() {

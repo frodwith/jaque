@@ -6,14 +6,18 @@ import java.lang.reflect.Method;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeField;
 import com.oracle.truffle.api.dsl.NodeFields;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 
 import net.frodwith.jaque.data.Cell;
+import net.frodwith.jaque.data.Fragmenter;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.TailException;
@@ -28,12 +32,12 @@ import net.frodwith.jaque.truffle.nodes.jet.JetNode;
   @NodeField(name="context", type=Context.class),
   @NodeField(name="isTail", type=Boolean.class),
   @NodeField(name="inBattery", type=Boolean.class),
-  @NodeField(name="axis", type=Object.class),
+  @NodeField(name="fragmenter", type=Fragmenter.class),
 })
 public abstract class KickNode extends FormulaNode {
   protected abstract Context getContext();
   protected abstract boolean getIsTail();
-  protected abstract Object getAxis();
+  protected abstract Fragmenter getFragmenter();
   protected abstract boolean getInBattery();
   
   @Specialization(
@@ -69,8 +73,8 @@ public abstract class KickNode extends FormulaNode {
   protected Object doCachedCall(VirtualFrame frame, Cell core,
     @Cached("core.head") Object cachedBattery,
     @Cached("getTarget(core)") CallTarget target,
-    @Cached("makeDispatch()") DispatchNode dispatch) {
-    return dispatch.executeDispatch(frame, target, core);
+    @Cached("getDispatch()") DispatchNode dispatch) {
+    return dispatch.call(frame, target, core);
   }
   
   @Specialization(
@@ -85,9 +89,10 @@ public abstract class KickNode extends FormulaNode {
 //    replaces = { "doCachedCall", "doJet" },
     guards = { "getInBattery()" })
   protected Object doSlowCall(VirtualFrame frame, Cell core,
-      @Cached("makeDispatch()") DispatchNode dispatch) {
-    return dispatch.executeDispatch(frame, getTarget(core), core);
+    @Cached("getDispatch()") DispatchNode dispatch) {
+    return dispatch.call(frame, getTarget(core), core);
   }
+
   @Specialization(
 //    replaces = { "doSlowTail", "doCachedTail", "doJet" },
     guards = { "getIsTail()" })
@@ -95,31 +100,31 @@ public abstract class KickNode extends FormulaNode {
     throw new TailException(getNockTarget(core), core);
   }
   
+  // TODO: factor out the PIC logic for cells (from NockNode) into a dispatch
+  //       node and call that from here. Low priority though, as this is ONLY
+  //       called on kicks outside the battery.
   @Specialization(
 //    replaces = { "doSlowCall", "doCachedCall", "doJet" }
       )
   protected Object doNockCall(VirtualFrame frame, Cell core,
-    @Cached("makeDispatch()") DispatchNode dispatch) {
-    return dispatch.executeDispatch(frame, getNockTarget(core), core);
+    @Cached("getDispatch()") DispatchNode dispatch) {
+    return dispatch.call(frame, getNockTarget(core), core);
   }
   
   protected CallTarget getNockTarget(Cell core) {
-    Cell formula = TypesGen.asCell(Noun.fragment(getAxis(), core));
+    Cell formula = TypesGen.asCell(getFragmenter().fragment(core));
     return getContext().getNock(formula);
   }
-
-  protected DispatchNode makeDispatch() {
-    return DispatchNodeGen.create();
-  }
   
+  @TruffleBoundary
   protected boolean fine(Cell core) {
-    boolean wasFine = getContext().fine(core);
-    return wasFine;
+    return getContext().fine(core);
   }
   
+  @TruffleBoundary
   protected JetNode find(Cell core) {
     Context context = getContext();
-    Class<? extends ImplementationNode> driver = context.find(core, getAxis());
+    Class<? extends ImplementationNode> driver = context.find(core, getFragmenter().axis);
     if ( null == driver ) {
       return null;
     }
@@ -144,6 +149,10 @@ public abstract class KickNode extends FormulaNode {
   }
   
   protected CallTarget getTarget(Cell core) {
-    return getContext().getKick(core, getAxis());
+    return getContext().getKick(core, getFragmenter());
+  }
+  
+  protected DispatchNode getDispatch() {
+    return DispatchNodeGen.create();
   }
 }

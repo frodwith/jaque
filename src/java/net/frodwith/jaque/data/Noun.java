@@ -102,17 +102,4 @@ public class Noun {
     return (has >>> 31) ^ (has & 0x7fffffff);
   }
   
-  public static Object fragment(Object axis, Object subject) {
-    try {
-      while ( !Atom.equals(axis, 1L) ) {
-        Cell c = (Cell) subject; 
-        subject = Atom.cap(axis) == 2L ? c.head : c.tail;
-        axis = Atom.mas(axis);
-      }
-      return subject;
-    }
-    catch (ClassCastException e) {
-      throw new Bail();
-    }
-  }
 }

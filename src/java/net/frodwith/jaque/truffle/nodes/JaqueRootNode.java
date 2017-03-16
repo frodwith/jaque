@@ -6,18 +6,15 @@ import com.oracle.truffle.api.nodes.RootNode;
 
 public class JaqueRootNode extends RootNode {
   @Child private FunctionNode root;
-  @Child private DispatchNode jump;
   
   public JaqueRootNode(FunctionNode root) {
     super(NockLanguage.class, null, FunctionNode.DESCRIPTOR);
     this.root = root;
-    this.jump = DispatchNodeGen.create();
   }
 
   @Override
   public Object execute(VirtualFrame frame) {
-    Object subject = frame.getArguments()[0];
-    FunctionNode.setSubject(frame, subject);
+    FunctionNode.setSubject(frame, frame.getArguments()[0]);
     return root.executeGeneric(frame);
   }
 
