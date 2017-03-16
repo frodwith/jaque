@@ -5,13 +5,13 @@ package net.frodwith.jaque.truffle;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.nodes.Node;
 
-import net.frodwith.jaque.truffle.driver.Specification;
+import net.frodwith.jaque.truffle.driver.Arm;
 
 public class NockLanguage extends TruffleLanguage<Context> {
   
   @Override
   protected Context createContext(com.oracle.truffle.api.TruffleLanguage.Env env) {
-    Specification[] jetDrivers = (Specification[]) env.getConfig().get("jetDrivers");
+    Arm[] jetDrivers = (Arm[]) env.getConfig().get("jetDrivers");
     return new Context(jetDrivers);
   }
   

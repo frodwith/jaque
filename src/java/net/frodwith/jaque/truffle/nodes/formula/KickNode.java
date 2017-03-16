@@ -19,6 +19,7 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Fragmenter;
 import net.frodwith.jaque.data.Noun;
+import net.frodwith.jaque.location.Location;
 import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.TailException;
 import net.frodwith.jaque.truffle.TypesGen;
@@ -43,12 +44,15 @@ public abstract class KickNode extends FormulaNode {
   @Specialization(
     limit  = "1",
     guards = { "getInBattery()",
-               "!(jetNode == null)", 
                "core.head == cachedBattery",
-               "fine(core)" })
+               "!(location == null)",
+               "!(driver == null)",
+               "isFine(location, core)" })
   protected Object doJet(VirtualFrame frame, Cell core,
     @Cached("core.head") Object cachedBattery,
-    @Cached("find(core)") JetNode jetNode) {
+    @Cached("getLocation(core)") Location location,
+    @Cached("getDriver(location)") Class<? extends ImplementationNode> driver,
+    @Cached("makeJetNode(driver)") JetNode jetNode) {
     setSubject(frame, core);
     return jetNode.executeGeneric(frame);
   }
@@ -117,35 +121,26 @@ public abstract class KickNode extends FormulaNode {
   }
   
   @TruffleBoundary
-  protected boolean fine(Cell core) {
-    return getContext().fine(core);
-  }
-  
-  @TruffleBoundary
-  protected JetNode find(Cell core) {
-    Context context = getContext();
-    Class<? extends ImplementationNode> driver = context.find(core, getFragmenter().axis);
+  protected JetNode makeJetNode(Class<? extends ImplementationNode> driver) {
     if ( null == driver ) {
       return null;
     }
-    else {
-      try {
-        CompilerAsserts.neverPartOfCompilation();
-        Method cons = driver.getMethod("create", Context.class);
-        ImplementationNode impl = (ImplementationNode) cons.invoke(null, context);
-        return new JetNode(impl);
-      }
-      catch (NoSuchMethodException e) {
-        e.printStackTrace();
-      }
-      catch (IllegalAccessException e) {
-        e.printStackTrace();
-      }
-      catch (InvocationTargetException e) {
-        e.printStackTrace();
-      }
-      return null;
+    CompilerAsserts.neverPartOfCompilation();
+    try {
+      Method cons = driver.getMethod("create", Context.class);
+      ImplementationNode impl = (ImplementationNode) cons.invoke(null, getContext());
+      return new JetNode(impl);
     }
+    catch (NoSuchMethodException e) {
+      e.printStackTrace();
+    }
+    catch (IllegalAccessException e) {
+      e.printStackTrace();
+    }
+    catch (InvocationTargetException e) {
+      e.printStackTrace();
+    }
+    return null;
   }
   
   protected CallTarget getTarget(Cell core) {
@@ -154,5 +149,17 @@ public abstract class KickNode extends FormulaNode {
   
   protected DispatchNode getDispatch() {
     return DispatchNodeGen.create();
+  }
+  
+  protected Location getLocation(Cell core) {
+    return getContext().lookup(core);
+  }
+  
+  protected boolean isFine(Location loc, Cell core) {
+    return (null == loc) ? false : loc.matches(core);
+  }
+  
+  protected Class<? extends ImplementationNode> getDriver(Location loc) {
+    return (null == loc) ? null : loc.find(getFragmenter());
   }
 }

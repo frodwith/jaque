@@ -1,6 +1,8 @@
 package net.frodwith.jaque.truffle;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import com.oracle.truffle.api.CallTarget;
@@ -14,6 +16,10 @@ import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Fragmenter;
 import net.frodwith.jaque.data.Noun;
+import net.frodwith.jaque.location.DynamicLocation;
+import net.frodwith.jaque.location.Location;
+import net.frodwith.jaque.location.StaticLocation;
+import net.frodwith.jaque.truffle.driver.Arm;
 import net.frodwith.jaque.truffle.driver.AxisArm;
 import net.frodwith.jaque.truffle.driver.NamedArm;
 import net.frodwith.jaque.truffle.driver.Specification;
@@ -47,31 +53,28 @@ public class Context {
   private final Map<KickLabel, CallTarget> kicks;
   private final Map<Cell, CallTarget> nocks;
   private final Map<Cell, Location> locations;
-  private final Map<KickLabel,Class<? extends ImplementationNode>> drivers;
-  private final Map<AxisKey,Class<? extends ImplementationNode>> installedByAxis;
-  private final Map<NameKey,Class<? extends ImplementationNode>> installedByName;
+  private final Map<String, Arm[]> drivers;
   
-  public Context(Specification[] drivers) {
+  public Context(Arm[] arms) {
     this.kicks = new HashMap<KickLabel, CallTarget>();
     this.nocks = new HashMap<Cell, CallTarget>();
     this.locations = new HashMap<Cell, Location>();
-    this.drivers = new HashMap<KickLabel, Class<? extends ImplementationNode>>();
-    this.installedByAxis = new HashMap<AxisKey, Class<? extends ImplementationNode>>();
-    this.installedByName = new HashMap<NameKey, Class<? extends ImplementationNode>>();
+    this.drivers = new HashMap<String, Arm[]>();
     
-    if ( null != drivers ) {
-      for ( Specification s : drivers ) {
-        if ( s instanceof AxisArm ) {
-          AxisArm a = (AxisArm) s;
-          AxisKey k = new AxisKey(a.label, a.axis);
-          this.installedByAxis.put(k, a.jetClass);
+    Map<String, List<Arm>> temp = new HashMap<String, List<Arm>>();
+    if ( null != arms ) {
+      for ( Arm a : arms ) {
+        List<Arm> push = temp.get(a.label);
+        if ( null == push ) {
+          push = new LinkedList<Arm>();
+          temp.put(a.label, push);
         }
-        else {
-          NamedArm n = (NamedArm) s;
-          NameKey k = new NameKey(n.label, n.name);
-          this.installedByName.put(k, n.jetClass);
-        }
+        push.add(a);
       }
+    }
+    
+    for ( Map.Entry<String, List<Arm>> e : temp.entrySet() ) {
+      drivers.put(e.getKey(), e.getValue().toArray(new Arm[0]));
     }
   }
   
@@ -230,176 +233,44 @@ public class Context {
     return t;
   }
   
-  public boolean fine(Cell core) {
-    Cell battery = TypesGen.asCell(core.head);
-    Location loc = locations.get(battery);
-    return ( null != loc ) && loc.matches(core);
+  public Location lookup(Cell core) {
+    return locations.get(TypesGen.asCell(core.head));
   }
   
   public void register(Cell core, String name, Fragmenter toParent, Map<String, Object> hooks) {
     Cell battery = TypesGen.asCell(core.head);
+    Location loc;
     if ( toParent.isZero() ) {
-      locations.put(battery, new StaticLocation(name, core, hooks));
+      loc = new StaticLocation(name, core, hooks);
     }
     else {
       Cell parentCore = TypesGen.asCell(toParent.fragment(core));
       Cell parentBattery = TypesGen.asCell(parentCore.head);
-      Location parentLocation = locations.get(parentBattery);
-      if ( null == parentLocation ) {
+      Location parentLoc = locations.get(parentBattery);
+      if ( null == parentLoc ) {
         System.err.println("register: invalid parent");
+        return;
       }
-      else {
-        locations.put(battery, new DynamicLocation(
-            battery, name, toParent, parentLocation, hooks));
-      }
+      loc = new DynamicLocation(battery, name, toParent, parentLoc, hooks);
     }
-  }
-  
-  public Class<? extends ImplementationNode> find(Cell core, Object axis) {
-    Cell battery = TypesGen.asCell(core.head);
-    KickLabel label = new KickLabel(battery, axis);
-    if ( drivers.containsKey(label) ) {
-      return drivers.get(label);
-    }
-    else {
-      Class<? extends ImplementationNode> driver;
-      Location loc = locations.get(battery);
-      if ( null == loc ) {
-        driver = null;
-      }
-      else {
-        String ll = loc.getLabel();
-        AxisKey ak = new AxisKey(ll, axis);
-        driver = installedByAxis.get(ak);
-        if ( null == driver ) {
-          String name = loc.axisHook(axis);
-          if ( null != name ) {
-            NameKey nk = new NameKey(ll, name);
-            driver = installedByName.get(nk);
-          }
+
+    Arm[] arms = drivers.get(loc.getLabel());
+    if ( arms != null ) {
+      for ( Arm a : arms ) {
+        Object axis;
+        if ( a instanceof AxisArm ) {
+          AxisArm aa = (AxisArm) a;
+          axis = aa.axis;
         }
-      }
-      drivers.put(label, driver);
-      return driver;
-    }
-  }
-  
-  private abstract class Location {
-    protected String name;
-    private Map<String, Object> nameToAxis;
-    private Map<Object, String> axisToName;
-
-    protected Location(String name, Map<String, Object> hooks) {
-      this.name = name;
-      this.nameToAxis = hooks;
-      this.axisToName = new HashMap<Object, String>();
-      for ( Map.Entry<String, Object> e : hooks.entrySet() ) {
-        axisToName.put(e.getValue(), e.getKey());
+        else {
+          NamedArm na = (NamedArm) a;
+          axis = loc.hookAxis(na.name);
+        }
+        loc.install(new Fragmenter(axis), a.driver);
       }
     }
 
-    public abstract boolean matches(Cell core);
-    public abstract String getLabel();
-    
-    public Object hookAxis(String name) {
-      return nameToAxis.get(name);
-    }
-    
-    public String axisHook(Object axis) {
-      return axisToName.get(axis);
-    }
-  }
-  
-  private class StaticLocation extends Location {
-    private final Object noun;
-    
-    public StaticLocation(String name, Object noun, Map<String, Object> hooks) {
-      super(name, hooks);
-      this.noun = noun;
-    }
-
-    public boolean matches(Cell core) {
-      return Noun.equals(noun, core);
-    }
-    
-    public String getLabel() {
-      return name;
-    }
-  }
-  
-  private class DynamicLocation extends Location {
-    private final Cell battery;
-    private final Fragmenter toParent;
-    private final Location parent;
-    private final String label;
-    
-    public DynamicLocation(Cell battery, String name,
-        Fragmenter toParent, Location parent, Map<String, Object> hooks) {
-      super(name, hooks);
-      this.battery = battery;
-      this.label = parent.getLabel() + "/" + name;
-      this.toParent = toParent;
-      this.parent = parent;
-    }
-    
-    public boolean matches(Cell core) {
-      return Noun.equals(core.head, battery)
-          && parent.matches(TypesGen.asCell(toParent.fragment(core)));
-    }
-    
-    public String getLabel() {
-      return label;
-    }
-  }
-
-  private class NameKey {
-    public final String label;
-    public final String name;
-    
-    public NameKey(String label, String name) {
-      this.label = label;
-      this.name = name;
-    }
-    
-    public int hashCode() {
-      return label.hashCode() ^ name.hashCode();
-    }
-    
-    public boolean equals(Object o) {
-      if ( o instanceof NameKey ) {
-        NameKey d = (NameKey) o;
-        return d.label.equals(label) && d.name.equals(name);
-      }
-      else {
-        return false;
-      }
-    }
-  }
-  
-  private class AxisKey {
-    public final String label;
-    public final Object axis;
-    
-    public AxisKey(String label, Object axis) {
-      this.label = label;
-      this.axis = axis;
-    }
-    
-    @Override
-    public int hashCode() {
-      return label.hashCode() ^ Atom.mug(axis);
-    }
-    
-    @Override
-    public boolean equals(Object o) {
-      if ( o instanceof AxisKey ) {
-        AxisKey d = (AxisKey) o;
-        return d.label.equals(label) && Atom.equals(d.axis, axis);
-      }
-      else {
-        return false;
-      }
-    }
+    locations.put(battery, loc);
   }
   
   private class KickLabel {
