@@ -45,7 +45,7 @@ public abstract class KickNode extends FormulaNode {
     limit  = "1",
     guards = { "getInBattery()",
                "core.head == cachedBattery",
-               "!(jetNode == null)",
+               "jetNode != null",
                "isFine(location, core)" })
   protected Object doJet(VirtualFrame frame, Cell core,
     @Cached("core.head") Object cachedBattery,

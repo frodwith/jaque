@@ -3,6 +3,8 @@ package net.frodwith.jaque.location;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Fragmenter;
 import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;

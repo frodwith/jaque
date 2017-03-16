@@ -1,5 +1,11 @@
 package net.frodwith.jaque.data;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import net.frodwith.jaque.truffle.TypesGen;
 
 /* Because we must use Object fields for the head and the tail to accomodate the atom
@@ -12,6 +18,7 @@ import net.frodwith.jaque.truffle.TypesGen;
 public class Cell {
   public final Object head;
   public final Object tail;
+  //public final Shape  shape;
 
   private boolean hashed;
   private int hash;
@@ -19,6 +26,7 @@ public class Cell {
   public Cell(Object head, Object tail) {
     this.head = head;
     this.tail = tail;
+    //this.shape = Shape.cons(Shape.forNoun(head), Shape.forNoun(tail));
   }
   
   private static int mug_both(int lef, int rit) {
@@ -43,7 +51,8 @@ public class Cell {
       return false;
     }
     else {
-      return Noun.equals(a.head, b.head) && Noun.equals(a.tail, b.tail);
+      return //a.shape == b.shape && 
+          Noun.equals(a.head, b.head) && Noun.equals(a.tail, b.tail);
     }
   }
   

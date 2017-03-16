@@ -2,7 +2,7 @@
   :description "Clojure implementation of nock"
   :jvm-opts     ["-server"
 ; think your stack overflows are spurious? they're not, but...
-;                 "-Xss1024m"
+                 "-Xss1024m"
                  "-XX:+UnlockExperimentalVMOptions" 
                  "-XX:+EnableJVMCI"
                  "-d64" 

@@ -45,6 +45,47 @@ public class Atom {
         && Arrays.equals(TypesGen.asIntArray(a), TypesGen.asIntArray(b)));
   }
   
+  public static Object lsh(byte bloq, int bits, Object atom) {
+    int len = measure(bloq, atom),
+        big;
+
+    if ( 0 == len ) {
+      return 0L;
+    }
+    try {
+      big = Math.addExact(bits, len);
+    }
+    catch (ArithmeticException e) {
+      throw new Bail();
+    }
+    
+    int[] sal = slaq(bloq, big);
+    chop(bloq, 0, len, bits, sal, atom);
+
+    return normalize(sal);
+  }
+  
+  public static int[] slaq(byte bloq, int len) {
+    int big = ((len << bloq) + 31) >>> 5;
+    return new int[big];
+  } 
+  
+  public static Object peg(Object axis, Object to) {
+    if ( equals(axis, 1L) ) {
+      return axis;
+    }
+    else {
+      int c = measure(to),
+          d = c - 1;
+      long e = d << 1;
+
+      Object f = subtract(to, e),
+             g = lsh((byte) 0, d, axis);
+      
+      return add(f, g);
+    }
+  }
+  
   private static void reverseBytes(byte[] a) {
     int i, j;
     byte b;
