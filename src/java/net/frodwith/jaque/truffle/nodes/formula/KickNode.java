@@ -45,14 +45,12 @@ public abstract class KickNode extends FormulaNode {
     limit  = "1",
     guards = { "getInBattery()",
                "core.head == cachedBattery",
-               "!(location == null)",
-               "!(driver == null)",
+               "!(jetNode == null)",
                "isFine(location, core)" })
   protected Object doJet(VirtualFrame frame, Cell core,
     @Cached("core.head") Object cachedBattery,
     @Cached("getLocation(core)") Location location,
-    @Cached("getDriver(location)") Class<? extends ImplementationNode> driver,
-    @Cached("makeJetNode(driver)") JetNode jetNode) {
+    @Cached("makeJetNode(getDriver(location))") JetNode jetNode) {
     setSubject(frame, core);
     return jetNode.executeGeneric(frame);
   }
