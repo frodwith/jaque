@@ -13,9 +13,10 @@ public abstract class Location {
   protected final String name;
   private final Map<String, Object> nameToAxis;
   private final Map<Object, String> axisToName;
-  private final Map<Object, Class<? extends ImplementationNode>> drivers;
+  public final Map<Object, Class<? extends ImplementationNode>> drivers;
+  public final Fragmenter[] fragments;
 
-  protected Location(String name, Map<String, Object> hooks) {
+  protected Location(String name, Map<String, Object> hooks, Object[] axes) {
     this.name = name;
     this.nameToAxis = hooks;
     this.axisToName = new HashMap<Object, String>();
@@ -23,10 +24,21 @@ public abstract class Location {
     for ( Map.Entry<String, Object> e : hooks.entrySet() ) {
       axisToName.put(e.getValue(), e.getKey());
     }
+
+    this.fragments = new Fragmenter[axes.length];
+    int i = 0;
+    for ( Object axis : axes ) {
+      this.fragments[i++] = new Fragmenter(axis);
+    }
   }
 
   public abstract boolean matches(Cell core);
   public abstract String getLabel();
+  protected abstract Object reconstructInner(Object[] arguments, int index);
+  
+  public  Object reconstruct(Object[] arguments) {
+    return reconstructInner(arguments, 0);
+  }
   
   public Object hookAxis(String name) {
     return nameToAxis.get(name);

@@ -3,27 +3,56 @@ package net.frodwith.jaque.truffle.nodes.formula.hint;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+
+import net.frodwith.jaque.Location;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Fragmenter;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.TypesGen;
+import net.frodwith.jaque.truffle.driver.Arm;
+import net.frodwith.jaque.truffle.driver.AxisArm;
+import net.frodwith.jaque.truffle.driver.NamedArm;
+import net.frodwith.jaque.truffle.nodes.FragmentationNode;
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
+import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
 
 /* Fast hints are semantically only executed once, then rewritten
  * to a discard hint.
  */
 public class FastHintNode extends DynamicHintFormula {
-  @Child private Node contextNode;
   private final Context context;
 
   public FastHintNode(Context context, FormulaNode hint, FormulaNode next) {
     super(hint, next);
     this.context = context;
+  }
+  
+  private Location register(Cell core, Clue clue) {
+    if ( Atom.isZero(clue.parentAxis) ) {
+      return new Location(clue.name, clue.name, 0L, clue.hooks,
+          core, null, context.drivers.get(clue.name));
+    }
+    else {
+      CompilerAsserts.neverPartOfCompilation();
+      FragmentationNode fragment = new FragmentationNode(clue.parentAxis);
+      insert(fragment);
+      Cell parentCore = TypesGen.asCell(fragment.executeFragment(core));
+      Cell parentBattery = TypesGen.asCell(parentCore.head);
+      Location parentLoc = context.locations.get(parentBattery);
+      if ( null == parentLoc ) {
+        System.err.println("register: invalid parent");
+        return null;
+      }
+      String label = parentLoc.label + "/" + clue.name;
+      return new Location(clue.name, label, clue.parentAxis, clue.hooks, 
+          core.head, parentLoc, context.drivers.get(label));
+    }
   }
 
   public Object executeGeneric(VirtualFrame frame) {
@@ -35,7 +64,7 @@ public class FastHintNode extends DynamicHintFormula {
     Clue clue = Clue.parse(rawClue);
     if ( TypesGen.isCell(product) && null != clue ) {
       Cell core = TypesGen.asCell(product);
-      context.register(core, clue.name, new Fragmenter(clue.parentAxis), clue.hooks);
+      context.locations.put(TypesGen.asCell(core.head), register(core, clue));
     }
 
     // possibly we could discard to next, but if hint is constant
@@ -112,7 +141,7 @@ public class FastHintNode extends DynamicHintFormula {
       if ( Cell.equals(CONSTANT_ZERO, f) ) {
         return 0L;
       }
-      if ( !Noun.isAtom(f.tail) || !Atom.isZero(f.head) ) {
+      if ( !Noun.isAtom(f.tail) || !Atom.isZero(f.head) || Atom.cap(f.tail) != 3) {
         throw new ClueParsingException();
       }
       return f.tail;

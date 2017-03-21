@@ -6,28 +6,19 @@ import java.util.List;
 import java.util.Map;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.RootNode;
 
-import net.frodwith.jaque.Bail;
+import net.frodwith.jaque.KickLabel;
+import net.frodwith.jaque.Location;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Fragmenter;
 import net.frodwith.jaque.data.Noun;
-import net.frodwith.jaque.location.DynamicLocation;
-import net.frodwith.jaque.location.Location;
-import net.frodwith.jaque.location.StaticLocation;
 import net.frodwith.jaque.truffle.driver.Arm;
-import net.frodwith.jaque.truffle.driver.AxisArm;
-import net.frodwith.jaque.truffle.driver.NamedArm;
-import net.frodwith.jaque.truffle.driver.Specification;
-import net.frodwith.jaque.truffle.nodes.DispatchNode;
-import net.frodwith.jaque.truffle.nodes.DispatchNodeGen;
-import net.frodwith.jaque.truffle.nodes.FunctionNode;
+import net.frodwith.jaque.truffle.nodes.FragmentationNode;
 import net.frodwith.jaque.truffle.nodes.JaqueRootNode;
+import net.frodwith.jaque.truffle.nodes.NockDispatchNode;
+import net.frodwith.jaque.truffle.nodes.NockDispatchNodeGen;
 import net.frodwith.jaque.truffle.nodes.TopRootNode;
 import net.frodwith.jaque.truffle.nodes.formula.BumpNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.ComposeNode;
@@ -47,14 +38,13 @@ import net.frodwith.jaque.truffle.nodes.formula.KickNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralCellNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralIntArrayNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralLongNode;
-import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
 
 public class Context {
   
-  private final Map<KickLabel, CallTarget> kicks;
-  private final Map<Cell, CallTarget> nocks;
-  private final Map<Cell, Location> locations;
-  private final Map<String, Arm[]> drivers;
+  public final Map<KickLabel, CallTarget> kicks;
+  public final Map<Cell, CallTarget> nocks;
+  public final Map<Cell, Location> locations;
+  public final Map<String, Arm[]> drivers;
   
   public Context(Arm[] arms) {
     this.kicks = new HashMap<KickLabel, CallTarget>();
@@ -79,6 +69,9 @@ public class Context {
     }
   }
   
+  /* If there was a node for this, we could profile it, but it's a slow path operation
+   * (in general, we cache formulas) so there's not(?) much benefit to making it a node.
+   */
   public FormulaNode parseCell(Cell src, boolean tail) {
     Object op  = src.head,
            arg = src.tail;
@@ -109,7 +102,10 @@ public class Context {
           Cell c = TypesGen.asCell(arg),
                h = TypesGen.asCell(c.head),
                t = TypesGen.asCell(c.tail);
-          return NockNodeGen.create(parseCell(h, false), parseCell(t, false), this, tail);
+          FormulaNode left = parseCell(h, false),
+                     right = parseCell(t, false);
+          NockDispatchNode dispatch = NockDispatchNodeGen.create(this, tail);
+          return NockNodeGen.create(left, right, dispatch);
         }
         case 3:
           return DeepNodeGen.create(parseCell(TypesGen.asCell(arg), false));
@@ -155,9 +151,11 @@ public class Context {
         case 9: {
           Cell c = TypesGen.asCell(arg),
                t = TypesGen.asCell(c.tail);
-          Fragmenter fragmenter = new Fragmenter(c.head);
-               
-          return KickNodeGen.create(parseCell(t, false), this, tail, fragmenter.isLeft(), fragmenter);
+          Object axis = c.head;
+          FormulaNode core = parseCell(t, false);
+          FragmentationNode fragment = new FragmentationNode(axis);
+
+          return KickNodeGen.create(core, this, tail, Atom.cap(axis) == 2, axis, fragment);
         }
         case 10: {
           Cell    cell = TypesGen.asCell(arg);
@@ -198,103 +196,13 @@ public class Context {
     }
   }
 
+  /* Top-level interpeter entry point */
   public Object nock(Object subject, Cell formula) {
-    TopRootNode top = new TopRootNode(getNock(formula));
+    FormulaNode program = parseCell(formula, true);
+    JaqueRootNode root  = new JaqueRootNode(program);
+    CallTarget target   = Truffle.getRuntime().createCallTarget(root);
+    TopRootNode top     = new TopRootNode(target);
     return Truffle.getRuntime().createCallTarget(top).call(subject);
   }
-
-  private CallTarget makeTarget(Cell formula) {
-    CompilerDirectives.transferToInterpreter();
-    return Truffle.getRuntime().createCallTarget(new JaqueRootNode(parseCell(formula, true)));
-  }
   
-  public CallTarget getNock(Cell c) {
-    CallTarget t = nocks.get(c);
-    if ( null == t ) {
-      t = makeTarget(c);
-      nocks.put(c, t);
-    }
-    return t;
-  }
-
-  public CallTarget getKick(Cell core, Fragmenter fragmenter) {
-    Cell battery    = TypesGen.asCell(core.head);
-    KickLabel label = new KickLabel(battery, fragmenter.axis);
-    CallTarget t    = kicks.get(label);
-    if ( null == t ) {
-      Object obj = fragmenter.fragment(core);
-      if ( !TypesGen.isCell(obj) ) {
-        throw new Bail();
-      }
-      else {
-        t = makeTarget(TypesGen.asCell(obj));
-        kicks.put(label, t);
-      }
-    }
-    return t;
-  }
-  
-  public Location lookup(Cell core) {
-    return locations.get(TypesGen.asCell(core.head));
-  }
-  
-  public void register(Cell core, String name, Fragmenter toParent, Map<String, Object> hooks) {
-    Cell battery = TypesGen.asCell(core.head);
-    Location loc;
-    if ( toParent.isZero() ) {
-      loc = new StaticLocation(name, core, hooks);
-    }
-    else {
-      Cell parentCore = TypesGen.asCell(toParent.fragment(core));
-      Cell parentBattery = TypesGen.asCell(parentCore.head);
-      Location parentLoc = locations.get(parentBattery);
-      if ( null == parentLoc ) {
-        System.err.println("register: invalid parent");
-        return;
-      }
-      loc = new DynamicLocation(battery, name, toParent, parentLoc, hooks);
-    }
-
-    Arm[] arms = drivers.get(loc.getLabel());
-    if ( arms != null ) {
-      for ( Arm a : arms ) {
-        Object axis;
-        if ( a instanceof AxisArm ) {
-          AxisArm aa = (AxisArm) a;
-          axis = aa.axis;
-        }
-        else {
-          NamedArm na = (NamedArm) a;
-          axis = loc.hookAxis(na.name);
-        }
-        loc.install(new Fragmenter(axis), a.driver);
-      }
-    }
-
-    locations.put(battery, loc);
-  }
-  
-  private class KickLabel {
-    public final Cell battery;
-    public final Object axis;
-    
-    public KickLabel(Cell battery, Object axis) {
-      this.battery = battery;
-      this.axis = axis;
-    }
-    
-    public int hashCode() {
-      return Cell.mug(battery) ^ Atom.mug(axis);
-    }
-    
-    public boolean equals(Object o) {
-      if ( !(o instanceof KickLabel) ) {
-        return false;
-      }
-      else {
-        KickLabel k = (KickLabel) o;
-        return Cell.equals(battery, k.battery) && Atom.equals(axis, k.axis);
-      }
-    }
-  }
 }

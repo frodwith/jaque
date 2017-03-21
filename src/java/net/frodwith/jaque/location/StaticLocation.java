@@ -6,9 +6,10 @@ import net.frodwith.jaque.data.Cell;
 
 public class StaticLocation extends Location {
   private final Object noun;
+  private static final Object[] EMPTY = new Object[0];
 
   public StaticLocation(String name, Object noun, Map<String, Object> hooks) {
-    super(name, hooks);
+    super(name, hooks, EMPTY);
     this.noun = noun;
   }
 
@@ -22,6 +23,11 @@ public class StaticLocation extends Location {
   @Override
   public String getLabel() {
     return name;
+  }
+
+  protected Object reconstructInner(Object[] arguments, int index) {
+    assert arguments.length == index;
+    return noun;
   }
 
 }

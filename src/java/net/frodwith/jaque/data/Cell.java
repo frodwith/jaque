@@ -18,7 +18,6 @@ import net.frodwith.jaque.truffle.TypesGen;
 public class Cell {
   public final Object head;
   public final Object tail;
-  //public final Shape  shape;
 
   private boolean hashed;
   private int hash;
@@ -26,7 +25,6 @@ public class Cell {
   public Cell(Object head, Object tail) {
     this.head = head;
     this.tail = tail;
-    //this.shape = Shape.cons(Shape.forNoun(head), Shape.forNoun(tail));
   }
   
   private static int mug_both(int lef, int rit) {
@@ -51,8 +49,7 @@ public class Cell {
       return false;
     }
     else {
-      return //a.shape == b.shape && 
-          Noun.equals(a.head, b.head) && Noun.equals(a.tail, b.tail);
+      return Noun.equals(a.head, b.head) && Noun.equals(a.tail, b.tail);
     }
   }
   

@@ -2,18 +2,18 @@ package net.frodwith.jaque.truffle.nodes.formula;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-import net.frodwith.jaque.data.Fragmenter;
+import net.frodwith.jaque.truffle.nodes.FragmentationNode;
 
 public class FragmentNode extends FormulaNode {
-  private Fragmenter fragmenter;
+  @Child private FragmentationNode f;
   
-  public FragmentNode(Fragmenter fragmenter) {
-    this.fragmenter = fragmenter;
+  public FragmentNode(Object axis) {
+    this.f = new FragmentationNode(axis);
   }
 
   @Override
   public Object executeGeneric(VirtualFrame frame) {
-    return fragmenter.fragment(getSubject(frame));
+    return f.executeFragment(getSubject(frame));
   }
 
 }

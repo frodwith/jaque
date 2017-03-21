@@ -5,10 +5,10 @@ import com.oracle.truffle.api.nodes.ControlFlowException;
 
 public class TailException extends ControlFlowException {
   public final CallTarget target;
-  public final Object subject;
+  public final Object[] arguments;
   
-  public TailException(CallTarget target, Object subject) {
+  public TailException(CallTarget target, Object[] arguments) {
     this.target = target;
-    this.subject = subject;
+    this.arguments = arguments;
   }
 }

@@ -19,8 +19,7 @@ public class TopRootNode extends RootNode {
 
   @Override
   public Object execute(VirtualFrame frame) {
-    Object subject = frame.getArguments()[0];
-    return dispatch.call(frame, target, subject);
+    return dispatch.call(frame, target, frame.getArguments());
   }
 
 }

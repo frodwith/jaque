@@ -1,11 +1,13 @@
 package net.frodwith.jaque.truffle.nodes.formula;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.LinkedList;
+import java.util.Map;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -13,18 +15,21 @@ import com.oracle.truffle.api.dsl.NodeField;
 import com.oracle.truffle.api.dsl.NodeFields;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.DirectCallNode;
-import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.nodes.RootNode;
 
+import net.frodwith.jaque.KickLabel;
+import net.frodwith.jaque.Location;
 import net.frodwith.jaque.data.Cell;
-import net.frodwith.jaque.data.Fragmenter;
-import net.frodwith.jaque.data.Noun;
-import net.frodwith.jaque.location.Location;
 import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.TailException;
 import net.frodwith.jaque.truffle.TypesGen;
 import net.frodwith.jaque.truffle.nodes.DispatchNode;
 import net.frodwith.jaque.truffle.nodes.DispatchNodeGen;
+import net.frodwith.jaque.truffle.nodes.FragmentationNode;
+import net.frodwith.jaque.truffle.nodes.JaqueRootNode;
+import net.frodwith.jaque.truffle.nodes.NockDispatchNode;
+import net.frodwith.jaque.truffle.nodes.NockDispatchNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
 import net.frodwith.jaque.truffle.nodes.jet.JetNode;
 
@@ -33,101 +38,79 @@ import net.frodwith.jaque.truffle.nodes.jet.JetNode;
   @NodeField(name="context", type=Context.class),
   @NodeField(name="isTail", type=Boolean.class),
   @NodeField(name="inBattery", type=Boolean.class),
-  @NodeField(name="fragmenter", type=Fragmenter.class),
+  @NodeField(name="axis", type=Object.class),
+  @NodeField(name="fragment", type=FragmentationNode.class),
 })
 public abstract class KickNode extends FormulaNode {
   protected abstract Context getContext();
   protected abstract boolean getIsTail();
-  protected abstract Fragmenter getFragmenter();
+  protected abstract Object getAxis();
+  protected abstract FragmentationNode getFragment();
   protected abstract boolean getInBattery();
   
   @Specialization(
     limit  = "1",
-    guards = { "getInBattery()",
-               "core.head == cachedBattery",
-               "jetNode != null",
-               "isFine(location, core)" })
+    guards = { "driver != null",
+               "isFine(loc, nodes, core)" })
   protected Object doJet(VirtualFrame frame, Cell core,
-    @Cached("core.head") Object cachedBattery,
-    @Cached("getLocation(core)") Location location,
-    @Cached("makeJetNode(getDriver(location))") JetNode jetNode) {
-    setSubject(frame, core);
-    return jetNode.executeGeneric(frame);
+      @Cached("getLocation(core)") Location loc,
+      @Cached("makeLocationNodes(loc)") FragmentationNode[] nodes,
+      @Cached("getDriver(loc, axis)") ImplementationNode driver) {
+    return driver.doJet(core);
   }
 
-  @Specialization(
-    limit = "1",
-//    replaces = "doJet",
-    guards = { "getInBattery()",
-               "getIsTail()",
-               "core.head == cachedBattery" })
-  protected Object doCachedTail(Cell core,
-    @Cached("core.head") Object cachedBattery,
-    @Cached("getTarget(core)") CallTarget target) {
-    throw new TailException(target, core);
-  }
-
-  @Specialization(
-    limit = "1",
-//    replaces = "doJet",
-    guards = { "getInBattery()",
-               "core.head == cachedBattery" })
-  protected Object doCachedCall(VirtualFrame frame, Cell core,
-    @Cached("core.head") Object cachedBattery,
-    @Cached("getTarget(core)") CallTarget target,
-    @Cached("getDispatch()") DispatchNode dispatch) {
-    return dispatch.call(frame, target, core);
-  }
-  
-  @Specialization(
-//    replaces = { "doCachedTail", "doJet" },
-    guards = { "getInBattery()",
-               "getIsTail()" })
-  protected Object doSlowTail(Cell core) {
-    throw new TailException(getTarget(core), core);
-  }
-
-  @Specialization(
-//    replaces = { "doCachedCall", "doJet" },
-    guards = { "getInBattery()" })
-  protected Object doSlowCall(VirtualFrame frame, Cell core,
-    @Cached("getDispatch()") DispatchNode dispatch) {
-    return dispatch.call(frame, getTarget(core), core);
-  }
-
-  @Specialization(
-//    replaces = { "doSlowTail", "doCachedTail", "doJet" },
-    guards = { "getIsTail()" })
-  protected Object doNockTail(VirtualFrame frame, Cell core) {
-    throw new TailException(getNockTarget(core), core);
-  }
-  
-  // TODO: factor out the PIC logic for cells (from NockNode) into a dispatch
-  //       node and call that from here. Low priority though, as this is ONLY
-  //       called on kicks outside the battery.
-  @Specialization(
-//    replaces = { "doSlowCall", "doCachedCall", "doJet" }
-      )
-  protected Object doNockCall(VirtualFrame frame, Cell core,
-    @Cached("getDispatch()") DispatchNode dispatch) {
-    return dispatch.call(frame, getNockTarget(core), core);
-  }
-  
-  protected CallTarget getNockTarget(Cell core) {
-    Cell formula = TypesGen.asCell(getFragmenter().fragment(core));
-    return getContext().getNock(formula);
-  }
-  
   @TruffleBoundary
-  protected JetNode makeJetNode(Class<? extends ImplementationNode> driver) {
-    if ( null == driver ) {
+  protected FragmentationNode[] makeLocationNodes(Location loc) {
+    CompilerAsserts.neverPartOfCompilation();
+    if ( null == loc ) {
       return null;
     }
+    LinkedList<FragmentationNode> list = new LinkedList<FragmentationNode>();
+    while ( loc.parent != null ) {
+      list.add(new FragmentationNode(loc.axisToParent));
+    }
+    return list.toArray(new FragmentationNode[0]);
+  }
+
+  /* This is a specialization guard, so there is no point profiling it */
+  @ExplodeLoop
+  protected boolean isFine(Location loc, FragmentationNode[] nodes, Object noun) {
+    CompilerAsserts.compilationConstant(nodes.length);
+    if ( null == loc ) {
+      return false;
+    }
+    for ( int i = 0; i < nodes.length; ++i ) {
+      if ( !TypesGen.isCell(noun) ) {
+        return false;
+      }
+      Cell currentCore = TypesGen.asCell(noun);
+      if ( currentCore.head != loc.noun ) {
+        return false;
+      }
+      noun = nodes[i].executeFragment(currentCore);
+      loc  = loc.parent;
+    }
+    return loc.noun == noun;
+  }
+  
+  @TruffleBoundary // hash operations
+  protected Location getLocation(Cell core) {
+    return getContext().locations.get(TypesGen.asCell(core.head));
+  }
+
+  @TruffleBoundary
+  protected ImplementationNode getDriver(Location loc, Object axis) {
     CompilerAsserts.neverPartOfCompilation();
+    if ( null == loc ) {
+      return null;
+    }
+    Class<? extends ImplementationNode> klass = loc.drivers.get(axis);
+    if ( null == klass ) {
+      return null;
+    }
     try {
-      Method cons = driver.getMethod("create", Context.class);
-      ImplementationNode impl = (ImplementationNode) cons.invoke(null, getContext());
-      return new JetNode(impl);
+      Method cons = klass.getMethod("create", Context.class);
+      return (ImplementationNode) cons.invoke(null, getContext());
     }
     catch (NoSuchMethodException e) {
       e.printStackTrace();
@@ -140,24 +123,86 @@ public abstract class KickNode extends FormulaNode {
     }
     return null;
   }
-  
-  protected CallTarget getTarget(Cell core) {
-    return getContext().getKick(core, getFragmenter());
+
+  // Unregistered location, cached target, tail call
+  @Specialization(
+    limit = "1",
+    guards = { "getInBattery()",
+               "getIsTail()",
+               "core.head == cachedBattery" })
+  protected Object doCachedTail(Cell core,
+      @Cached("core.head") Object cachedBattery,
+      @Cached("getLabel(core)") KickLabel label,
+      @Cached("getTarget(label, core)") CallTarget target) {
+    throw new TailException(target, new Object[] { core });
   }
   
+  protected KickLabel getLabel(Cell core) {
+    Cell battery = TypesGen.asCell(core.head);
+    return new KickLabel(battery, getAxis());
+  }
+
+  @TruffleBoundary // hash operations
+  protected CallTarget getTarget(KickLabel label, Cell core) {
+    CompilerAsserts.neverPartOfCompilation();
+    Context context = getContext();
+    Map<KickLabel,CallTarget> kicks = context.kicks;
+    CallTarget t = kicks.get(label);
+    if ( null == t ) {
+      Cell formula = TypesGen.asCell(getFragment().executeFragment(core));
+      FormulaNode f = context.parseCell(formula, true);
+      RootNode root = new JaqueRootNode(f);
+      t = Truffle.getRuntime().createCallTarget(root);
+      kicks.put(label, t);
+    }
+    return t;
+  }
+
+  // Unregistered location, cached target, direct call
+  @Specialization(
+    limit = "1",
+    guards = { "getInBattery()",
+               "core.head == cachedBattery" })
+  protected Object doCachedCall(VirtualFrame frame, Cell core,
+      @Cached("core.head") Object cachedBattery,
+      @Cached("getLabel(core)") KickLabel label,
+      @Cached("getTarget(label, core)") CallTarget target,
+      @Cached("getDispatch()") DispatchNode dispatch) {
+    return dispatch.call(frame, target, new Object[] { core });
+  }
+
   protected DispatchNode getDispatch() {
     return DispatchNodeGen.create();
   }
   
-  protected Location getLocation(Cell core) {
-    return getContext().lookup(core);
+  // Unregistered location, varying target, tail
+  @Specialization(
+    guards = { "getInBattery()",
+               "getIsTail()" })
+  protected Object doSlowTail(Cell core) {
+    KickLabel label = getLabel(core);
+    throw new TailException(getTarget(label, core), new Object[] { core });
+  }
+
+  // Unregistered location, varying target, direct call
+  @Specialization(
+    guards = { "getInBattery()" })
+  protected Object doSlowCall(VirtualFrame frame, Cell core,
+      @Cached("getDispatch()") DispatchNode dispatch) {
+    KickLabel label = getLabel(core);
+    return dispatch.call(frame, getTarget(label, core), new Object[] { core });
   }
   
-  protected boolean isFine(Location loc, Cell core) {
-    return (null == loc) ? false : loc.matches(core);
+  // kicked arm isn't even in the battery - treat as nock
+  @Specialization
+  protected Object doNock(VirtualFrame frame, Cell core,
+      @Cached("makeNockDispatch()") NockDispatchNode dispatch) {
+    Cell formula = TypesGen.asCell(getFragment().executeFragment(core));
+    return dispatch.executeNock(frame, core, formula);
   }
   
-  protected Class<? extends ImplementationNode> getDriver(Location loc) {
-    return (null == loc) ? null : loc.find(getFragmenter());
+  protected NockDispatchNode makeNockDispatch() {
+    return NockDispatchNodeGen.create(getContext(), getIsTail());
   }
+  
 }

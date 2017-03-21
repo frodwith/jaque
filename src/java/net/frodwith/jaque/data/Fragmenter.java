@@ -1,10 +1,12 @@
 package net.frodwith.jaque.data;
 
+import com.oracle.truffle.api.nodes.ExplodeLoop;
+
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.truffle.TypesGen;
 
 public class Fragmenter {
-  private final boolean[] path;
+  public final boolean[] path;
   public final Object axis;
 
   public Fragmenter(Object axis) {
@@ -48,6 +50,5 @@ public class Fragmenter {
     catch (ClassCastException e) {
       throw new Bail();
     }
-
   }
 }
