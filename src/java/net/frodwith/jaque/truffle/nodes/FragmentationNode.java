@@ -1,5 +1,7 @@
 package net.frodwith.jaque.truffle.nodes;
 
+import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.profiles.BranchProfile;
 
 import net.frodwith.jaque.Bail;
@@ -25,7 +27,9 @@ public class FragmentationNode extends JaqueNode {
     }
   }
   
+  @ExplodeLoop
   public Object executeFragment(Object subject) {
+    CompilerAsserts.compilationConstant(path.length);
     if ( null == path ) {
       errorPath.enter();
       throw new Bail();

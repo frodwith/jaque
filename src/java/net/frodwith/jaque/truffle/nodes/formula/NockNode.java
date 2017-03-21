@@ -1,28 +1,41 @@
 package net.frodwith.jaque.truffle.nodes.formula;
 
-import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.dsl.Cached;
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.NodeField;
-import com.oracle.truffle.api.dsl.NodeFields;
-import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.DirectCallNode;
-import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.profiles.BranchProfile;
 
+import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.truffle.Context;
-import net.frodwith.jaque.truffle.TailException;
-import net.frodwith.jaque.truffle.nodes.DispatchNode;
-import net.frodwith.jaque.truffle.nodes.DispatchNodeGen;
 import net.frodwith.jaque.truffle.nodes.NockDispatchNode;
+import net.frodwith.jaque.truffle.nodes.NockDispatchNodeGen;
 
-@NodeField(name="dispatch", type=NockDispatchNode.class)
-public abstract class NockNode extends BinaryFormulaNode {
-  public abstract NockDispatchNode getDispatch();
-
-  @Specialization
-  protected Object doNock(VirtualFrame frame, Object subject, Cell formula) {
-    return getDispatch().executeNock(frame, subject, formula);
+public final class NockNode extends FormulaNode {
+  @Child private FormulaNode subject;
+  @Child private FormulaNode formula;
+  @Child private NockDispatchNode dispatch;
+  private final BranchProfile errorPath;
+  
+  public NockNode(FormulaNode subject, FormulaNode formula, Context context, boolean tail) {
+    this.subject = subject;
+    this.formula = formula;
+    this.dispatch = NockDispatchNodeGen.create(context, tail);
+    this.errorPath = BranchProfile.create();
   }
+
+  @Override
+  public Object executeGeneric(VirtualFrame frame) {
+    Object bus = subject.executeGeneric(frame);
+    Cell fol;
+    try {
+      fol = formula.executeCell(frame);
+      return dispatch.executeNock(frame, bus, fol);
+    }
+    catch (UnexpectedResultException e) {
+      errorPath.enter();
+      throw new Bail();
+    }
+  }
+  
+
 }

@@ -1,6 +1,8 @@
 package net.frodwith.jaque.data;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Stack;
 
 import gnu.math.MPN;
 import net.frodwith.jaque.Bail;
@@ -100,6 +102,99 @@ public class Noun {
   
   static int mug_out(int has) {
     return (has >>> 31) ^ (has & 0x7fffffff);
+  }
+  
+  public static Object parse(String src) {
+    StringBuilder b = null;
+    int i, len = src.length();
+    ArrayList<Object> result = new ArrayList<Object>();
+    Stack<ArrayList<Object>> s = new Stack<ArrayList<Object>>();
+    s.push(result);
+
+    for ( i = 0; i < len; ++i ) {
+      char c = src.charAt(i);
+      if ( Character.isDigit(c) ) {
+        if ( null == b ) {
+          b = new StringBuilder();
+        }
+        b.append(c);
+      }
+      else if ( c == '.' ) {
+        if ( null == b ) {
+          throw new IllegalArgumentException(". outside atom at position " + i);
+        }
+      }
+      else {
+
+        if ( null != b ) {
+          s.peek().add(b.toString());
+          b = null;
+        }
+
+        if ( c == '[' ) {
+          s.push(new ArrayList<Object>());
+        }
+        else if ( c == ']' ) {
+          if ( s.isEmpty() ) {
+            throw new IllegalArgumentException("unbalanced ] at position " + i);
+          }
+          ArrayList<Object> fin = s.pop();
+          if ( fin.size() < 2 ) {
+            throw new IllegalArgumentException("cell with less than 2 elements at position" + i);
+          }
+          if ( s.isEmpty() ) {
+            throw new IllegalArgumentException("unbalanced ] at position " + i);
+          }
+          s.peek().add(fin);
+        }
+        else if ( Character.isSpaceChar(c) ) {
+          continue;
+        }
+        else {
+          throw new IllegalArgumentException("unrecognized character " + c + " at position " + i);
+        }
+      }
+    }
+
+    if ( null != b ) {
+      s.peek().add(b.toString());
+    }
+
+    if ( s.isEmpty() ) {
+      throw new IllegalArgumentException("too many ]");
+    }
+    else {
+      ArrayList<Object> tree = s.pop();
+      if ( !s.isEmpty() ) {
+        throw new IllegalArgumentException("missing ]");
+      }
+      if ( 1 != tree.size() ) {
+        throw new IllegalArgumentException("multiple nouns not surrounded by brackets");
+      }
+      return readRec(tree.get(0));
+    }
+  }
+
+  private static Object readRec(Object o) {
+    if (o instanceof String) {
+      return Atom.fromString((String) o);
+    }
+    else if (o instanceof ArrayList<?>) {
+      ArrayList<Object> a = (ArrayList<Object>) o;
+      int len = a.size();
+      Object tail = readRec(a.remove(--len)),
+             head = readRec(a.remove(--len));
+      Cell end = new Cell(head, tail);
+
+      while ( len-- > 0 ) {
+        end = new Cell(readRec(a.remove(len)), end);
+      }
+
+      return end;
+    }
+    else {
+      throw new IllegalArgumentException();
+    }
   }
   
 }

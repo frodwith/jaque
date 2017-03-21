@@ -1,5 +1,8 @@
 package net.frodwith.jaque.truffle;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -12,9 +15,9 @@ import net.frodwith.jaque.KickLabel;
 import net.frodwith.jaque.Location;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
-import net.frodwith.jaque.data.Fragmenter;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.driver.Arm;
+import net.frodwith.jaque.truffle.driver.AxisArm;
 import net.frodwith.jaque.truffle.nodes.FragmentationNode;
 import net.frodwith.jaque.truffle.nodes.JaqueRootNode;
 import net.frodwith.jaque.truffle.nodes.NockDispatchNode;
@@ -31,6 +34,10 @@ import net.frodwith.jaque.truffle.nodes.formula.SameNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.hint.DiscardHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.FastHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.MemoHintNode;
+import net.frodwith.jaque.truffle.nodes.jet.AddNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.DecrementNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.LessThanNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.SubtractNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 import net.frodwith.jaque.truffle.nodes.formula.FragmentNode;
 import net.frodwith.jaque.truffle.nodes.formula.IfNode;
@@ -38,6 +45,7 @@ import net.frodwith.jaque.truffle.nodes.formula.KickNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralCellNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralIntArrayNode;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralLongNode;
+import net.frodwith.jaque.truffle.nodes.formula.NockNode;
 
 public class Context {
   
@@ -84,8 +92,7 @@ public class Context {
     else {
       switch ( (int) TypesGen.asLong(op) ) {
         case 0: {
-          Fragmenter fragmenter = new Fragmenter(arg);
-          return new FragmentNode(fragmenter);
+          return new FragmentNode(arg);
         }
         case 1: {
           if ( TypesGen.isCell(arg) ) {
@@ -104,8 +111,7 @@ public class Context {
                t = TypesGen.asCell(c.tail);
           FormulaNode left = parseCell(h, false),
                      right = parseCell(t, false);
-          NockDispatchNode dispatch = NockDispatchNodeGen.create(this, tail);
-          return NockNodeGen.create(left, right, dispatch);
+          return new NockNode(left, right, this, tail);
         }
         case 3:
           return DeepNodeGen.create(parseCell(TypesGen.asCell(arg), false));
@@ -153,9 +159,8 @@ public class Context {
                t = TypesGen.asCell(c.tail);
           Object axis = c.head;
           FormulaNode core = parseCell(t, false);
-          FragmentationNode fragment = new FragmentationNode(axis);
 
-          return KickNodeGen.create(core, this, tail, Atom.cap(axis) == 2, axis, fragment);
+          return KickNodeGen.create(core, this, tail, Atom.cap(axis) == 2, axis);
         }
         case 10: {
           Cell    cell = TypesGen.asCell(arg);
@@ -204,5 +209,26 @@ public class Context {
     TopRootNode top     = new TopRootNode(target);
     return Truffle.getRuntime().createCallTarget(top).call(subject);
   }
-  
+
+  public static void main(String[] args) {
+    Arm[] drivers = new Arm[] {
+      new AxisArm("kmat/math/dec", 2L, DecrementNodeGen.class),
+      new AxisArm("kmat/math/add", 2L, AddNodeGen.class),
+      new AxisArm("kmat/math/sub", 2L, SubtractNodeGen.class),
+      new AxisArm("kmat/math/lth", 2L, LessThanNodeGen.class),
+    };
+    Context c = new Context(drivers);
+    try {
+      byte[] bytes = Files.readAllBytes(Paths.get("/home/pdriver/math-kernel.nock"));
+      String fos   = new String(bytes, "UTF-8").trim();
+      Cell formula = TypesGen.asCell(Noun.parse(fos));
+      Cell kernel  = TypesGen.asCell(c.nock(0, formula));
+      String calls = "[8 [9 22 0 1] 9 2 [0 4] [1 15] 0 11]";
+      Cell call    = TypesGen.asCell(Noun.parse(calls));
+      System.out.println(c.nock(kernel, call));
+    }
+    catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
 }

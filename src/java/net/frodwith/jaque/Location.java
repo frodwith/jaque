@@ -39,17 +39,19 @@ public final class Location {
     }
 
     this.drivers = new HashMap<Object, Class<? extends ImplementationNode>>();
-    for ( Arm a : arms ) {
-      Object axis;
-      if ( a instanceof AxisArm ) {
-        AxisArm aa = (AxisArm) a;
-        axis = aa.axis;
+    if ( null != arms ) {
+      for ( Arm a : arms ) {
+        Object axis;
+        if ( a instanceof AxisArm ) {
+          AxisArm aa = (AxisArm) a;
+          axis = aa.axis;
+        }
+        else {
+          NamedArm na = (NamedArm) a;
+          axis = nameToAxis.get(na.name);
+        }
+        drivers.put(axis, a.driver);
       }
-      else {
-        NamedArm na = (NamedArm) a;
-        axis = nameToAxis.get(na.name);
-      }
-      drivers.put(axis, a.driver);
     }
   }
 }

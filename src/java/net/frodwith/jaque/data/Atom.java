@@ -576,7 +576,10 @@ public class Atom {
       words = Arrays.copyOfRange(words, 0, words.length - bad);
     }
 
-    if ( words != null && words.length > 2 ) {
+    if ( 0 == words.length ) {
+      return 0L;
+    }
+    else if ( words != null && words.length > 2 ) {
       return words;
     }
     else {
@@ -615,5 +618,26 @@ public class Atom {
         y   = bw;
       }
     }
+  }
+  
+  public static Object fromString(String s, int radix) {
+    char[] car = s.toCharArray();
+    int    len = car.length,
+           cpw = MPN.chars_per_word(radix),
+           i;
+    byte[] dig = new byte[len];
+    int[]  wor = new int[(len / cpw) + 1];
+
+    for (i = 0; i < len; ++i) {
+        dig[i] = (byte) Character.digit(car[i], radix);
+    }
+
+    MPN.set_str(wor, dig, len, radix);
+
+    return normalize(wor);
+}
+
+  public static Object fromString(String s) {
+      return fromString(s, 10);
   }
 }
