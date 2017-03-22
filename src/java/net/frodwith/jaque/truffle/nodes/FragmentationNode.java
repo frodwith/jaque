@@ -2,6 +2,7 @@ package net.frodwith.jaque.truffle.nodes;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.profiles.BranchProfile;
 
 import net.frodwith.jaque.Bail;
@@ -10,39 +11,36 @@ import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.truffle.TypesGen;
 
 public class FragmentationNode extends JaqueNode {
-  private final boolean[] path;
-  private BranchProfile errorPath = BranchProfile.create();
+  @Children private final ReadNode[] reads;
+  private final BranchProfile errorPath;
   
   public FragmentationNode(Object axis) {
+    this.errorPath = BranchProfile.create();
+    assert !Atom.isZero(axis);
+    
     int i, j, bits = Atom.measure(axis);
-    if ( Atom.isZero(axis) ) {
-      this.path = null;
-    }
-    else {
-      this.path = new boolean[bits-1];
-      
-      for ( i = 0, j = (bits - 2); j >= 0; ++i, --j ) {
-        path[i] = Atom.getNthBit(axis, j);
-      }
+    this.reads = new ReadNode[bits-1];
+    
+    for ( i = 0, j = (bits - 2); j >= 0; ++i, --j ) {
+      this.reads[i] = Atom.getNthBit(axis, j)
+          ? new TailNode()
+          : new HeadNode();
     }
   }
   
   @ExplodeLoop
   public Object executeFragment(Object subject) {
-    CompilerAsserts.compilationConstant(path.length);
-    if ( null == path ) {
+    CompilerAsserts.compilationConstant(reads.length);
+    try {
+      for ( ReadNode n : reads ) {
+        subject = n.executeRead(TypesGen.expectCell(subject));
+      }
+      return subject;
+    }
+    catch (UnexpectedResultException e) {
       errorPath.enter();
       throw new Bail();
     }
-    for ( boolean tail : path ) {
-      if ( !TypesGen.isCell(subject) ) {
-        errorPath.enter();
-        throw new Bail();
-      }
-      Cell c = TypesGen.asCell(subject);
-      subject = tail ? c.tail : c.head;
-    }
-    return subject;
   }
   
 }

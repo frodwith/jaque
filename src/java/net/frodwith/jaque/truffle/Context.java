@@ -23,6 +23,7 @@ import net.frodwith.jaque.truffle.nodes.JaqueRootNode;
 import net.frodwith.jaque.truffle.nodes.NockDispatchNode;
 import net.frodwith.jaque.truffle.nodes.NockDispatchNodeGen;
 import net.frodwith.jaque.truffle.nodes.TopRootNode;
+import net.frodwith.jaque.truffle.nodes.formula.BailNode;
 import net.frodwith.jaque.truffle.nodes.formula.BumpNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.ComposeNode;
 import net.frodwith.jaque.truffle.nodes.formula.ConsNodeGen;
@@ -92,7 +93,12 @@ public class Context {
     else {
       switch ( (int) TypesGen.asLong(op) ) {
         case 0: {
-          return new FragmentNode(arg);
+          if ( Atom.isZero(arg) ) {
+            return new BailNode();
+          }
+          else {
+            return new FragmentNode(arg);
+          }
         }
         case 1: {
           if ( TypesGen.isCell(arg) ) {
