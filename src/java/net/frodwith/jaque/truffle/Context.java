@@ -225,13 +225,13 @@ public class Context {
     };
     Context c = new Context(drivers);
     try {
-      byte[] bytes = Files.readAllBytes(Paths.get("/home/pdriver/math-kernel.nock"));
+      byte[] bytes = Files.readAllBytes(Paths.get("/home/pdriver/code/jaque/nock/simple-loop.nock"));
       String fos   = new String(bytes, "UTF-8").trim();
       Cell formula = TypesGen.asCell(Noun.parse(fos));
-      Cell kernel  = TypesGen.asCell(c.nock(0, formula));
-      String calls = "[8 [9 22 0 1] 9 2 [0 4] [1 15] 0 11]";
-      Cell call    = TypesGen.asCell(Noun.parse(calls));
-      System.out.println(c.nock(kernel, call));
+//      Cell kernel  = TypesGen.asCell(c.nock(0, formula));
+//      String calls = "[8 [9 22 0 1] 9 2 [0 4] [1 15] 0 11]";
+//      Cell call    = TypesGen.asCell(Noun.parse(calls));
+      System.out.println(Atom.cordToString(c.nock(0L, formula)));
     }
     catch (IOException e) {
       e.printStackTrace();

@@ -28,8 +28,10 @@ import net.frodwith.jaque.truffle.nodes.DispatchNode;
 import net.frodwith.jaque.truffle.nodes.DispatchNodeGen;
 import net.frodwith.jaque.truffle.nodes.FragmentationNode;
 import net.frodwith.jaque.truffle.nodes.JaqueRootNode;
+import net.frodwith.jaque.truffle.nodes.KickRootNode;
 import net.frodwith.jaque.truffle.nodes.NockDispatchNode;
 import net.frodwith.jaque.truffle.nodes.NockDispatchNodeGen;
+import net.frodwith.jaque.truffle.nodes.RepeatingKickNode;
 import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
 import net.frodwith.jaque.truffle.nodes.jet.JetNode;
 
@@ -75,9 +77,6 @@ public abstract class KickNode extends FormulaNode {
   @ExplodeLoop
   protected boolean isFine(Location loc, FragmentationNode[] nodes, Object noun) {
     CompilerAsserts.compilationConstant(nodes.length);
-    if ( null == loc ) {
-      return false;
-    }
     for ( int i = 0; i < nodes.length; ++i ) {
       if ( !TypesGen.isCell(noun) ) {
         return false;
