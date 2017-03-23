@@ -1,30 +1,24 @@
 package net.frodwith.jaque.truffle.nodes;
 
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.profiles.ValueProfile;
 
 import net.frodwith.jaque.Bail;
-import net.frodwith.jaque.data.Atom;
-import net.frodwith.jaque.data.Cell;
+import net.frodwith.jaque.data.Axis;
+import net.frodwith.jaque.data.Fragment;
 import net.frodwith.jaque.truffle.TypesGen;
 
 public class FragmentationNode extends JaqueNode {
   @Children private final ReadNode[] reads;
-//  private final ValueProfile constantSubject = ValueProfile.createIdentityProfile();
   
-  public FragmentationNode(Object axis) {
-    assert !Atom.isZero(axis);
+  public FragmentationNode(Object atom) {
+    int i = 0;
+    Axis axis = new Axis(atom);
+    this.reads = new ReadNode[axis.length];
     
-    int i, j, bits = Atom.measure(axis);
-    this.reads = new ReadNode[bits-1];
-    
-    for ( i = 0, j = (bits - 2); j >= 0; ++i, --j ) {
-      this.reads[i] = Atom.getNthBit(axis, j)
-          ? new ReadTailNode()
-          : new ReadHeadNode();
+    for ( Fragment f : axis ) {
+      this.reads[i++] = (f == Fragment.HEAD)
+          ? new ReadHeadNode()
+          : new ReadTailNode();
     }
   }
   
