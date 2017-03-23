@@ -29,7 +29,6 @@ import net.frodwith.jaque.truffle.nodes.formula.ComposeNode;
 import net.frodwith.jaque.truffle.nodes.formula.ConsNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.DeepNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.EscapeNodeGen;
-import net.frodwith.jaque.truffle.nodes.formula.NockNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.PushNode;
 import net.frodwith.jaque.truffle.nodes.formula.SameNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.hint.DiscardHintNode;

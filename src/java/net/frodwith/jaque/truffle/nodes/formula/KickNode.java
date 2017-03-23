@@ -28,12 +28,9 @@ import net.frodwith.jaque.truffle.nodes.DispatchNode;
 import net.frodwith.jaque.truffle.nodes.DispatchNodeGen;
 import net.frodwith.jaque.truffle.nodes.FragmentationNode;
 import net.frodwith.jaque.truffle.nodes.JaqueRootNode;
-import net.frodwith.jaque.truffle.nodes.KickRootNode;
 import net.frodwith.jaque.truffle.nodes.NockDispatchNode;
 import net.frodwith.jaque.truffle.nodes.NockDispatchNodeGen;
-import net.frodwith.jaque.truffle.nodes.RepeatingKickNode;
 import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
-import net.frodwith.jaque.truffle.nodes.jet.JetNode;
 
 @NodeChild(value="core", type=FormulaNode.class)
 @NodeFields({

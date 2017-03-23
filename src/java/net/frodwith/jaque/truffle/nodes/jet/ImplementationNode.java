@@ -3,7 +3,6 @@ package net.frodwith.jaque.truffle.nodes.jet;
 
 import com.oracle.truffle.api.dsl.NodeField;
 
-import net.frodwith.jaque.data.Fragmenter;
 import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.nodes.JaqueNode;
 

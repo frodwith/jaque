@@ -11,8 +11,7 @@ public abstract class UnaryJetNode extends ImplementationNode {
 
   @Override
   public Object doJet(Object subject) {
-    Cell core = TypesGen.asCell(subject);
-    return this.executeUnary(fragment.executeFragment(core));
+    return this.executeUnary(fragment.executeFragment(subject));
   }
 
 }

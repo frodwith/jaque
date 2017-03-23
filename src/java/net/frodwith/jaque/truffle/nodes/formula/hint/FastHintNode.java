@@ -6,21 +6,15 @@ import java.util.Map;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node;
 
 import net.frodwith.jaque.Location;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
-import net.frodwith.jaque.data.Fragmenter;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.TypesGen;
-import net.frodwith.jaque.truffle.driver.Arm;
-import net.frodwith.jaque.truffle.driver.AxisArm;
-import net.frodwith.jaque.truffle.driver.NamedArm;
 import net.frodwith.jaque.truffle.nodes.FragmentationNode;
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
-import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
 
 /* Fast hints are semantically only executed once, then rewritten
  * to a discard hint.
