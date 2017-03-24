@@ -6,8 +6,9 @@ import java.util.Map;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 
-import net.frodwith.jaque.Location;
+import net.frodwith.jaque.Registration;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Noun;
@@ -27,25 +28,25 @@ public class FastHintNode extends DynamicHintFormula {
     this.context = context;
   }
   
-  private Location register(Cell core, Clue clue) {
+  private Registration register(DynamicObject core, Clue clue) {
     if ( Atom.isZero(clue.parentAxis) ) {
-      return new Location(clue.name, clue.name, 0L, clue.hooks,
+      return new Registration(clue.name, clue.name, 0L, clue.hooks,
           core, null, context.drivers.get(clue.name));
     }
     else {
       CompilerAsserts.neverPartOfCompilation();
       FragmentationNode fragment = new FragmentationNode(clue.parentAxis);
       insert(fragment);
-      Cell parentCore = TypesGen.asCell(fragment.executeFragment(core));
-      Cell parentBattery = TypesGen.asCell(parentCore.head);
-      Location parentLoc = context.locations.get(parentBattery);
-      if ( null == parentLoc ) {
+      DynamicObject parentCore = Noun.asCell(fragment.executeFragment(core));
+      DynamicObject parentBattery = Noun.asCell(Cell.head(parentCore));
+      Registration parent = context.locations.get(parentBattery);
+      if ( null == parent ) {
         System.err.println("register: invalid parent");
         return null;
       }
-      String label = parentLoc.label + "/" + clue.name;
-      return new Location(clue.name, label, clue.parentAxis, clue.hooks, 
-          core.head, parentLoc, context.drivers.get(label));
+      String label = parent.label + "/" + clue.name;
+      return new Registration(clue.name, label, clue.parentAxis, clue.hooks, 
+          Cell.head(core), parent, context.drivers.get(label));
     }
   }
 
@@ -56,9 +57,9 @@ public class FastHintNode extends DynamicHintFormula {
     // We're on the slow path either way from here
     CompilerDirectives.transferToInterpreter();
     Clue clue = Clue.parse(rawClue);
-    if ( TypesGen.isCell(product) && null != clue ) {
-      Cell core = TypesGen.asCell(product);
-      context.locations.put(TypesGen.asCell(core.head), register(core, clue));
+    if ( Noun.isCell(product) && null != clue ) {
+      DynamicObject core = Noun.asCell(product);
+      context.locations.put(Noun.asCell(Cell.head(core)), register(core, clue));
     }
 
     // possibly we could discard to next, but if hint is constant
@@ -69,6 +70,11 @@ public class FastHintNode extends DynamicHintFormula {
     return product;
   }
   
+  
+  /* It should be noted that clue parsing is always done in the interpreter, so
+   * slow-path operations (like Cell.head() instead of a ReadNode) are used freely.
+   */
+  
   private static class ClueParsingException extends Exception {
   }
   
@@ -76,8 +82,8 @@ public class FastHintNode extends DynamicHintFormula {
     public final String name;
     public final Object parentAxis;
     public final Map<String, Object> hooks;
-    public static final Cell CONSTANT_ZERO = new Cell(1L, 0L);
-    public static final Cell CONSTANT_FRAG = new Cell(0L, 1L);
+    public static final DynamicObject CONSTANT_ZERO = Context.cons(1L, 0L);
+    public static final DynamicObject CONSTANT_FRAG = Context.cons(0L, 1L);
 
     private Clue(String name, Object parentAxis, Map<String, Object> hooks) {
       this.name = name;
@@ -86,12 +92,12 @@ public class FastHintNode extends DynamicHintFormula {
     }
 
     private static String chum(Object noun) throws ClueParsingException {
-      if ( TypesGen.isCell(noun) ) {
-        Cell c = TypesGen.asCell(noun);
-        Object h = c.head,
-               t = c.tail;
+      if ( Noun.isCell(noun) ) {
+        DynamicObject c = Noun.asCell(noun);
+        Object h = Cell.head(c),
+               t = Cell.tail(c);
 
-        if ( TypesGen.isCell(t) || !TypesGen.isLong(t) ) {
+        if ( Noun.isCell(t) || !TypesGen.isLong(t) ) {
           throw new ClueParsingException();
         }
 
@@ -115,10 +121,10 @@ public class FastHintNode extends DynamicHintFormula {
     
     private static Object skipHints(Object formula) {
       while ( true ) {
-        if ( TypesGen.isCell(formula) ) {
-          Cell c = TypesGen.asCell(formula);
-          if ( Atom.equals(10L, c.head) ) {
-            formula = TypesGen.asCell(c.tail).tail;
+        if ( Noun.isCell(formula) ) {
+          DynamicObject c = Noun.asCell(formula);
+          if ( Atom.equals(10L, Cell.head(c)) ) {
+            formula = Cell.tail(Noun.asCell(Cell.tail(c)));
             continue;
           }
         }
@@ -128,35 +134,41 @@ public class FastHintNode extends DynamicHintFormula {
 
     private static Object parseParentAxis(Object noun) throws ClueParsingException {
       Object o = skipHints(noun);
-      if ( !TypesGen.isCell(o) ) {
+      if ( !Noun.isCell(o) ) {
         throw new ClueParsingException();
       }
-      Cell f = TypesGen.asCell(o);
+
+      DynamicObject f = Noun.asCell(o);
+      Object h = Cell.head(f),
+             t = Cell.tail(f);
+
       if ( Cell.equals(CONSTANT_ZERO, f) ) {
         return 0L;
       }
-      if ( !Noun.isAtom(f.tail) || !Atom.isZero(f.head) || Atom.cap(f.tail) != 3) {
+      if ( !Noun.isAtom(t) || !Atom.isZero(h) || Atom.cap(t) != 3) {
         throw new ClueParsingException();
       }
-      return f.tail;
+      return t;
     }
     
     private static Object parseHookAxis(Object nock) throws ClueParsingException {
-      nock = skipHints(nock);
-      Cell f = TypesGen.asCell(nock);
-      Object op = f.head;
+      DynamicObject f = Noun.asCell(skipHints(nock));
+      Object op = Cell.head(f),
+           tail = Cell.tail(f);
       if ( Noun.isAtom(op) ) {
         if ( Atom.equals(0L, op) ) {
-          if ( Noun.isAtom(f.tail) ) {
-            return f.tail;
+          if ( Noun.isAtom(tail) ) {
+            return tail;
           }
         }
         else if ( Atom.equals(9L, op) ) {
-          Cell rest = TypesGen.asCell(f.tail);
-          if ( Noun.isAtom(rest.head) 
-              && Cell.equals(CONSTANT_FRAG, TypesGen.asCell(rest.tail)) )
-          {
-            return rest.head;
+          DynamicObject rest = Noun.asCell(tail);
+          Object h = Cell.head(rest),
+                 t = Cell.tail(rest);
+
+          if ( Noun.isAtom(h) 
+              && Cell.equals(CONSTANT_FRAG, Noun.asCell(t)) ) {
+            return h;
           }
         }
       }
@@ -167,19 +179,19 @@ public class FastHintNode extends DynamicHintFormula {
       Object list = noun;
       Map<String, Object> map = new HashMap<String, Object>();
       while ( !Atom.isZero(list) ) {
-        Cell pair = TypesGen.asCell(list);
-        Cell i = TypesGen.asCell(pair.head);
-        Object t = i.head;
+        DynamicObject pair = Noun.asCell(list);
+        DynamicObject i = Noun.asCell(Cell.head(pair));
+        Object t = Cell.head(i);
         if ( !Noun.isAtom(t) ) {
           throw new ClueParsingException();
         }
-        String term = Atom.cordToString(i.head);
+        String term = Atom.cordToString(t);
         if ( null == term ) {
           throw new ClueParsingException();
         }
-        Cell nock = TypesGen.asCell(i.tail);
+        DynamicObject nock = Noun.asCell(Cell.tail(i));
         map.put(term, parseHookAxis(nock));
-        list = pair.tail;
+        list = Cell.tail(pair);
       }
 
       return map;
@@ -187,11 +199,11 @@ public class FastHintNode extends DynamicHintFormula {
     
     public static Clue parse(Object raw) {
       try {
-        Cell trel = TypesGen.asCell(raw);
-        Cell pair = TypesGen.asCell(trel.tail);
-        String name = chum(trel.head);
-        Object parentAxis = parseParentAxis(pair.head);
-        Map<String, Object> hooks = parseHooks(pair.tail);
+        DynamicObject trel = Noun.asCell(raw);
+        DynamicObject pair = Noun.asCell(Cell.tail(trel));
+        String name = chum(Cell.head(trel));
+        Object parentAxis = parseParentAxis(Cell.head(pair));
+        Map<String, Object> hooks = parseHooks(Cell.tail(pair));
         return new Clue(name, parentAxis, hooks);
       }
       catch (ClassCastException e) {

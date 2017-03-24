@@ -8,22 +8,22 @@ import net.frodwith.jaque.truffle.driver.AxisArm;
 import net.frodwith.jaque.truffle.driver.NamedArm;
 import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
 
-public final class Location {
+public final class Registration {
   public final String name;
   public final String label;
   public final Object noun;
-  public final Location parent;
+  public final Registration parent;
   public final Object axisToParent;
   public final Map<String, Object> nameToAxis;
   public final Map<Object, String> axisToName;
   public final Map<Object,Class<? extends ImplementationNode>> drivers;
   
-  public Location(String name, 
+  public Registration(String name, 
       String label,
       Object axisToParent,
       Map<String, Object> hooks, 
       Object noun, 
-      Location parent,
+      Registration parent,
       Arm[] arms) {
 
     this.name = name;

@@ -1,13 +1,15 @@
 package net.frodwith.jaque;
 
+import com.oracle.truffle.api.object.DynamicObject;
+
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
 
 public class KickLabel {
-  public final Cell battery;
+  public final DynamicObject battery;
   public final Object axis;
   
-  public KickLabel(Cell battery, Object axis) {
+  public KickLabel(DynamicObject battery, Object axis) {
     this.battery = battery;
     this.axis = axis;
   }

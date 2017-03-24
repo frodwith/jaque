@@ -17,7 +17,7 @@ import com.oracle.truffle.api.object.Layout;
 import com.oracle.truffle.api.object.Shape;
 
 import net.frodwith.jaque.KickLabel;
-import net.frodwith.jaque.Location;
+import net.frodwith.jaque.Registration;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Fragment;
@@ -64,13 +64,13 @@ public class Context {
   
   public final Map<KickLabel, CallTarget> kicks;
   public final Map<DynamicObject, CallTarget> nocks;
-  public final Map<DynamicObject, Location> locations;
+  public final Map<DynamicObject, Registration> locations;
   public final Map<String, Arm[]> drivers;
   
   public Context(Arm[] arms) {
     this.kicks = new HashMap<KickLabel, CallTarget>();
     this.nocks = new HashMap<DynamicObject, CallTarget>();
-    this.locations = new HashMap<DynamicObject, Location>();
+    this.locations = new HashMap<DynamicObject, Registration>();
     this.drivers = new HashMap<String, Arm[]>();
     
     Map<String, List<Arm>> temp = new HashMap<String, List<Arm>>();
