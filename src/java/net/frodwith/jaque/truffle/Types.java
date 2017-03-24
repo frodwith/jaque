@@ -5,7 +5,7 @@ import com.oracle.truffle.api.dsl.TypeSystem;
 
 import net.frodwith.jaque.data.Cell;
 
-@TypeSystem({long.class, int[].class})
+@TypeSystem({long.class, int[].class, Cell.class})
 public class Types {
   @ImplicitCast
   public static int[] castIntArray(long v) {

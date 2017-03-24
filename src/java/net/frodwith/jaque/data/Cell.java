@@ -6,9 +6,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.oracle.truffle.api.object.DynamicObject;
-
-import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.TypesGen;
 
 /* Because we must use Object fields for the head and the tail to accomodate the atom
@@ -19,6 +16,16 @@ import net.frodwith.jaque.truffle.TypesGen;
  */
 
 public class Cell {
+  public final Object head;
+  public final Object tail;
+
+  private boolean hashed;
+  private int hash;
+  
+  public Cell(Object head, Object tail) {
+    this.head = head;
+    this.tail = tail;
+  }
   
   private static int mug_both(int lef, int rit) {
     int bot, out;
@@ -34,37 +41,35 @@ public class Cell {
     }
   }
   
-  public static boolean equals(DynamicObject a, DynamicObject b) {
+  public static boolean equals(Cell a, Cell b) {
     if (a == b) {
       return true;
     }
-    if ( (boolean) a.get("hashed") 
-        && (boolean) b.get("hashed") 
-        && a.get("hash") != b.get("hash") ) {
+    if (a.hashed && b.hashed && a.hash != b.hash) {
       return false;
     }
     else {
-      return Noun.equals(head(a), head(b)) && Noun.equals(tail(a), tail(b));
+      return Noun.equals(a.head, b.head) && Noun.equals(a.tail, b.tail);
     }
   }
   
-  public static int mug(DynamicObject c) {
-    if ( !((boolean) c.get("hashed")) ) {
-      int hash = mug_both(Noun.mug(head(c)), Noun.mug(tail(c)));
+  public static int mug(Cell c) {
+    if ( !c.hashed ) {
+      c.hash = mug_both(Noun.mug(c.head), Noun.mug(c.tail));
+      c.hashed = true;
+    }
+    return c.hash;
+  }
 
-      c.set("hash", hash);
-      c.set("hashed", true);
-      return hash;
-    }
-    return (int) c.get("hash");
+  public boolean equals(Object o) {
+    return TypesGen.isCell(o) && equals(this, TypesGen.asCell(o));
   }
   
-  public static Object head(DynamicObject c) {
-    return c.get(Fragment.HEAD);
+  public int hashCode() {
+    return mug(this);
   }
   
-  public static Object tail(DynamicObject c) {
-    return c.get(Fragment.TAIL);
+  public String toString() {
+    return Noun.toString(this);
   }
-  
 }

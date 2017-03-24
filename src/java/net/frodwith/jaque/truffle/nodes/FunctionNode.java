@@ -6,10 +6,8 @@ import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import com.oracle.truffle.api.object.DynamicObject;
 
 import net.frodwith.jaque.data.Cell;
-import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.TypesGen;
 
 /* Execute a function of the subject (stored in frame)
@@ -49,14 +47,8 @@ public abstract class FunctionNode extends JaqueNode {
     return TypesGen.expectIntArray(executeGeneric(frame));
   }
   
-  public DynamicObject executeCell(VirtualFrame frame) throws UnexpectedResultException {
-    Object o = executeGeneric(frame);
-    if ( Noun.isCell(o) ) {
-      return Noun.asCell(o);
-    }
-    else {
-      throw new UnexpectedResultException(o);
-    }
+  public Cell executeCell(VirtualFrame frame) throws UnexpectedResultException {
+    return TypesGen.expectCell(executeGeneric(frame));
   }
 
 }
