@@ -1,8 +1,6 @@
 package net.frodwith.jaque.truffle.nodes.formula;
 
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.object.DynamicObject;
-
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
 
@@ -18,7 +16,7 @@ public abstract class SameNode extends BinaryFormulaNode {
   }
   
   @Specialization
-  protected long same(DynamicObject a, DynamicObject b) {
+  protected long same(Cell a, Cell b) {
     return Cell.equals(a, b) ? Atom.YES : Atom.NO;
   }
   

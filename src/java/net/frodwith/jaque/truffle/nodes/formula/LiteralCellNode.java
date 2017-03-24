@@ -18,7 +18,7 @@ public class LiteralCellNode extends FormulaNode {
   }
 
   @Override
-  public DynamicObject executeCell(VirtualFrame frame) {
+  public Cell executeCell(VirtualFrame frame) {
     return value;
   }
 
