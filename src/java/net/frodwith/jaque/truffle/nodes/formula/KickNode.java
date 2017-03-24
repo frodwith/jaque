@@ -64,20 +64,14 @@ public abstract class KickNode extends FormulaNode {
     }
   }
   
-  protected Fine[] registrationChecks(Registration r) {
+  protected static Fine[] registrationChecks(Registration r) {
     CompilerAsserts.neverPartOfCompilation();
-    if ( null == r ) {
-      return null;
-    }
     List<Fine> acc = new LinkedList<Fine>();
     while ( null != r.parent ) {
-      Fine f = new Fine(r.noun, 
+      acc.add(new Fine(
+          r.noun, 
           ReadNodeGen.create(Fragment.HEAD), 
-          new FragmentationNode(r.axisToParent));
-      insert(f.constantRead);
-      insert(f.parent);
-      acc.add(f);
-      r = r.parent;
+          new FragmentationNode(r.axisToParent)));
     }
     acc.add(new Fine(r.noun, null, null));
     return acc.toArray(new Fine[0]);
@@ -161,8 +155,13 @@ public abstract class KickNode extends FormulaNode {
   protected Object doCachedTail(DynamicObject core,
       @Cached("getBattery(core)") DynamicObject cachedBattery,
       @Cached("getLabel(cachedBattery)") KickLabel label,
-      @Cached("getTarget(label, core)") CallTarget target) {
+      @Cached("getFragmentationNode()") FragmentationNode fragment,
+      @Cached("getTarget(label, core, fragment)") CallTarget target) {
     throw new TailException(target, new Object[] { core });
+  }
+  
+  protected FragmentationNode getFragmentationNode() {
+    return new FragmentationNode(getAxis());
   }
   
   protected KickLabel getLabel(DynamicObject battery) {
@@ -170,13 +169,15 @@ public abstract class KickNode extends FormulaNode {
   }
 
   @TruffleBoundary // hash operations
-  protected CallTarget getTarget(KickLabel label, DynamicObject core) {
+  protected CallTarget getTarget(KickLabel label,
+      DynamicObject core,
+      FragmentationNode fragment) {
     CompilerAsserts.neverPartOfCompilation();
     Context context = getContext();
     Map<KickLabel,CallTarget> kicks = context.kicks;
     CallTarget t = kicks.get(label);
     if ( null == t ) {
-      DynamicObject formula = Noun.asCell(Noun.fragment(getAxis(), core));
+      DynamicObject formula = Noun.asCell(fragment.executeFragment(core));
       FormulaNode f = context.parseCell(formula, true);
       RootNode root = new JaqueRootNode(f);
       t = Truffle.getRuntime().createCallTarget(root);
@@ -193,7 +194,8 @@ public abstract class KickNode extends FormulaNode {
   protected Object doCachedCall(VirtualFrame frame, DynamicObject core,
       @Cached("getBattery(core)") DynamicObject cachedBattery,
       @Cached("getLabel(cachedBattery)") KickLabel label,
-      @Cached("getTarget(label, core)") CallTarget target,
+      @Cached("getFragmentationNode()") FragmentationNode fragment,
+      @Cached("getTarget(label, core, fragment)") CallTarget target,
       @Cached("getDispatch()") DispatchNode dispatch) {
     return dispatch.call(frame, target, new Object[] { core });
   }
@@ -206,25 +208,28 @@ public abstract class KickNode extends FormulaNode {
   @Specialization(
     guards = { "getInBattery()",
                "getIsTail()" })
-  protected Object doSlowTail(DynamicObject core) {
+  protected Object doSlowTail(DynamicObject core,
+      @Cached("getFragmentationNode()") FragmentationNode fragment) {
     KickLabel label = getLabel(getBattery(core));
-    throw new TailException(getTarget(label, core), new Object[] { core });
+    throw new TailException(getTarget(label, core, fragment), new Object[] { core });
   }
 
   // Unregistered location, varying target, direct call
   @Specialization(
     guards = { "getInBattery()" })
   protected Object doSlowCall(VirtualFrame frame, DynamicObject core,
+      @Cached("getFragmentationNode()") FragmentationNode fragment,
       @Cached("getDispatch()") DispatchNode dispatch) {
     KickLabel label = getLabel(getBattery(core));
-    return dispatch.call(frame, getTarget(label, core), new Object[] { core });
+    return dispatch.call(frame, getTarget(label, core, fragment), new Object[] { core });
   }
   
   // kicked arm isn't even in the battery - treat as nock
   @Specialization
   protected Object doNock(VirtualFrame frame, DynamicObject core,
+      @Cached("getFragmentationNode()") FragmentationNode fragment,
       @Cached("getNockDispatch()") NockDispatchNode dispatch) {
-    DynamicObject formula = Noun.asCell(Noun.fragment(getAxis(), core));
+    DynamicObject formula = Noun.asCell(fragment.executeFragment(core));
     return dispatch.executeNock(frame, core, formula);
   }
   

@@ -1,6 +1,5 @@
 (ns jaque.noun
   (:import clojure.lang.BigInt
-           net.frodwith.jaque.truffle.Context
            (net.frodwith.jaque.data Atom Cell Noun)))
 
 (defn atom? [a]
@@ -25,7 +24,7 @@
         (keyword? a) (Atom/stringToCord (name a))
         (vector? a)  ((fn f [items n]
                         (if (= n 2)
-                          (Context/cons (noun (first items)) (noun (second items)))
-                          (Context/cons (noun (first items)) (f (rest items) (dec n)))))
+                          (Cell. (noun (first items)) (noun (second items)))
+                          (Cell. (noun (first items)) (f (rest items) (dec n)))))
                       (seq a) (count a))
         :else (throw (IllegalArgumentException.))))
