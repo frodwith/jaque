@@ -5,6 +5,7 @@ package net.frodwith.jaque.truffle;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.nodes.Node;
 
+import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.driver.Arm;
 
 public class NockLanguage extends TruffleLanguage<Context> {
@@ -37,6 +38,6 @@ public class NockLanguage extends TruffleLanguage<Context> {
 
   @Override
   protected boolean isObjectOfLanguage(Object object) {
-    return TypesGen.isCell(object) || TypesGen.isImplicitIntArray(object);
+    return Noun.isNoun(object);
   }
 }

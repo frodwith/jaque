@@ -1,13 +1,14 @@
 package net.frodwith.jaque.truffle.nodes.formula;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import net.frodwith.jaque.data.Cell;
 
 public class LiteralCellNode extends FormulaNode {
-  private Cell value;
+  private DynamicObject value;
 
-  public LiteralCellNode(Cell value) {
+  public LiteralCellNode(DynamicObject value) {
     this.value = value;
   }
 

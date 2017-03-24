@@ -12,6 +12,7 @@ import com.oracle.truffle.api.dsl.NodeFields;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.RootNode;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.truffle.Context;
@@ -25,7 +26,7 @@ import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 public abstract class NockDispatchNode extends JaqueNode {
   private static final String CACHE_SIZE = "3";
 
-  public abstract Object executeNock(VirtualFrame frame, Object subject, Cell formula);
+  public abstract Object executeNock(VirtualFrame frame, Object subject, DynamicObject formula);
   public abstract Context getContext();
   public abstract boolean getIsTail();
   
@@ -33,8 +34,8 @@ public abstract class NockDispatchNode extends JaqueNode {
     limit = CACHE_SIZE,
     guards = { "getIsTail()",
                "formula == cachedFormula" })
-  public Object doTailCached(Object subject, Cell formula,
-    @Cached("formula") Cell cachedFormula,
+  public Object doTailCached(Object subject, DynamicObject formula,
+    @Cached("formula") DynamicObject cachedFormula,
     @Cached("getTarget(formula)") CallTarget target) {
     throw new TailException(target, new Object[] { subject });
   }
@@ -42,8 +43,8 @@ public abstract class NockDispatchNode extends JaqueNode {
   @Specialization(
     limit = CACHE_SIZE,
     guards = "formula == cachedFormula")
-  public Object doCachedCall(VirtualFrame frame, Object subject, Cell formula,
-    @Cached("formula") Cell cachedFormula,
+  public Object doCachedCall(VirtualFrame frame, Object subject, DynamicObject formula,
+    @Cached("formula") DynamicObject cachedFormula,
     @Cached("getTarget(formula)") CallTarget target,
     @Cached("getDispatch()") DispatchNode dispatch) {
     return dispatch.call(frame, target, new Object[] { subject });
@@ -52,22 +53,22 @@ public abstract class NockDispatchNode extends JaqueNode {
   @Specialization(
     replaces = "doTailCached",
       guards = { "getIsTail()" })
-  public Object doTailSlow(Object subject, Cell formula) {
+  public Object doTailSlow(Object subject, DynamicObject formula) {
     throw new TailException(getTarget(formula), new Object[] { subject });
   }
 
   @Specialization(
     replaces = "doCachedCall")
-  public Object doSlowCall(VirtualFrame frame, Object subject, Cell formula,
+  public Object doSlowCall(VirtualFrame frame, Object subject, DynamicObject formula,
     @Cached("getDispatch()") DispatchNode dispatch) {
     return dispatch.call(frame, getTarget(formula), new Object[] { subject });
   }
 
   @TruffleBoundary // hash operations
-  protected CallTarget getTarget(Cell formula) {
+  protected CallTarget getTarget(DynamicObject formula) {
     CompilerAsserts.neverPartOfCompilation();
     Context context = getContext();
-    Map<Cell,CallTarget> nocks = context.nocks;
+    Map<DynamicObject,CallTarget> nocks = context.nocks;
     CallTarget t = nocks.get(formula);
     if ( null == t ) {
       FormulaNode f = context.parseCell(formula, true);

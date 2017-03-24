@@ -4,8 +4,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Stack;
 
+import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.object.DynamicObject;
+
 import gnu.math.MPN;
 import net.frodwith.jaque.Bail;
+import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.TypesGen;
 
 /* This is not the base class for nock objects, because nock objects are Objects.
@@ -40,11 +44,11 @@ public class Noun {
   
   private static void write(StringBuilder b, Object noun) {
     if ( isCell(noun) ) {
-      Cell c = TypesGen.asCell(noun);
+      DynamicObject c = asCell(noun);
       b.append("[");
-      write(b, c.head);
+      write(b, Cell.head(c));
       b.append(" ");
-      write(b, c.tail);
+      write(b, Cell.tail(c));
       b.append("]");
     }
     else {
@@ -63,13 +67,18 @@ public class Noun {
   }
 
   public static boolean isCell(Object noun) {
-    return TypesGen.isCell(noun);
+    return (noun instanceof TruffleObject) 
+        && Context.isJaqueObject((TruffleObject) noun);
   }
 
   public static boolean isNoun(Object obj) {
     return isCell(obj) || isAtom(obj);
   }
-
+  
+  public static DynamicObject asCell(Object noun) {
+    assert isCell(noun);
+    return (DynamicObject) noun;
+  }
   
   public static boolean equals(Object a, Object b) {
     if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
@@ -78,8 +87,8 @@ public class Noun {
     else if ( TypesGen.isIntArray(a) && TypesGen.isIntArray(b) ) {
       return Arrays.equals(TypesGen.asIntArray(a), TypesGen.asIntArray(b));
     }
-    else if ( TypesGen.isCell(a) && TypesGen.isCell(b) ) {
-      return Cell.equals(TypesGen.asCell(a), TypesGen.asCell(b));
+    else if ( isCell(a) && isCell(b) ) {
+      return Cell.equals(asCell(a), asCell(b));
     }
     else {
       return false;
@@ -87,11 +96,11 @@ public class Noun {
   }
   
   public static int mug(Object noun) {
-    if ( noun instanceof Cell) {
-      return Cell.mug((Cell) noun);
+    if ( isAtom(noun) ) {
+      return Atom.mug(noun);
     }
     else {
-      return Atom.mug(noun);
+      return Cell.mug(asCell(noun));
     }
   }
 
@@ -184,10 +193,10 @@ public class Noun {
       int len = a.size();
       Object tail = readRec(a.remove(--len)),
              head = readRec(a.remove(--len));
-      Cell end = new Cell(head, tail);
+      DynamicObject end = Context.cons(head, tail);
 
       while ( len-- > 0 ) {
-        end = new Cell(readRec(a.remove(len)), end);
+        end = Context.cons(readRec(a.remove(len)), end);
       }
 
       return end;

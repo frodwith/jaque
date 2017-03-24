@@ -3,6 +3,7 @@ package net.frodwith.jaque.truffle.nodes.formula;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.data.Cell;
+import net.frodwith.jaque.truffle.Context;
 
 public class PushNode extends FormulaNode {
   @Child private FormulaNode f;
@@ -15,11 +16,11 @@ public class PushNode extends FormulaNode {
 
   @Override
   public Object executeGeneric(VirtualFrame frame) {
-    Object old = getSubject(frame);
+    Object tail = getSubject(frame);
     Object head = f.executeGeneric(frame);
-    setSubject(frame, new Cell(head, old));
+    setSubject(frame, Context.cons(head, tail));
     Object product = g.executeGeneric(frame);
-    setSubject(frame, old);
+    setSubject(frame, tail);
     return product;
   }
 }
