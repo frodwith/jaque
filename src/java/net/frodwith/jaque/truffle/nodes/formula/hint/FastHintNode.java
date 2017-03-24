@@ -35,9 +35,7 @@ public class FastHintNode extends DynamicHintFormula {
     }
     else {
       CompilerAsserts.neverPartOfCompilation();
-      FragmentationNode fragment = new FragmentationNode(clue.parentAxis);
-      insert(fragment);
-      DynamicObject parentCore = Noun.asCell(fragment.executeFragment(core));
+      DynamicObject parentCore = Noun.asCell(Noun.fragment(clue.parentAxis, core));
       DynamicObject parentBattery = Noun.asCell(Cell.head(parentCore));
       Registration parent = context.locations.get(parentBattery);
       if ( null == parent ) {

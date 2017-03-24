@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.object.DynamicObject;
 
 import net.frodwith.jaque.truffle.Context;
@@ -60,11 +61,12 @@ public class Cell {
   }
   
   public static Object head(DynamicObject c) {
+    CompilerAsserts.neverPartOfCompilation();
     return c.get(Fragment.HEAD);
   }
   
   public static Object tail(DynamicObject c) {
+    CompilerAsserts.neverPartOfCompilation();
     return c.get(Fragment.TAIL);
   }
-  
 }

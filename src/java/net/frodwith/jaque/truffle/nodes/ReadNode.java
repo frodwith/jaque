@@ -9,6 +9,7 @@ import com.oracle.truffle.api.object.Location;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 
+import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Fragment;
 
 @NodeField(name="fragment", type=Fragment.class)
@@ -21,6 +22,16 @@ public abstract class ReadNode extends JaqueNode {
       @Cached("lookupShape(cell)") Shape shape,
       @Cached("lookupLocation(shape)") Location location) {
     return location.get(cell, shape);
+  }
+  
+  @Specialization
+  protected Object readSlow(DynamicObject cell) {
+    return cell.get(getFragment());
+  }
+  
+  @Specialization
+  protected Object badRead(Object something) {
+    throw new Bail();
   }
   
   protected static boolean shapeCheck(Shape shape, DynamicObject cell) {

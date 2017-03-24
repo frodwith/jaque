@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Stack;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.object.DynamicObject;
 
@@ -203,6 +204,24 @@ public class Noun {
     }
     else {
       throw new IllegalArgumentException();
+    }
+  }
+  
+  public static Object fragment(Object atom, Object subject) {
+    CompilerAsserts.neverPartOfCompilation();
+    if ( Atom.isZero(atom) ) {
+      throw new Bail();
+    }
+    else if ( equals(atom, 1L) ) {
+      return subject;
+    }
+    else {
+      Axis axis = new Axis(atom);
+      for ( Fragment f : axis ) {
+        DynamicObject c = asCell(subject);
+        subject = ( f == Fragment.HEAD ) ? Cell.head(c) : Cell.tail(c);
+      }
+      return subject;
     }
   }
   

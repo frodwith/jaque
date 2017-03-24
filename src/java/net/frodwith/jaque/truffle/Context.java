@@ -58,6 +58,8 @@ import net.frodwith.jaque.truffle.nodes.formula.NockNode;
 public class Context {
   private static final Layout LAYOUT = Layout.createLayout();
   private static final Shape INITIAL = LAYOUT.createShape(JaqueObjectType.INSTANCE).
+        defineProperty(Fragment.HEAD, null, 0).
+        defineProperty(Fragment.TAIL, null, 0).
         defineProperty("hashed", false, 0).
         defineProperty("hash", 0, 0);
 
@@ -91,10 +93,10 @@ public class Context {
   }
   
   public static DynamicObject cons(Object head, Object tail) {
-    return INITIAL.
-        defineProperty(Fragment.HEAD, head, 0).
-        defineProperty(Fragment.TAIL, tail, 0).
-        newInstance();
+    DynamicObject cell = INITIAL.newInstance();
+    cell.set(Fragment.HEAD, head);
+    cell.set(Fragment.TAIL, tail);
+    return cell;
   }
   
   /* copied from simplelanguage */
@@ -266,7 +268,7 @@ public class Context {
       DynamicObject kernel  = Noun.asCell(c.nock(0L, formula));
       String calls = "[8 [9 22 0 1] 9 2 [0 4] [1 15] 0 11]";
       DynamicObject call    = Noun.asCell(Noun.parse(calls));
-      System.out.println(Atom.cordToString(c.nock(kernel, call)));
+      System.out.println(c.nock(kernel, call));
     }
     catch (IOException e) {
       e.printStackTrace();

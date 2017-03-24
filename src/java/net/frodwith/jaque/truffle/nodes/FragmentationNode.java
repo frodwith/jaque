@@ -20,11 +20,9 @@ public class FragmentationNode extends JaqueNode {
     
   }
   
-  @ExplodeLoop
   public Object executeFragment(Object o) {
-    CompilerAsserts.compilationConstant(reads.length);
-    for ( int i = 0; i < reads.length; ++i ) {
-      o = reads[i].executeRead(o);
+    for ( ReadNode r : reads ) {
+      o = r.executeRead(o);
     }
     return o;
   }
