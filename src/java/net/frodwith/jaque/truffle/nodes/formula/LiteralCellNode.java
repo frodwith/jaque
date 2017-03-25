@@ -4,8 +4,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.data.Cell;
 
-public class LiteralCellNode extends FormulaNode {
-  private Cell value;
+public final class LiteralCellNode extends FormulaNode {
+  private final Cell value;
 
   public LiteralCellNode(Cell value) {
     this.value = value;

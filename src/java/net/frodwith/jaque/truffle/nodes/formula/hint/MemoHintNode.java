@@ -7,7 +7,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 
-public class MemoHintNode extends FormulaNode {
+public final class MemoHintNode extends FormulaNode {
   private final Map<Object,Object> cache;
   @Child private FormulaNode next;
   

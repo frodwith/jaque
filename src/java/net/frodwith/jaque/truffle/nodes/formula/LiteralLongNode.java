@@ -2,8 +2,8 @@ package net.frodwith.jaque.truffle.nodes.formula;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-public class LiteralLongNode extends FormulaNode {
-  private long value;
+public final class LiteralLongNode extends FormulaNode {
+  private final long value;
 
   public LiteralLongNode(long value) {
     this.value = value;

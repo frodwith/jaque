@@ -2,7 +2,7 @@ package net.frodwith.jaque.truffle.nodes.formula;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-public class ComposeNode extends FormulaNode {
+public final class ComposeNode extends FormulaNode {
   @Child private FormulaNode f;
   @Child private FormulaNode g;
   

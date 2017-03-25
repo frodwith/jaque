@@ -2,8 +2,8 @@ package net.frodwith.jaque.truffle.nodes.formula;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-public class LiteralIntArrayNode extends FormulaNode {
-  private int[] value;
+public final class LiteralIntArrayNode extends FormulaNode {
+  private final int[] value;
 
   public LiteralIntArrayNode(int[] value) {
     this.value = value;

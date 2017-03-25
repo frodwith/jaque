@@ -1,12 +1,14 @@
 package net.frodwith.jaque.truffle.nodes.formula;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.profiles.ValueProfile;
 
 import net.frodwith.jaque.data.Cell;
 
-public class PushNode extends FormulaNode {
+public final class PushNode extends FormulaNode {
   @Child private FormulaNode f;
   @Child private FormulaNode g;
+//  ValueProfile headProfile = ValueProfile.createClassProfile();
   
   public PushNode(FormulaNode f, FormulaNode g) {
     this.f = f;
@@ -16,6 +18,7 @@ public class PushNode extends FormulaNode {
   @Override
   public Object executeGeneric(VirtualFrame frame) {
     Object old = getSubject(frame);
+//    Object head = headProfile.profile(f.executeGeneric(frame));
     Object head = f.executeGeneric(frame);
     setSubject(frame, new Cell(head, old));
     Object product = g.executeGeneric(frame);

@@ -19,7 +19,6 @@ public class Cell {
   public final Object head;
   public final Object tail;
 
-  private boolean hashed;
   private int hash;
   
   public Cell(Object head, Object tail) {
@@ -45,7 +44,7 @@ public class Cell {
     if (a == b) {
       return true;
     }
-    if (a.hashed && b.hashed && a.hash != b.hash) {
+    if (a.hash != 0 && b.hash != 0 && a.hash != b.hash) {
       return false;
     }
     else {
@@ -54,9 +53,8 @@ public class Cell {
   }
   
   public static int mug(Cell c) {
-    if ( !c.hashed ) {
+    if ( c.hash == 0 ) {
       c.hash = mug_both(Noun.mug(c.head), Noun.mug(c.tail));
-      c.hashed = true;
     }
     return c.hash;
   }

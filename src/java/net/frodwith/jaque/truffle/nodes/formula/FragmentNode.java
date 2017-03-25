@@ -4,7 +4,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.truffle.nodes.FragmentationNode;
 
-public class FragmentNode extends FormulaNode {
+public final class FragmentNode extends FormulaNode {
   @Child private FragmentationNode f;
   
   public FragmentNode(Object axis) {

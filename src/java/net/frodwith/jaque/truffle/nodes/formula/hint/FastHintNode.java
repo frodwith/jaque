@@ -19,7 +19,7 @@ import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 /* Fast hints are semantically only executed once, then rewritten
  * to a discard hint.
  */
-public class FastHintNode extends DynamicHintFormula {
+public final class FastHintNode extends DynamicHintFormula {
   private final Context context;
 
   public FastHintNode(Context context, FormulaNode hint, FormulaNode next) {
@@ -35,7 +35,7 @@ public class FastHintNode extends DynamicHintFormula {
     else {
       CompilerAsserts.neverPartOfCompilation();
       FragmentationNode fragment = new FragmentationNode(clue.parentAxis);
-      insert(fragment);
+      //insert(fragment);
       Cell parentCore = TypesGen.asCell(fragment.executeFragment(core));
       Cell parentBattery = TypesGen.asCell(parentCore.head);
       Location parentLoc = context.locations.get(parentBattery);
@@ -69,10 +69,10 @@ public class FastHintNode extends DynamicHintFormula {
     return product;
   }
   
-  private static class ClueParsingException extends Exception {
+  private static final class ClueParsingException extends Exception {
   }
   
-  private static class Clue {
+  private static final class Clue {
     public final String name;
     public final Object parentAxis;
     public final Map<String, Object> hooks;

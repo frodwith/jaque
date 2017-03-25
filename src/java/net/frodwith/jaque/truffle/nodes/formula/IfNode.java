@@ -7,7 +7,7 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 
 import net.frodwith.jaque.Bail;
 
-public class IfNode extends FormulaNode {
+public final class IfNode extends FormulaNode {
   @Child private FormulaNode test;
   @Child private FormulaNode yes;
   @Child private FormulaNode no;

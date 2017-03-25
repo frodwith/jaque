@@ -8,7 +8,7 @@ import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
  * Other hint nodes (like FastHintNode) may do something with those hints,
  * but the purpose of this node is to literally discard the computed values.
  */
-public class DiscardHintNode extends DynamicHintFormula {
+public final class DiscardHintNode extends DynamicHintFormula {
   
   public DiscardHintNode(FormulaNode hint, FormulaNode next) {
     super(hint, next);
