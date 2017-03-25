@@ -18,6 +18,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.RootNode;
 
+import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.KickLabel;
 import net.frodwith.jaque.Location;
 import net.frodwith.jaque.data.Cell;
@@ -48,12 +49,30 @@ public abstract class KickNode extends FormulaNode {
   @Specialization(
     limit  = "1",
     guards = { "driver != null",
-               "isFine(loc, nodes, core)" })
+               "isFine(constants, nodes, core)" })
   protected Object doJet(VirtualFrame frame, Cell core,
       @Cached("getLocation(core)") Location loc,
+      @Cached("makeConstants(loc)") Object[] constants,
       @Cached("makeLocationNodes(loc)") FragmentationNode[] nodes,
       @Cached("getDriver(loc, axis)") ImplementationNode driver) {
     return driver.doJet(core);
+  }
+  
+  protected Object[] makeConstants(Location loc) {
+    if ( null == loc) {
+      return null;
+    }
+    if ( loc.isStatic ) {
+      return new Object[] { loc.noun };
+    }
+    loc = loc.parent; // skip the first location, battery already checked
+    LinkedList<Object> list = new LinkedList<Object>();
+    while ( !loc.isStatic ) {
+      list.add(loc.noun);
+      loc = loc.parent;
+    }
+    list.add(loc.noun);
+    return list.toArray(new Object[0]);
   }
 
   @TruffleBoundary
@@ -63,7 +82,7 @@ public abstract class KickNode extends FormulaNode {
       return null;
     }
     LinkedList<FragmentationNode> list = new LinkedList<FragmentationNode>();
-    while ( loc.parent != null ) {
+    while ( !loc.isStatic ) {
       list.add(new FragmentationNode(loc.axisToParent));
       loc = loc.parent;
     }
@@ -72,20 +91,24 @@ public abstract class KickNode extends FormulaNode {
 
   /* This is a specialization guard, so there is no point profiling it */
   @ExplodeLoop
-  protected boolean isFine(Location loc, FragmentationNode[] nodes, Object noun) {
-    CompilerAsserts.compilationConstant(nodes.length);
-    for ( int i = 0; i < nodes.length; ++i ) {
-      if ( !TypesGen.isCell(noun) ) {
-        return false;
+  protected boolean isFine(Object[] constants, FragmentationNode[] nodes, Object noun) {
+    try {
+      int i, top = nodes.length - 1;
+      for ( i = 0; i < top; ++i ) {
+        noun = nodes[i].executeFragment(noun);
+        if ( constants[i] != TypesGen.asCell(noun).head ) {
+          return false;
+        }
       }
-      Cell currentCore = TypesGen.asCell(noun);
-      if ( currentCore.head != loc.noun ) {
-        return false;
-      }
-      noun = nodes[i].executeFragment(currentCore);
-      loc  = loc.parent;
+      noun = nodes[i].executeFragment(noun);
+      return constants[i] == noun;
     }
-    return loc.noun == noun;
+    catch (Bail e) {
+      return false;
+    }
+    catch (ClassCastException e) {
+      return false;
+    }
   }
   
   @TruffleBoundary // hash operations
