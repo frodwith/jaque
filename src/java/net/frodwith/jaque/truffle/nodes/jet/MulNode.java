@@ -6,16 +6,16 @@ import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Noun;
 
-public abstract class AddNode extends BinaryJetNode {
+public abstract class MulNode extends BinaryJetNode {
 
   @Specialization(rewriteOn = ArithmeticException.class)
-  protected long add(long a, long b) {
-    return Atom.add(a, b);
+  protected long mul(long a, long b) throws ArithmeticException {
+    return Atom.mul(a, b);
   }
 
   @Specialization
-  protected int[] add(int[] a, int[] b) {
-    return Atom.add(a, b);
+  protected Object mul(int[] a, int[] b) {
+    return Atom.mul(a, b);
   }
 
 }

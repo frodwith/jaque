@@ -1,16 +1,26 @@
 package net.frodwith.jaque.truffle.nodes.formula;
 
 import com.oracle.truffle.api.dsl.Specialization;
+
+import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
+import net.frodwith.jaque.data.Noun;
 
 public abstract class DeepNode extends UnaryFormulaNode {
+
   @Specialization
   protected long deep(Cell c) {
-    return 0L;
+    return Atom.YES;
   }
 
   @Specialization
-  protected long deep(Object o) {
-    return 1L;
+  protected long deep(long l) {
+    return Atom.NO;
   }
+
+  @Specialization
+  protected long deep(int[] a) {
+    return Atom.NO;
+  }
+
 }

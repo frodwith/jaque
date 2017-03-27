@@ -18,11 +18,4 @@ public abstract class LessThanNode extends BinaryJetNode {
     return (Atom.compare(a, b) == -1) ? Atom.YES : Atom.NO;
   }
 
-  @Specialization
-  protected Object lth(Object a, Object b) {
-    if ( !Noun.isAtom(a) || !Noun.isAtom(b) ) {
-      throw new Bail();
-    }
-    return (Atom.compare(a, b) == -1) ? Atom.YES : Atom.NO;
-  }
 }

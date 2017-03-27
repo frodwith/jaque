@@ -22,11 +22,4 @@ public abstract class DecrementNode extends UnaryJetNode {
     return Atom.decrement(atom);
   }
 
-  @Specialization
-  protected Object decrement(Object atom) {
-    if ( !Noun.isAtom(atom) ) {
-      throw new Bail();
-    }
-    return Atom.decrement(atom);
-  }
 }

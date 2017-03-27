@@ -28,12 +28,4 @@ public abstract class SubtractNode extends BinaryJetNode {
       throw e;
     }
   }
-
-  @Specialization
-  protected Object sub(Object a, Object b) {
-    if ( !Noun.isAtom(a) || !Noun.isAtom(b) ) {
-      throw new Bail();
-    }
-    return Atom.subtract(a, b);
-  }
 }
