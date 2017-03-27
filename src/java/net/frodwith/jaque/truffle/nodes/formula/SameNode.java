@@ -3,6 +3,7 @@ package net.frodwith.jaque.truffle.nodes.formula;
 import com.oracle.truffle.api.dsl.Specialization;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
+import net.frodwith.jaque.data.Noun;
 
 public abstract class SameNode extends BinaryFormulaNode {
   @Specialization
@@ -22,6 +23,6 @@ public abstract class SameNode extends BinaryFormulaNode {
   
   @Specialization
   protected long same(Object a, Object b) {
-    return Atom.NO;
+    return Noun.equals(a, b) ? Atom.YES : Atom.NO;
   }
 }

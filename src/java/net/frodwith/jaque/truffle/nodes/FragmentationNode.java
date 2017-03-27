@@ -23,8 +23,9 @@ public class FragmentationNode extends JaqueNode {
   }
   
   @ExplodeLoop
-  public Object executeFragment(Object o) {
+  public Object executeFragment(Object subject) {
     try {
+      Object o = subject;
       for ( ReadNode n : reads ) {
         o = n.executeRead(TypesGen.asCell(o));
       }

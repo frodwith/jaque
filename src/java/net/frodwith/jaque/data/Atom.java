@@ -24,78 +24,287 @@ import net.frodwith.jaque.truffle.TypesGen;
  */
 
 public class Atom {
+  // get two equally sized int[]s for mpn functions
+  private static class Square {
+    int[] x;
+    int[] y;
+    int   len;
+
+    public Square(Object a, Object b) {
+      int[] aw = TypesGen.asImplicitIntArray(a), bw = TypesGen.asImplicitIntArray(b);
+      int   as = aw.length, bs = bw.length;
+      if (as > bs) {
+        len = as;
+        x   = aw;
+        y   = new int[len];
+        System.arraycopy(bw, 0, y, 0, bs);
+      }
+      else if (as < bs) {
+        len = bs;
+        x   = new int[len];
+        y   = bw;
+        System.arraycopy(aw, 0, x, 0, as);
+      }
+      else {
+        len = as;
+        x   = aw;
+        y   = bw;
+      }
+    }
+  }
   private static final int[] MINIMUM_INDIRECT = new int[] {0, 0, 1};
   public static final boolean BIG_ENDIAN = true;
   public static final boolean LITTLE_ENDIAN = false;
   public static final long YES = 0L;
   public static final long NO = 1L;
   public static final Object FAST = stringToCord("fast");
+  
   public static final Object MEMO = stringToCord("memo");
   
-  public static boolean isZero(Object atom) {
-    return TypesGen.isLong(atom) && 0L == TypesGen.asLong(atom);
+  
+  public static Object div(int[] x, int[] y) {
+    int cmp = compare(x,y);
+    if ( cmp < 0 ) {
+      return 0L;
+    }
+    else if ( 0 == cmp ) {
+      return 1L;
+    }
+    else if ( 1 == y.length ) {
+      int[] q = new int[x.length];
+      MPN.divmod_1(q, x, x.length, y[0]);
+      return normalize(q);
+    }
+    else {
+      int xlen = x.length,
+          ylen = y.length;
+      int[] xwords = Arrays.copyOf(x, xlen+2),
+            ywords = Arrays.copyOf(y, ylen);
+
+      int nshift = MPN.count_leading_zeros (ywords[ylen-1]);
+      if (nshift != 0) {
+        MPN.lshift(ywords, 0, ywords, ylen, nshift);
+        int x_high = MPN.lshift(xwords, 0, xwords, xlen, nshift);
+        xwords[xlen++] = x_high;
+      }
+
+      if (xlen == ylen) {
+        xwords[xlen++] = 0;
+      }
+
+      MPN.divide (xwords, xlen, ywords, ylen);
+      return normalize(Arrays.copyOfRange(xwords, ylen, xwords.length + 1 - ylen));
+    }
+  }
+  
+  public static long div(long a, long b) {
+    return a / b;
+  }
+  
+  public static Object div(Object a, Object b) {
+    if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
+      try {
+        return div(TypesGen.asLong(a), TypesGen.asLong(b));
+      }
+      catch (ArithmeticException e) {
+      }
+    }
+    return div(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
+  }
+  
+  
+  
+  
+
+  public static int[] add(int[] a, int[] b) {
+    Square s   = new Square(a, b);
+    int[] dst  = new int[s.len+1];
+    dst[s.len] = MPN.add_n(dst, s.x, s.y, s.len);
+    return dst;
+  }
+  
+  public static long add(long a, long b) throws ArithmeticException {
+    return Math.addExact(a, b);
+  }
+  
+  public static Object add(Object a, Object b) {
+    if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
+      try {
+        return add(TypesGen.asLong(a), TypesGen.asLong(b));
+      }
+      catch (ArithmeticException e) {
+      }
+    }
+    return add(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
+  } 
+  
+  public static Object bitwiseOr(Object a, Object b) {
+    byte w   = 5;
+    int  lna = measure(w, a);
+    int  lnb = measure(w, b);
+
+    if ( (0 == lna) && (0 == lnb) ) {
+      return 0L;
+    }
+    else {
+      int i, len = Math.max(lna, lnb);
+      int[] sal  = new int[len];
+      int[] bow  = TypesGen.asImplicitIntArray(b);
+
+      chop(w, 0, lna, 0, sal, a);
+
+      for ( i = 0; i < lnb; i++ ) {
+        sal[i] |= bow[i];
+      }
+
+      return normalize(sal);
+    } 
+  }
+  
+  public static int cap(Object atom) {
+    int b = measure(atom);
+    if ( b < 2 ) {
+      throw new Bail();
+    }
+    return getNthBit(atom, b - 2) ? 3 : 2;
   }
 
+  public static void chop(byte met, int fum, int wid, int tou, int[] dst, Object src) {
+    int[] buf = TypesGen.asImplicitIntArray(src);
+    int   len = buf.length, i;
+
+    if (met < 5) {
+      int san = 1 << met,
+      mek = ((1 << san) - 1),
+      baf = fum << met,
+      bat = tou << met;
+
+      for (i = 0; i < wid; ++i) {
+        int waf = baf >>> 5,
+            raf = baf & 31,
+            wat = bat >>> 5,
+            rat = bat & 31,
+            hop;
+
+        hop = (waf >= len) ? 0 : buf[waf];
+        hop = (hop >>> raf) & mek;
+        dst[wat] ^= hop << rat;
+        baf += san;
+        bat += san;
+      }
+    }
+    else {
+      int hut = met - 5,
+          san = 1 << hut,
+          j;
+
+      for (i = 0; i < wid; ++i) {
+        int wuf = (fum + i) << hut,
+            wut = (tou + i) << hut;
+
+        for (j = 0; j < san; ++j) {
+          dst[wut + j] ^= ((wuf + j) >= len)
+                       ? 0
+                       : buf[wuf + j];
+        }
+      }
+    }
+  }
+  
+  public static int compare(int[] a, int[] b) {
+    return MPN.cmp(a, a.length, b, b.length);
+  }
+  
+  public static int compare(long a, long b) {
+    
+    if (a == b) {
+      return 0;
+    }
+    else {
+      boolean lth = a < b;
+      if ( (a < 0) != (b < 0) ) {
+        lth = !lth;
+      }
+      return lth ? -1 : 1;
+    }
+  }
+
+  // -1, 0, 1 for less than, equal, or greater than respectively
+  public static int compare(Object a, Object b) {
+    if ( TypesGen.isLong(a) ) {
+      if ( TypesGen.isLong(b) ) {
+        return compare(TypesGen.asLong(a), TypesGen.asLong(b));
+      }
+      else {
+        return -1;
+      }
+    } else {
+      if ( TypesGen.isLong(b) ) {
+        return 1;
+      }
+      else {
+        return compare(TypesGen.asIntArray(a), TypesGen.asIntArray(b));
+      }
+    }
+  }
+  
+  public static String cordToString(Object atom) {
+    try {
+      return new String(toByteArray(atom, LITTLE_ENDIAN), "UTF-8");
+    }
+    catch (UnsupportedEncodingException e) {
+      return null;
+    }
+  }
+  
+  public static Object decrement(int[] atom) {
+    int[] result;
+    if ( atom[0] == 0 ) {
+      result = new int[atom.length - 1];
+      Arrays.fill(result, 0xFFFFFFFF);
+    }
+    else {
+      result = Arrays.copyOf(atom, atom.length);
+      result[0] -= 1;
+    }
+    return normalize(result);
+  }
+  
+  public static long decrement(long atom) {
+    if ( atom == 0 ) {
+      throw new Bail();
+    }
+    else {
+      return atom - 1;
+    }
+  }
+  
+  public static Object decrement(Object atom) {
+    if ( TypesGen.isLong(atom) ) {
+      return decrement(TypesGen.asLong(atom));
+    }
+    else {
+      return decrement(TypesGen.asIntArray(atom));
+    }
+  }
+  
+  public static boolean equals(long a, long b) {
+    return a == b;
+  }
+  
+  public static boolean equals(int[] a, int[] b) {
+    return Arrays.equals(a,  b);
+  }
+  
   public static boolean equals(Object a, Object b) {
     return ( TypesGen.isLong(a) 
         && TypesGen.isLong(b)
-        && TypesGen.asLong(a) == TypesGen.asLong(b))
-        || ( TypesGen.isIntArray(a)
+        && equals(TypesGen.asLong(a), TypesGen.asLong(b)) )
+      || ( TypesGen.isIntArray(a)
         && TypesGen.isIntArray(b)
-        && Arrays.equals(TypesGen.asIntArray(a), TypesGen.asIntArray(b)));
+        && equals(TypesGen.asIntArray(a), TypesGen.asIntArray(b)));
   }
   
-  public static Object lsh(byte bloq, int bits, Object atom) {
-    int len = measure(bloq, atom),
-        big;
-
-    if ( 0 == len ) {
-      return 0L;
-    }
-    try {
-      big = Math.addExact(bits, len);
-    }
-    catch (ArithmeticException e) {
-      throw new Bail();
-    }
-    
-    int[] sal = slaq(bloq, big);
-    chop(bloq, 0, len, bits, sal, atom);
-
-    return normalize(sal);
-  }
-  
-  public static int[] slaq(byte bloq, int len) {
-    int big = ((len << bloq) + 31) >>> 5;
-    return new int[big];
-  } 
-  
-  public static Object peg(Object axis, Object to) {
-    if ( equals(axis, 1L) ) {
-      return axis;
-    }
-    else {
-      int c = measure(to),
-          d = c - 1;
-      long e = d << 1;
-
-      Object f = subtract(to, e),
-             g = lsh((byte) 0, d, axis);
-      
-      return add(f, g);
-    }
-  }
-  
-  private static void reverseBytes(byte[] a) {
-    int i, j;
-    byte b;
-    for (i = 0, j = a.length - 1; j > i; ++i, --j) {
-      b = a[i];
-      a[i] = a[j];
-      a[j] = b;
-    }
-  }
-
   public static Object fromByteArray(byte[] pill, boolean endian) {
     int len  = pill.length;
     int trim = len % 4;
@@ -127,57 +336,56 @@ public class Atom {
     return normalize(words);
   }
   
-  public static byte[] toByteArray(Object atom, boolean endian) {
-    if (isZero(atom)) {
-      return new byte[1];
-    }
-    int[]  wor = TypesGen.asImplicitIntArray(atom);
-    int    bel = measure((byte)3, atom);
-    byte[] buf = new byte[bel];
-    int    w, i, b;
-    for (i = 0, b = 0;;) {
-      w = wor[i++];
-
-      buf[b++] = (byte) ((w & 0x000000FF) >>> 0);
-      if (b >= bel) break;
-
-      buf[b++] = (byte) ((w & 0x0000FF00) >>> 8);
-      if (b >= bel) break;
-
-      buf[b++] = (byte) ((w & 0x00FF0000) >>> 16);
-      if (b >= bel) break;
-
-      buf[b++] = (byte) ((w & 0xFF000000) >>> 24);
-      if (b >= bel) break;
-    }
-    if (endian == BIG_ENDIAN) {
-      reverseBytes(buf);
-    }
-    return buf;
+  public static Object fromString(String s) {
+      return fromString(s, 10);
   }
   
-  public static String cordToString(Object atom) {
-    try {
-      return new String(toByteArray(atom, LITTLE_ENDIAN), "UTF-8");
-    }
-    catch (UnsupportedEncodingException e) {
-      return null;
-    }
-  }
+  public static Object fromString(String s, int radix) {
+    char[] car = s.toCharArray();
+    int    len = car.length,
+           cpw = MPN.chars_per_word(radix),
+           i;
+    byte[] dig = new byte[len];
+    int[]  wor = new int[(len / cpw) + 1];
 
-  public static Object stringToCord(String s) {
-    try {
-      return fromByteArray(s.getBytes("UTF-8"), LITTLE_ENDIAN);
+    for (i = 0; i < len; ++i) {
+        dig[i] = (byte) Character.digit(car[i], radix);
     }
-    catch (UnsupportedEncodingException e) {
-      return null;
+
+    MPN.set_str(wor, dig, len, radix);
+
+    return normalize(wor);
+}
+  
+  public static boolean getNthBit(int[] atom, int n) {
+    int pix = n >> 5;
+    
+    if ( pix >= atom.length ) {
+      return false;
+    }
+    else {
+      return (1 & (atom[pix] >>> (n & 31))) != 0;
     }
   }
   
-  public static long increment(long atom) throws ArithmeticException {
-    return Math.incrementExact(atom);
+  public static boolean getNthBit(long atom, int n) {
+    if ( n >= (Long.SIZE - 1) ) {
+      return false;
+    }
+    else {
+      return ((atom & (1L << n)) != 0);
+    }
   }
   
+  public static boolean getNthBit(Object atom, int n) {
+    if ( atom instanceof Long ) {
+      return getNthBit((long) atom, n);
+    }
+    else {
+      return getNthBit((int[]) atom, n);
+    }
+  }
+
   public static int[] increment(int[] atom) {
     int top = atom[atom.length];
     try {
@@ -193,7 +401,11 @@ public class Atom {
       return w;
     }
   }
-  
+
+  public static long increment(long atom) throws ArithmeticException {
+    return Math.incrementExact(atom);
+  }
+
   public static Object increment(Object atom) {
     if ( TypesGen.isLong(atom) ) {
       try {
@@ -208,37 +420,6 @@ public class Atom {
     }
   }
   
-  public static long decrement(long atom) {
-    if ( atom == 0 ) {
-      throw new Bail();
-    }
-    else {
-      return atom - 1;
-    }
-  }
-  
-  public static Object decrement(int[] atom) {
-    int[] result;
-    if ( atom[0] == 0 ) {
-      result = new int[atom.length - 1];
-      Arrays.fill(result, 0xFFFFFFFF);
-    }
-    else {
-      result = Arrays.copyOf(atom, atom.length);
-      result[0] -= 1;
-    }
-    return normalize(result);
-  }
-  
-  public static Object decrement(Object atom) {
-    if ( TypesGen.isLong(atom) ) {
-      return decrement(TypesGen.asLong(atom));
-    }
-    else {
-      return decrement(TypesGen.asIntArray(atom));
-    }
-  }
-  
   public static boolean isLessThanUnsigned(long n1, long n2) {
     boolean comp = (n1 < n2);
     if ((n1 < 0) != (n2 < 0)) {
@@ -247,97 +428,39 @@ public class Atom {
     return comp;
   }
   
-  public static int compare(long a, long b) {
-    
-    if (a == b) {
-      return 0;
-    }
-    else {
-      boolean lth = a < b;
-      if ( (a < 0) != (b < 0) ) {
-        lth = !lth;
-      }
-      return lth ? -1 : 1;
-    }
+  public static boolean isZero(Object atom) {
+    return TypesGen.isLong(atom) && 0L == TypesGen.asLong(atom);
   }
   
-  public static int compare(int[] a, int[] b) {
-    return MPN.cmp(a, a.length, b, b.length);
-  }
-  
-  // -1, 0, 1 for less than, equal, or greater than respectively
-  public static int compare(Object a, Object b) {
-    if ( TypesGen.isLong(a) ) {
-      if ( TypesGen.isLong(b) ) {
-        return compare(TypesGen.asLong(a), TypesGen.asLong(b));
-      }
-      else {
-        return -1;
-      }
-    } else {
-      if ( TypesGen.isLong(b) ) {
-        return 1;
-      }
-      else {
-        return compare(TypesGen.asIntArray(a), TypesGen.asIntArray(b));
-      }
-    }
-  }
-  
-  public static long add(long a, long b) throws ArithmeticException {
-    return Math.addExact(a, b);
-  }
+  public static Object lsh(byte bloq, int bits, Object atom) {
+    int len = measure(bloq, atom),
+        big;
 
-  public static int[] add(int[] a, int[] b) {
-    Square s   = new Square(a, b);
-    int[] dst  = new int[s.len+1];
-    dst[s.len] = MPN.add_n(dst, s.x, s.y, s.len);
-    return dst;
-  }
-  
-  public static Object add(Object a, Object b) {
-    if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
-      try {
-        return add(TypesGen.asLong(a), TypesGen.asLong(b));
-      }
-      catch (ArithmeticException e) {
-      }
+    if ( 0 == len ) {
+      return 0L;
     }
-    return add(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
-  }
-  
-  public static long subtract(long a, long b) {
-    if ( -1 == compare(a, b) ) {
+    try {
+      big = Math.addExact(bits, len);
+    }
+    catch (ArithmeticException e) {
       throw new Bail();
     }
-    else {
-      return a - b;
-    }
+    
+    int[] sal = slaq(bloq, big);
+    chop(bloq, 0, len, bits, sal, atom);
+
+    return normalize(sal);
   }
   
-  public static int[] subtract(int[] a, int[] b) {
-    Square s = new Square(a, b);
-    int[] dst = new int[s.len];
-    int bor = MPN.sub_n(dst, s.x, s.y, s.len);
-    if ( bor != 0 ) {
+  public static Object mas(Object atom) {
+    int b = measure(atom);
+    if ( b < 2 ) {
       throw new Bail();
     }
-    return dst;
-  }
-  
-  public static Object subtract(Object a, Object b) {
-    if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
-      return subtract(TypesGen.asLong(a), TypesGen.asLong(b));
-    }
-    else {
-      int[] aa = TypesGen.asImplicitIntArray(a);
-      int[] ba = TypesGen.asImplicitIntArray(b);
-      return normalize(subtract(aa, ba));
-    }
-  }
-  
-  public static int measure(Object atom) {
-    return measure((byte)0, atom);
+    long c = 1 << (b - 1),
+         d = 1 << (b - 2);
+    Object e = subtract(atom, c);
+    return bitwiseOr(e, d);
   }
   
   public static int measure(byte bloq, Object atom) {
@@ -397,6 +520,28 @@ public class Atom {
     }
   }
   
+  public static int measure(Object atom) {
+    return measure((byte)0, atom);
+  }
+  
+  public static int mug(Object atom) {
+    int[] words = TypesGen.asImplicitIntArray(atom);
+    return mug_words((int) 2166136261L, words.length, words);
+  }
+  
+  private static int mug_words(int off, int nwd, int[] wod) {
+    int has, out; 
+
+    while ( true ) {
+      has = mug_words_in(off, nwd, wod);
+      out = Noun.mug_out(has);
+      if ( 0 != out ) {
+        return out;
+      }
+      ++off;
+    }
+  }
+
   private static int mug_words_in(int off, int nwd, int[] wod) {
     if (0 == nwd) {
       return off;
@@ -429,137 +574,40 @@ public class Atom {
     return off;
   }
 
-  private static int mug_words(int off, int nwd, int[] wod) {
-    int has, out; 
+  public static Object mul(int[] x, int[] y) {
+    int xlen = x.length,
+        ylen = y.length;
+    int[] dest = new int[xlen + ylen];
+       
+    if ( xlen < ylen ) {
+      int zlen = xlen;
+      int[] z = x;
 
-    while ( true ) {
-      has = mug_words_in(off, nwd, wod);
-      out = Noun.mug_out(has);
-      if ( 0 != out ) {
-        return out;
+      x = y;
+      y = z;
+      xlen = ylen;
+      ylen = zlen;
+    }
+
+    MPN.mul(dest, x, xlen, y, ylen);
+    return normalize(dest);
+  }
+  
+  public static long mul(long a, long b) throws ArithmeticException {
+    return Math.multiplyExact(a, b);
+  }
+  
+  public static Object mul(Object a, Object b) {
+    if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
+      try {
+        return mul(TypesGen.asLong(a), TypesGen.asLong(b));
       }
-      ++off;
-    }
-  }
-
-  public static int mug(Object atom) {
-    int[] words = TypesGen.asImplicitIntArray(atom);
-    return mug_words((int) 2166136261L, words.length, words);
-  }
-  
-  public static boolean getNthBit(long atom, int n) {
-    if ( n >= (Long.SIZE - 1) ) {
-      return false;
-    }
-    else {
-      return ((atom & (1L << n)) != 0);
-    }
-  }
-  
-  public static boolean getNthBit(int[] atom, int n) {
-    int pix = n >> 5;
-    
-    if ( pix >= atom.length ) {
-      return false;
-    }
-    else {
-      return (1 & (atom[pix] >>> (n & 31))) != 0;
-    }
-  }
-  
-  public static boolean getNthBit(Object atom, int n) {
-    if ( atom instanceof Long ) {
-      return getNthBit((long) atom, n);
-    }
-    else {
-      return getNthBit((int[]) atom, n);
-    }
-  }
-
-  public static void chop(byte met, int fum, int wid, int tou, int[] dst, Object src) {
-    int[] buf = TypesGen.asImplicitIntArray(src);
-    int   len = buf.length, i;
-
-    if (met < 5) {
-      int san = 1 << met,
-      mek = ((1 << san) - 1),
-      baf = fum << met,
-      bat = tou << met;
-
-      for (i = 0; i < wid; ++i) {
-        int waf = baf >>> 5,
-            raf = baf & 31,
-            wat = bat >>> 5,
-            rat = bat & 31,
-            hop;
-
-        hop = (waf >= len) ? 0 : buf[waf];
-        hop = (hop >>> raf) & mek;
-        dst[wat] ^= hop << rat;
-        baf += san;
-        bat += san;
+      catch (ArithmeticException e) {
       }
     }
-    else {
-      int hut = met - 5,
-          san = 1 << hut,
-          j;
-
-      for (i = 0; i < wid; ++i) {
-        int wuf = (fum + i) << hut,
-            wut = (tou + i) << hut;
-
-        for (j = 0; j < san; ++j) {
-          dst[wut + j] ^= ((wuf + j) >= len)
-                       ? 0
-                       : buf[wuf + j];
-        }
-      }
-    }
+    return mul(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
   
-  public static Object bitwiseOr(Object a, Object b) {
-    byte w   = 5;
-    int  lna = measure(w, a);
-    int  lnb = measure(w, b);
-
-    if ( (0 == lna) && (0 == lnb) ) {
-      return 0L;
-    }
-    else {
-      int i, len = Math.max(lna, lnb);
-      int[] sal  = new int[len];
-      int[] bow  = TypesGen.asImplicitIntArray(b);
-
-      chop(w, 0, lna, 0, sal, a);
-
-      for ( i = 0; i < lnb; i++ ) {
-        sal[i] |= bow[i];
-      }
-
-      return normalize(sal);
-    } 
-  }
-  
-  public static Object mas(Object atom) {
-    int b = measure(atom);
-    if ( b < 2 ) {
-      throw new Bail();
-    }
-    long c = 1 << (b - 1),
-         d = 1 << (b - 2);
-    Object e = subtract(atom, c);
-    return bitwiseOr(e, d);
-  }
-
-  public static int cap(Object atom) {
-    int b = measure(atom);
-    if ( b < 2 ) {
-      throw new Bail();
-    }
-    return getNthBit(atom, b - 2) ? 3 : 2;
-  }
-
   public static Object normalize(int[] words) {
     int bad = 0;
 
@@ -582,62 +630,110 @@ public class Atom {
     else if ( words != null && words.length > 2 ) {
       return words;
     }
+    else if (words.length == 1) {
+      return (long) words[0];
+    }
     else {
-      long v = words[0];
-      if (words.length > 1) {
-        v ^= words[1] << 32;
-      }
-      return v;
+      return ((long)words[1] << 32) | ((long)words[0] & 0xffffffffL);
     }
   }
 
-  // get two equally sized int[]s for mpn functions
-  private static class Square {
-    int[] x;
-    int[] y;
-    int   len;
+  public static Object peg(Object axis, Object to) {
+    if ( equals(axis, 1L) ) {
+      return axis;
+    }
+    else {
+      int c = measure(to),
+          d = c - 1;
+      long e = d << 1;
 
-    public Square(Object a, Object b) {
-      int[] aw = TypesGen.asImplicitIntArray(a), bw = TypesGen.asImplicitIntArray(b);
-      int   as = aw.length, bs = bw.length;
-      if (as > bs) {
-        len = as;
-        x   = aw;
-        y   = new int[len];
-        System.arraycopy(bw, 0, y, 0, bs);
-      }
-      else if (as < bs) {
-        len = bs;
-        x   = new int[len];
-        y   = bw;
-        System.arraycopy(aw, 0, x, 0, as);
-      }
-      else {
-        len = as;
-        x   = aw;
-        y   = bw;
-      }
+      Object f = subtract(to, e),
+             g = lsh((byte) 0, d, axis);
+      
+      return add(f, g);
     }
   }
   
-  public static Object fromString(String s, int radix) {
-    char[] car = s.toCharArray();
-    int    len = car.length,
-           cpw = MPN.chars_per_word(radix),
-           i;
-    byte[] dig = new byte[len];
-    int[]  wor = new int[(len / cpw) + 1];
-
-    for (i = 0; i < len; ++i) {
-        dig[i] = (byte) Character.digit(car[i], radix);
+  private static void reverseBytes(byte[] a) {
+    int i, j;
+    byte b;
+    for (i = 0, j = a.length - 1; j > i; ++i, --j) {
+      b = a[i];
+      a[i] = a[j];
+      a[j] = b;
     }
+  }
+  
+  public static int[] slaq(byte bloq, int len) {
+    int big = ((len << bloq) + 31) >>> 5;
+    return new int[big];
+  }
 
-    MPN.set_str(wor, dig, len, radix);
+  public static Object stringToCord(String s) {
+    try {
+      return fromByteArray(s.getBytes("UTF-8"), LITTLE_ENDIAN);
+    }
+    catch (UnsupportedEncodingException e) {
+      return null;
+    }
+  }
 
-    return normalize(wor);
-}
+  public static int[] subtract(int[] a, int[] b) {
+    Square s = new Square(a, b);
+    int[] dst = new int[s.len];
+    int bor = MPN.sub_n(dst, s.x, s.y, s.len);
+    if ( bor != 0 ) {
+      throw new Bail();
+    }
+    return dst;
+  }
 
-  public static Object fromString(String s) {
-      return fromString(s, 10);
+  public static long subtract(long a, long b) {
+    if ( -1 == compare(a, b) ) {
+      throw new Bail();
+    }
+    else {
+      return a - b;
+    }
+  }
+  
+  public static Object subtract(Object a, Object b) {
+    if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
+      return subtract(TypesGen.asLong(a), TypesGen.asLong(b));
+    }
+    else {
+      int[] aa = TypesGen.asImplicitIntArray(a);
+      int[] ba = TypesGen.asImplicitIntArray(b);
+      return normalize(subtract(aa, ba));
+    }
+  }
+
+  public static byte[] toByteArray(Object atom, boolean endian) {
+    if (isZero(atom)) {
+      return new byte[1];
+    }
+    int[]  wor = TypesGen.asImplicitIntArray(atom);
+    int    bel = measure((byte)3, atom);
+    byte[] buf = new byte[bel];
+    int    w, i, b;
+    for (i = 0, b = 0;;) {
+      w = wor[i++];
+
+      buf[b++] = (byte) ((w & 0x000000FF) >>> 0);
+      if (b >= bel) break;
+
+      buf[b++] = (byte) ((w & 0x0000FF00) >>> 8);
+      if (b >= bel) break;
+
+      buf[b++] = (byte) ((w & 0x00FF0000) >>> 16);
+      if (b >= bel) break;
+
+      buf[b++] = (byte) ((w & 0xFF000000) >>> 24);
+      if (b >= bel) break;
+    }
+    if (endian == BIG_ENDIAN) {
+      reverseBytes(buf);
+    }
+    return buf;
   }
 }

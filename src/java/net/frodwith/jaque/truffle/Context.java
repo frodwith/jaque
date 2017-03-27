@@ -36,10 +36,12 @@ import net.frodwith.jaque.truffle.nodes.formula.hint.FastHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.MemoHintNode;
 import net.frodwith.jaque.truffle.nodes.jet.AddNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.DecrementNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.DivNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.LessThanNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.SubtractNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 import net.frodwith.jaque.truffle.nodes.formula.FragmentNode;
+import net.frodwith.jaque.truffle.nodes.formula.IdentityNode;
 import net.frodwith.jaque.truffle.nodes.formula.IfNode;
 import net.frodwith.jaque.truffle.nodes.formula.KickNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.LiteralCellNode;
@@ -94,6 +96,9 @@ public class Context {
         case 0: {
           if ( Atom.isZero(arg) ) {
             return new BailNode();
+          }
+          if ( Atom.equals(1L, arg) ) {
+            return new IdentityNode();
           }
           else {
             return new FragmentNode(arg);
@@ -217,21 +222,33 @@ public class Context {
 
   public static void main(String[] args) {
     Arm[] drivers = new Arm[] {
+      new AxisArm("top/main/dec", 2L, DecrementNodeGen.class),
+      new AxisArm("top/main/sub", 2L, SubtractNodeGen.class),
+//      new AxisArm("top/main/div", 2L, DivNodeGen.class),
+      new AxisArm("top/main/lth", 2L, LessThanNodeGen.class),
+    };
+    /*
+    Arm[] drivers = new Arm[] {
       new AxisArm("kmat/math/dec", 2L, DecrementNodeGen.class),
       new AxisArm("kmat/math/add", 2L, AddNodeGen.class),
       new AxisArm("kmat/math/sub", 2L, SubtractNodeGen.class),
       new AxisArm("kmat/math/lth", 2L, LessThanNodeGen.class),
     };
+    */
     Context c = new Context(drivers);
     try {
 //      byte[] bytes = Files.readAllBytes(Paths.get("/home/pdriver/code/jaque/nock/simple-loop.nock"));
+      /*
       byte[] bytes = Files.readAllBytes(Paths.get("/home/pdriver/math-kernel.nock"));
-      String fos   = new String(bytes, "UTF-8").trim();
-      Cell formula = TypesGen.asCell(Noun.parse(fos));
       Cell kernel  = TypesGen.asCell(c.nock(0L, formula));
       String calls = "[8 [9 22 0 1] 9 2 [0 4] [1 15] 0 11]";
       Cell call    = TypesGen.asCell(Noun.parse(calls));
       System.out.println(c.nock(kernel, call));
+      */
+      byte[] bytes = Files.readAllBytes(Paths.get("nock/division-test.nock"));
+      String fos   = new String(bytes, "UTF-8").trim();
+      Cell formula = TypesGen.asCell(Noun.parse(fos));
+      System.out.println(c.nock(0L, formula));
     }
     catch (IOException e) {
       e.printStackTrace();

@@ -26,13 +26,13 @@ public final class IfNode extends FormulaNode {
     long answer;
     try {
       answer = test.executeLong(frame);
-      if ( 0L == answer ) {
-        condition.profile(true);
-        return yes.executeGeneric(frame);
-      }
-      else if ( 1L == answer ) {
-        condition.profile(false);
-        return no.executeGeneric(frame);
+      if ( answer == 0L || answer == 1L ) {
+        if ( condition.profile(0L == answer) ) {
+          return yes.executeGeneric(frame);
+        }
+        else {
+          return no.executeGeneric(frame);
+        }
       }
     }
     catch (UnexpectedResultException e) {

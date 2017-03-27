@@ -19,6 +19,8 @@ public class Noun {
         size  = len,
         i     = b.length(),
         j     = i - 1;
+    
+    cur = Arrays.copyOf(cur, cur.length);
 
     for(;;) {
       int dig = MPN.divmod_1(cur, cur, size, radix);
