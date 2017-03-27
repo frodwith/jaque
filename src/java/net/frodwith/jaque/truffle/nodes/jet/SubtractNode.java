@@ -4,6 +4,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Atom;
+import net.frodwith.jaque.data.Noun;
 
 public abstract class SubtractNode extends BinaryJetNode {
   @Specialization(rewriteOn = ArithmeticException.class)
@@ -26,5 +27,13 @@ public abstract class SubtractNode extends BinaryJetNode {
       System.err.println("subtract underflow");
       throw e;
     }
+  }
+
+  @Specialization
+  protected Object sub(Object a, Object b) {
+    if ( !Noun.isAtom(a) || !Noun.isAtom(b) ) {
+      throw new Bail();
+    }
+    return Atom.subtract(a, b);
   }
 }

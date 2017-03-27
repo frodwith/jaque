@@ -224,7 +224,7 @@ public class Context {
     Arm[] drivers = new Arm[] {
       new AxisArm("top/main/dec", 2L, DecrementNodeGen.class),
       new AxisArm("top/main/sub", 2L, SubtractNodeGen.class),
-//      new AxisArm("top/main/div", 2L, DivNodeGen.class),
+      new AxisArm("top/main/div", 2L, DivNodeGen.class),
       new AxisArm("top/main/lth", 2L, LessThanNodeGen.class),
     };
     /*

@@ -62,60 +62,6 @@ public class Atom {
   public static final Object MEMO = stringToCord("memo");
   
   
-  public static Object div(int[] x, int[] y) {
-    int cmp = compare(x,y);
-    if ( cmp < 0 ) {
-      return 0L;
-    }
-    else if ( 0 == cmp ) {
-      return 1L;
-    }
-    else if ( 1 == y.length ) {
-      int[] q = new int[x.length];
-      MPN.divmod_1(q, x, x.length, y[0]);
-      return normalize(q);
-    }
-    else {
-      int xlen = x.length,
-          ylen = y.length;
-      int[] xwords = Arrays.copyOf(x, xlen+2),
-            ywords = Arrays.copyOf(y, ylen);
-
-      int nshift = MPN.count_leading_zeros (ywords[ylen-1]);
-      if (nshift != 0) {
-        MPN.lshift(ywords, 0, ywords, ylen, nshift);
-        int x_high = MPN.lshift(xwords, 0, xwords, xlen, nshift);
-        xwords[xlen++] = x_high;
-      }
-
-      if (xlen == ylen) {
-        xwords[xlen++] = 0;
-      }
-
-      MPN.divide (xwords, xlen, ywords, ylen);
-      return normalize(Arrays.copyOfRange(xwords, ylen, xwords.length + 1 - ylen));
-    }
-  }
-  
-  public static long div(long a, long b) {
-    return a / b;
-  }
-  
-  public static Object div(Object a, Object b) {
-    if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
-      try {
-        return div(TypesGen.asLong(a), TypesGen.asLong(b));
-      }
-      catch (ArithmeticException e) {
-      }
-    }
-    return div(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
-  }
-  
-  
-  
-  
-
   public static int[] add(int[] a, int[] b) {
     Square s   = new Square(a, b);
     int[] dst  = new int[s.len+1];
@@ -136,8 +82,8 @@ public class Atom {
       }
     }
     return add(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
-  } 
-  
+  }
+
   public static Object bitwiseOr(Object a, Object b) {
     byte w   = 5;
     int  lna = measure(w, a);
@@ -168,7 +114,7 @@ public class Atom {
     }
     return getNthBit(atom, b - 2) ? 3 : 2;
   }
-
+  
   public static void chop(byte met, int fum, int wid, int tou, int[] dst, Object src) {
     int[] buf = TypesGen.asImplicitIntArray(src);
     int   len = buf.length, i;
@@ -209,7 +155,7 @@ public class Atom {
         }
       }
     }
-  }
+  } 
   
   public static int compare(int[] a, int[] b) {
     return MPN.cmp(a, a.length, b, b.length);
@@ -269,7 +215,7 @@ public class Atom {
     }
     return normalize(result);
   }
-  
+
   public static long decrement(long atom) {
     if ( atom == 0 ) {
       throw new Bail();
@@ -288,12 +234,63 @@ public class Atom {
     }
   }
   
-  public static boolean equals(long a, long b) {
-    return a == b;
+  public static Object div(int[] x, int[] y) {
+    // Adapated from Kawa's IntNum.java
+    int cmp = compare(x,y);
+    if ( cmp < 0 ) {
+      return 0L;
+    }
+    else if ( 0 == cmp ) {
+      return 1L;
+    }
+    else if ( 1 == y.length ) {
+      int[] q = new int[x.length];
+      MPN.divmod_1(q, x, x.length, y[0]);
+      return normalize(q);
+    }
+    else {
+      int xlen = x.length,
+          ylen = y.length;
+      int[] xwords = Arrays.copyOf(x, xlen+2),
+            ywords = Arrays.copyOf(y, ylen);
+
+      int nshift = MPN.count_leading_zeros (ywords[ylen-1]);
+      if (nshift != 0) {
+        MPN.lshift(ywords, 0, ywords, ylen, nshift);
+        int x_high = MPN.lshift(xwords, 0, xwords, xlen, nshift);
+        xwords[xlen++] = x_high;
+      }
+
+      if (xlen == ylen) {
+        xwords[xlen++] = 0;
+      }
+
+      MPN.divide (xwords, xlen, ywords, ylen);
+      return normalize(Arrays.copyOfRange(xwords, ylen, xwords.length + 1 - ylen));
+    }
+  }
+  
+  public static long div(long a, long b) {
+    return a / b;
+  }
+  
+  public static Object div(Object a, Object b) {
+    if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
+      try {
+        return div(TypesGen.asLong(a), TypesGen.asLong(b));
+      }
+      catch (ArithmeticException e) {
+      }
+    }
+    return div(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
   
   public static boolean equals(int[] a, int[] b) {
     return Arrays.equals(a,  b);
+  }
+  
+  public static boolean equals(long a, long b) {
+    return a == b;
   }
   
   public static boolean equals(Object a, Object b) {
