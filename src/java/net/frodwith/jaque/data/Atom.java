@@ -221,6 +221,10 @@ public class Atom {
     } 
     return compare(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
+  
+  public static long con(long a, long b) {
+    return a | b;
+  }
 
   public static Object con(Object a, Object b) {
     byte w   = 5;

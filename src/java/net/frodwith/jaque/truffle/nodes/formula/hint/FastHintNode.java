@@ -166,6 +166,7 @@ public final class FastHintNode extends DynamicHintFormula {
     private static Map<String,Object> parseHooks(Object noun) throws ClueParsingException {
       Object list = noun;
       Map<String, Object> map = new HashMap<String, Object>();
+      // TODO: use data.List
       while ( !Atom.isZero(list) ) {
         Cell pair = TypesGen.asCell(list);
         Cell i = TypesGen.asCell(pair.head);
