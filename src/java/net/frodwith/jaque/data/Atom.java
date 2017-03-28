@@ -3,6 +3,8 @@ package net.frodwith.jaque.data;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
+
 import gnu.math.MPN;
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.truffle.TypesGen;
@@ -85,6 +87,65 @@ public class Atom {
     }
     return add(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
+  
+  public static Object bex(long a) {
+    if (a < 64) {
+      return 1L << a;
+    }
+    else {
+      int whole = (int) (a >> 5),
+          parts = (int) a & 0xFFFF,
+          len = parts > 0 ? whole + 2 : whole + 1;
+
+      int[] words = new int[len];
+      words[whole] = 1 << parts;
+      return words;
+    }
+  }
+  
+  public static Object can(byte a, Iterable<Object> b) {
+    int tot = 0;
+
+    try {
+      for ( Object i : b ) {
+        Cell c = TypesGen.expectCell(i);
+        long pil = TypesGen.expectLong(c.head);
+        int pi = (int) pil;
+        
+        if (pi != pil) {
+          throw new Bail();
+        }
+
+        Object qi = c.tail;
+        if ( !Noun.isAtom(qi) ) {
+          throw new Bail();
+        }
+        tot = Math.addExact(tot, pi);
+      }
+    }
+    catch (ArithmeticException e) {
+      throw new Bail();
+    }
+    catch (UnexpectedResultException e) {
+      throw new Bail();
+    }
+
+    if ( 0 == tot ) {
+      return 0L;
+    }
+
+    int[] sal = slaq(a, tot);
+    int pos = 0;
+    
+    for ( Object i : b ) {
+      Cell c = TypesGen.asCell(i);
+      int pi = (int) TypesGen.asLong(c.head);
+      chop(a, 0, pi, pos, sal, c.tail);
+      pos += pi;
+    }
+
+    return malt(sal);
+  }
 
   public static int cap(Object atom) {
     int b = met(atom);
@@ -155,21 +216,10 @@ public class Atom {
   
   // -1, 0, 1 for less than, equal, or greater than respectively
   public static int compare(Object a, Object b) {
-    if ( TypesGen.isLong(a) ) {
-      if ( TypesGen.isLong(b) ) {
-        return compare(TypesGen.asLong(a), TypesGen.asLong(b));
-      }
-      else {
-        return -1;
-      }
-    } else {
-      if ( TypesGen.isLong(b) ) {
-        return 1;
-      }
-      else {
-        return compare(TypesGen.asIntArray(a), TypesGen.asIntArray(b));
-      }
-    }
+    if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
+      return compare(TypesGen.asLong(a), TypesGen.asLong(b));
+    } 
+    return compare(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
 
   public static Object con(Object a, Object b) {
@@ -191,7 +241,7 @@ public class Atom {
         sal[i] |= bow[i];
       }
 
-      return normalize(sal);
+      return malt(sal);
     } 
   }
   
@@ -214,7 +264,7 @@ public class Atom {
       result = Arrays.copyOf(atom, atom.length);
       result[0] -= 1;
     }
-    return normalize(result);
+    return malt(result);
   }
 
   public static long dec(long atom) {
@@ -246,10 +296,10 @@ public class Atom {
     else if ( 1 == y.length ) {
       int[] q = new int[x.length];
       MPN.divmod_1(q, x, x.length, y[0]);
-      return normalize(q);
+      return malt(q);
     }
     else {
-      return normalize(
+      return malt(
           Arrays.copyOfRange(divmod(x,y), y.length, x.length + 3 - y.length));
     }
   }
@@ -331,7 +381,7 @@ public class Atom {
       words[i] = w;
     }
 
-    return normalize(words);
+    return malt(words);
   }
   
   public static Object fromString(String s) {
@@ -352,7 +402,7 @@ public class Atom {
 
     MPN.set_str(wor, dig, len, radix);
 
-    return normalize(wor);
+    return malt(wor);
 }
   
   public static boolean getNthBit(int[] atom, int n) {
@@ -447,7 +497,37 @@ public class Atom {
     int[] sal = slaq(bloq, big);
     chop(bloq, 0, len, bits, sal, atom);
 
-    return normalize(sal);
+    return malt(sal);
+  }
+  
+  public static Object malt(int[] words) {
+    int bad = 0;
+
+    for ( int i = words.length - 1; i >= 0; --i) {
+      if ( words[i] == 0 ) {
+        ++bad;
+      }
+      else {
+        break;
+      }
+    }
+
+    if ( bad > 0 ) {
+      words = Arrays.copyOfRange(words, 0, words.length - bad);
+    }
+
+    if ( 0 == words.length ) {
+      return 0L;
+    }
+    else if ( words != null && words.length > 2 ) {
+      return words;
+    }
+    else if (words.length == 1) {
+      return (long) words[0];
+    }
+    else {
+      return ((long)words[1] << 32) | ((long)words[0] & 0xffffffffL);
+    }
   }
   
   public static Object mas(Object atom) {
@@ -535,7 +615,7 @@ public class Atom {
       return MPN.divmod_1(q, x, x.length, y[0]);
     }
     else {
-      return normalize(Arrays.copyOfRange(divmod(x,y), 0, y.length));
+      return malt(Arrays.copyOfRange(divmod(x,y), 0, y.length));
     }
   }
   
@@ -554,7 +634,7 @@ public class Atom {
     int[] words = TypesGen.asImplicitIntArray(atom);
     return mug_words((int) 2166136261L, words.length, words);
   }
-  
+
   private static int mug_words(int off, int nwd, int[] wod) {
     int has, out; 
 
@@ -599,7 +679,7 @@ public class Atom {
     }
     return off;
   }
-
+  
   public static Object mul(int[] x, int[] y) {
     int xlen = x.length,
         ylen = y.length;
@@ -616,7 +696,7 @@ public class Atom {
     }
 
     MPN.mul(dest, x, xlen, y, ylen);
-    return normalize(dest);
+    return malt(dest);
   }
   
   public static long mul(long a, long b) throws ArithmeticException {
@@ -632,36 +712,6 @@ public class Atom {
       }
     }
     return mul(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
-  }
-  
-  public static Object normalize(int[] words) {
-    int bad = 0;
-
-    for ( int i = words.length - 1; i >= 0; --i) {
-      if ( words[i] == 0 ) {
-        ++bad;
-      }
-      else {
-        break;
-      }
-    }
-
-    if ( bad > 0 ) {
-      words = Arrays.copyOfRange(words, 0, words.length - bad);
-    }
-
-    if ( 0 == words.length ) {
-      return 0L;
-    }
-    else if ( words != null && words.length > 2 ) {
-      return words;
-    }
-    else if (words.length == 1) {
-      return (long) words[0];
-    }
-    else {
-      return ((long)words[1] << 32) | ((long)words[0] & 0xffffffffL);
-    }
   }
 
   public static Object peg(Object axis, Object to) {
@@ -730,7 +780,7 @@ public class Atom {
     else {
       int[] aa = TypesGen.asImplicitIntArray(a);
       int[] ba = TypesGen.asImplicitIntArray(b);
-      return normalize(sub(aa, ba));
+      return malt(sub(aa, ba));
     }
   }
 
@@ -761,5 +811,59 @@ public class Atom {
       reverseBytes(buf);
     }
     return buf;
+  }
+
+  public static String toString(Object atom) {
+    return toString(atom, 10);
+  }
+  
+  public static String toString(Object atom, int radix) {
+    StringBuilder b = new StringBuilder();
+    write(b, TypesGen.asImplicitIntArray(atom), radix);
+    return b.toString();
+  }
+  
+  public static void write(StringBuilder b, int[] cur, int radix) {
+    int len   = cur.length,
+        size  = len,
+        i     = b.length(),
+        j     = i - 1;
+    
+    cur = Arrays.copyOf(cur, cur.length);
+
+    for(;;) {
+      int dig = MPN.divmod_1(cur, cur, size, radix);
+      b.append(Character.forDigit(dig, radix));
+      ++j;
+      if (cur[len-1] == 0) {
+        if (--len == 0) {
+          break;
+        }
+      }
+    }
+
+    for (; i < j; ++i, --j) {
+      char t = b.charAt(j);
+      b.setCharAt(j, b.charAt(i));
+      b.setCharAt(i, t);
+    }
+  }
+
+  public static Object cat(byte a, Object b, Object c) {
+    int lew = met(a, b),
+        ler = met(a, c),
+        all = lew + ler;
+    
+    if ( 0 == all ) {
+      return 0L;
+    }
+    else {
+      int[] sal = slaq(a, all);
+
+      chop(a, 0, lew, 0, sal, b);
+      chop(a, 0, ler, lew, sal, c);
+
+      return malt(sal);
+    }
   }
 }

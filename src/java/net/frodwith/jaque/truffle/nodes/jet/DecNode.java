@@ -4,9 +4,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Atom;
-import net.frodwith.jaque.data.Noun;
 
-public abstract class DecNode extends UnaryJetNode {
+public abstract class DecNode extends UnaryGateNode {
 
   @Specialization
   protected long decrement(long atom) {

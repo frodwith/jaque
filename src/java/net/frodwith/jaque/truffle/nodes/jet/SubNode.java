@@ -4,9 +4,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Atom;
-import net.frodwith.jaque.data.Noun;
 
-public abstract class SubNode extends BinaryJetNode {
+public abstract class SubNode extends PairGateNode {
   @Specialization(rewriteOn = ArithmeticException.class)
   protected long sub(long a, long b) {
     try {

@@ -14,32 +14,6 @@ import net.frodwith.jaque.truffle.TypesGen;
  */
 public class Noun {
   
-  private static void writeAtom(StringBuilder b, int[] cur, int radix) {
-    int len   = cur.length,
-        size  = len,
-        i     = b.length(),
-        j     = i - 1;
-    
-    cur = Arrays.copyOf(cur, cur.length);
-
-    for(;;) {
-      int dig = MPN.divmod_1(cur, cur, size, radix);
-      b.append(Character.forDigit(dig, radix));
-      ++j;
-      if (cur[len-1] == 0) {
-        if (--len == 0) {
-          break;
-        }
-      }
-    }
-
-    for (; i < j; ++i, --j) {
-      char t = b.charAt(j);
-      b.setCharAt(j, b.charAt(i));
-      b.setCharAt(i, t);
-    }
-  }
-  
   private static void write(StringBuilder b, Object noun) {
     if ( isCell(noun) ) {
       Cell c = TypesGen.asCell(noun);
@@ -50,7 +24,7 @@ public class Noun {
       b.append("]");
     }
     else {
-      writeAtom(b, TypesGen.asImplicitIntArray(noun), 10);
+      Atom.write(b, TypesGen.asImplicitIntArray(noun), 10);
     }
   }
   
