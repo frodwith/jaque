@@ -141,7 +141,6 @@ public class Atom {
   } 
   
   public static int compare(long a, long b) {
-    
     if (a == b) {
       return 0;
     }
