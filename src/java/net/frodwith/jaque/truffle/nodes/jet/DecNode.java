@@ -6,7 +6,7 @@ import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Noun;
 
-public abstract class DecrementNode extends UnaryJetNode {
+public abstract class DecNode extends UnaryJetNode {
 
   @Specialization
   protected long decrement(long atom) {
@@ -19,7 +19,7 @@ public abstract class DecrementNode extends UnaryJetNode {
   
   @Specialization
   protected Object decrement(int[] atom) {
-    return Atom.decrement(atom);
+    return Atom.dec(atom);
   }
 
 }

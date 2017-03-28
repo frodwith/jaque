@@ -35,10 +35,13 @@ import net.frodwith.jaque.truffle.nodes.formula.hint.DiscardHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.FastHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.MemoHintNode;
 import net.frodwith.jaque.truffle.nodes.jet.AddNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.DecrementNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.DecNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.DivNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.LessThanNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.SubtractNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.LthNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.ModNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.MulNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.SubNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 import net.frodwith.jaque.truffle.nodes.formula.FragmentNode;
 import net.frodwith.jaque.truffle.nodes.formula.IdentityNode;
@@ -222,10 +225,13 @@ public class Context {
 
   public static void main(String[] args) {
     Arm[] drivers = new Arm[] {
-      new AxisArm("top/main/dec", 2L, DecrementNodeGen.class),
-      new AxisArm("top/main/sub", 2L, SubtractNodeGen.class),
       new AxisArm("top/main/div", 2L, DivNodeGen.class),
-      new AxisArm("top/main/lth", 2L, LessThanNodeGen.class),
+      new AxisArm("top/main/mod", 2L, ModNodeGen.class),
+      new AxisArm("top/main/mul", 2L, MulNodeGen.class),
+      new AxisArm("top/main/lth", 2L, LthNodeGen.class),
+      new AxisArm("top/main/dec", 2L, DecNodeGen.class),
+      new AxisArm("top/main/add", 2L, AddNodeGen.class),
+      new AxisArm("top/main/sub", 2L, SubNodeGen.class),
     };
     /*
     Arm[] drivers = new Arm[] {

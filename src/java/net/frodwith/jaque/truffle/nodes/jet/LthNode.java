@@ -6,7 +6,7 @@ import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Noun;
 
-public abstract class LessThanNode extends BinaryJetNode {
+public abstract class LthNode extends BinaryJetNode {
 
   @Specialization
   protected long lth(long a, long b) {

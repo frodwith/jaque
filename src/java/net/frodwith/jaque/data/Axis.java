@@ -29,7 +29,7 @@ public final class Axis implements Iterable<Fragment> {
     assert !Atom.isZero(atom);
     assert !Atom.equals(atom, 1L);
     this.atom = atom;
-    this.length = Atom.measure(atom) - 1;
+    this.length = Atom.met(atom) - 1;
   }
 
   @Override

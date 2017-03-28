@@ -20,7 +20,9 @@ import net.frodwith.jaque.truffle.TypesGen;
  * Passing any of these functions other types of objects(ints, etc)
  * has undefined behavior.
  * 
- * Many of these methods were adapted from urbit's vere code.
+ * Many of these methods were adapted from urbit's vere code. The ones
+ * referencing MPN were also developed with reference to Kawa Scheme's
+ * IntNum class.
  */
 
 public class Atom {
@@ -84,31 +86,8 @@ public class Atom {
     return add(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
 
-  public static Object bitwiseOr(Object a, Object b) {
-    byte w   = 5;
-    int  lna = measure(w, a);
-    int  lnb = measure(w, b);
-
-    if ( (0 == lna) && (0 == lnb) ) {
-      return 0L;
-    }
-    else {
-      int i, len = Math.max(lna, lnb);
-      int[] sal  = new int[len];
-      int[] bow  = TypesGen.asImplicitIntArray(b);
-
-      chop(w, 0, lna, 0, sal, a);
-
-      for ( i = 0; i < lnb; i++ ) {
-        sal[i] |= bow[i];
-      }
-
-      return normalize(sal);
-    } 
-  }
-  
   public static int cap(Object atom) {
-    int b = measure(atom);
+    int b = met(atom);
     if ( b < 2 ) {
       throw new Bail();
     }
@@ -155,11 +134,11 @@ public class Atom {
         }
       }
     }
-  } 
+  }
   
   public static int compare(int[] a, int[] b) {
     return MPN.cmp(a, a.length, b, b.length);
-  }
+  } 
   
   public static int compare(long a, long b) {
     
@@ -174,7 +153,7 @@ public class Atom {
       return lth ? -1 : 1;
     }
   }
-
+  
   // -1, 0, 1 for less than, equal, or greater than respectively
   public static int compare(Object a, Object b) {
     if ( TypesGen.isLong(a) ) {
@@ -193,6 +172,29 @@ public class Atom {
       }
     }
   }
+
+  public static Object con(Object a, Object b) {
+    byte w   = 5;
+    int  lna = met(w, a);
+    int  lnb = met(w, b);
+
+    if ( (0 == lna) && (0 == lnb) ) {
+      return 0L;
+    }
+    else {
+      int i, len = Math.max(lna, lnb);
+      int[] sal  = new int[len];
+      int[] bow  = TypesGen.asImplicitIntArray(b);
+
+      chop(w, 0, lna, 0, sal, a);
+
+      for ( i = 0; i < lnb; i++ ) {
+        sal[i] |= bow[i];
+      }
+
+      return normalize(sal);
+    } 
+  }
   
   public static String cordToString(Object atom) {
     try {
@@ -203,7 +205,7 @@ public class Atom {
     }
   }
   
-  public static Object decrement(int[] atom) {
+  public static Object dec(int[] atom) {
     int[] result;
     if ( atom[0] == 0 ) {
       result = new int[atom.length - 1];
@@ -216,7 +218,7 @@ public class Atom {
     return normalize(result);
   }
 
-  public static long decrement(long atom) {
+  public static long dec(long atom) {
     if ( atom == 0 ) {
       throw new Bail();
     }
@@ -225,17 +227,16 @@ public class Atom {
     }
   }
   
-  public static Object decrement(Object atom) {
+  public static Object dec(Object atom) {
     if ( TypesGen.isLong(atom) ) {
-      return decrement(TypesGen.asLong(atom));
+      return dec(TypesGen.asLong(atom));
     }
     else {
-      return decrement(TypesGen.asIntArray(atom));
+      return dec(TypesGen.asIntArray(atom));
     }
   }
   
   public static Object div(int[] x, int[] y) {
-    // Adapated from Kawa's IntNum.java
     int cmp = compare(x,y);
     if ( cmp < 0 ) {
       return 0L;
@@ -249,24 +250,8 @@ public class Atom {
       return normalize(q);
     }
     else {
-      int xlen = x.length,
-          ylen = y.length;
-      int[] xwords = Arrays.copyOf(x, xlen+2),
-            ywords = Arrays.copyOf(y, ylen);
-
-      int nshift = MPN.count_leading_zeros (ywords[ylen-1]);
-      if (nshift != 0) {
-        MPN.lshift(ywords, 0, ywords, ylen, nshift);
-        int x_high = MPN.lshift(xwords, 0, xwords, xlen, nshift);
-        xwords[xlen++] = x_high;
-      }
-
-      if (xlen == ylen) {
-        xwords[xlen++] = 0;
-      }
-
-      MPN.divide (xwords, xlen, ywords, ylen);
-      return normalize(Arrays.copyOfRange(xwords, ylen, xwords.length + 1 - ylen));
+      return normalize(
+          Arrays.copyOfRange(divmod(x,y), y.length, x.length + 3 - y.length));
     }
   }
   
@@ -276,13 +261,30 @@ public class Atom {
   
   public static Object div(Object a, Object b) {
     if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
-      try {
-        return div(TypesGen.asLong(a), TypesGen.asLong(b));
-      }
-      catch (ArithmeticException e) {
-      }
+      return div(TypesGen.asLong(a), TypesGen.asLong(b));
     }
     return div(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
+  }
+
+  private static int[] divmod(int[] x, int[] y) {
+    int xlen = x.length,
+        ylen = y.length;
+    int[] xwords = Arrays.copyOf(x, xlen+2),
+          ywords = Arrays.copyOf(y, ylen);
+
+    int nshift = MPN.count_leading_zeros(ywords[ylen-1]);
+    if (nshift != 0) {
+      MPN.lshift(ywords, 0, ywords, ylen, nshift);
+      int x_high = MPN.lshift(xwords, 0, xwords, xlen, nshift);
+      xwords[xlen++] = x_high;
+    }
+
+    if (xlen == ylen) {
+      xwords[xlen++] = 0;
+    }
+
+    MPN.divide(xwords, xlen, ywords, ylen);
+    return xwords;
   }
   
   public static boolean equals(int[] a, int[] b) {
@@ -382,7 +384,7 @@ public class Atom {
       return getNthBit((int[]) atom, n);
     }
   }
-
+  
   public static int[] increment(int[] atom) {
     int top = atom[atom.length];
     try {
@@ -398,11 +400,11 @@ public class Atom {
       return w;
     }
   }
-
+  
   public static long increment(long atom) throws ArithmeticException {
     return Math.incrementExact(atom);
   }
-
+  
   public static Object increment(Object atom) {
     if ( TypesGen.isLong(atom) ) {
       try {
@@ -416,7 +418,7 @@ public class Atom {
       return increment(TypesGen.asIntArray(atom));
     }
   }
-  
+
   public static boolean isLessThanUnsigned(long n1, long n2) {
     boolean comp = (n1 < n2);
     if ((n1 < 0) != (n2 < 0)) {
@@ -424,13 +426,13 @@ public class Atom {
     }
     return comp;
   }
-  
+
   public static boolean isZero(Object atom) {
     return TypesGen.isLong(atom) && 0L == TypesGen.asLong(atom);
   }
-  
+
   public static Object lsh(byte bloq, int bits, Object atom) {
-    int len = measure(bloq, atom),
+    int len = met(bloq, atom),
         big;
 
     if ( 0 == len ) {
@@ -450,17 +452,17 @@ public class Atom {
   }
   
   public static Object mas(Object atom) {
-    int b = measure(atom);
+    int b = met(atom);
     if ( b < 2 ) {
       throw new Bail();
     }
     long c = 1 << (b - 1),
          d = 1 << (b - 2);
-    Object e = subtract(atom, c);
-    return bitwiseOr(e, d);
+    Object e = sub(atom, c);
+    return con(e, d);
   }
   
-  public static int measure(byte bloq, Object atom) {
+  public static int met(byte bloq, Object atom) {
     int gal, daz;
 
     if ( TypesGen.isLong(atom) ) {
@@ -517,8 +519,36 @@ public class Atom {
     }
   }
   
-  public static int measure(Object atom) {
-    return measure((byte)0, atom);
+  public static int met(Object atom) {
+    return met((byte)0, atom);
+  }
+  
+  public static Object mod(int[] x, int[] y) {
+    int cmp = compare(x,y);
+    if ( cmp < 0 ) {
+      return y;
+    }
+    else if ( 0 == cmp ) {
+      return 0L;
+    }
+    else if ( 1 == y.length ) {
+      int[] q = new int[x.length];
+      return MPN.divmod_1(q, x, x.length, y[0]);
+    }
+    else {
+      return normalize(Arrays.copyOfRange(divmod(x,y), 0, y.length));
+    }
+  }
+  
+  public static long mod(long a, long b) {
+    return a % b;
+  }
+  
+  public static Object mod(Object a, Object b) {
+    if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
+      return mod(TypesGen.asLong(a), TypesGen.asLong(b));
+    }
+    return mod(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
   
   public static int mug(Object atom) {
@@ -640,11 +670,11 @@ public class Atom {
       return axis;
     }
     else {
-      int c = measure(to),
+      int c = met(to),
           d = c - 1;
       long e = d << 1;
 
-      Object f = subtract(to, e),
+      Object f = sub(to, e),
              g = lsh((byte) 0, d, axis);
       
       return add(f, g);
@@ -675,7 +705,7 @@ public class Atom {
     }
   }
 
-  public static int[] subtract(int[] a, int[] b) {
+  public static int[] sub(int[] a, int[] b) {
     Square s = new Square(a, b);
     int[] dst = new int[s.len];
     int bor = MPN.sub_n(dst, s.x, s.y, s.len);
@@ -685,7 +715,7 @@ public class Atom {
     return dst;
   }
 
-  public static long subtract(long a, long b) {
+  public static long sub(long a, long b) {
     if ( -1 == compare(a, b) ) {
       throw new Bail();
     }
@@ -694,14 +724,14 @@ public class Atom {
     }
   }
   
-  public static Object subtract(Object a, Object b) {
+  public static Object sub(Object a, Object b) {
     if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
-      return subtract(TypesGen.asLong(a), TypesGen.asLong(b));
+      return sub(TypesGen.asLong(a), TypesGen.asLong(b));
     }
     else {
       int[] aa = TypesGen.asImplicitIntArray(a);
       int[] ba = TypesGen.asImplicitIntArray(b);
-      return normalize(subtract(aa, ba));
+      return normalize(sub(aa, ba));
     }
   }
 
@@ -710,7 +740,7 @@ public class Atom {
       return new byte[1];
     }
     int[]  wor = TypesGen.asImplicitIntArray(atom);
-    int    bel = measure((byte)3, atom);
+    int    bel = met((byte)3, atom);
     byte[] buf = new byte[bel];
     int    w, i, b;
     for (i = 0, b = 0;;) {
