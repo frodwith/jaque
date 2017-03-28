@@ -10,10 +10,10 @@ public abstract class CatNode extends TrelGateNode {
 
   @Specialization
   protected Object cat(long a, Object b, Object c) {
-    if ( a >= 32 || a < 0 || !Noun.isAtom(b) || !Noun.isAtom(c) ) {
+    if ( !Noun.isAtom(b) || !Noun.isAtom(c) ) {
       throw new Bail();
     }
-    return Atom.cat((byte) a, b, c);
+    return Atom.cat(Atom.bloq(a), b, c);
   }
 
 }

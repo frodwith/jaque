@@ -103,6 +103,13 @@ public class Atom {
     }
   }
   
+  public static byte bloq(long atom) {
+    if ( atom >= 32 || atom < 0) {
+      throw new Bail();
+    }
+    return (byte) atom;
+  }
+  
   public static Object can(byte a, Iterable<Object> b) {
     int tot = 0;
 
@@ -249,6 +256,33 @@ public class Atom {
     } 
   }
   
+  public static long dis(long a, long b) {
+    return a & b;
+  }
+
+  public static Object dis(Object a, Object b) {
+    byte w   = 5;
+    int  lna = met(w, a);
+    int  lnb = met(w, b);
+
+    if ( (0 == lna) && (0 == lnb) ) {
+      return 0L;
+    }
+    else {
+      int i, len = Math.max(lna, lnb);
+      int[] sal  = new int[len];
+      int[] bow  = TypesGen.asImplicitIntArray(b);
+
+      chop(w, 0, lna, 0, sal, a);
+
+      for ( i = 0; i < len; i++ ) {
+        sal[i] &= (i >= lnb) ? 0 : bow[i];
+      }
+
+      return malt(sal);
+    } 
+  }
+  
   public static String cordToString(Object atom) {
     try {
       return new String(toByteArray(atom, LITTLE_ENDIAN), "UTF-8");
@@ -355,6 +389,13 @@ public class Atom {
       || ( TypesGen.isIntArray(a)
         && TypesGen.isIntArray(b)
         && equals(TypesGen.asIntArray(a), TypesGen.asIntArray(b)));
+  }
+  
+  public static Object expect(Object o) {
+    if ( !Noun.isAtom(o) ) {
+      throw new Bail();
+    }
+    return o;
   }
   
   public static Object fromByteArray(byte[] pill, boolean endian) {
@@ -867,6 +908,52 @@ public class Atom {
       chop(a, 0, lew, 0, sal, b);
       chop(a, 0, ler, lew, sal, c);
 
+      return malt(sal);
+    }
+  }
+  
+  public static long expectLong(Object a) {
+    try {
+      return TypesGen.expectLong(a);
+    }
+    catch (UnexpectedResultException e) {
+      throw new Bail();
+    }
+  }
+  
+  public static int expectInt(Object a) {
+    long al = expectLong(a);
+    int  ai = (int) al;
+    if ( al != ai ) {
+      throw new Bail();
+    }
+    return ai;
+  }
+
+  public static Object cut(byte a, Object b, Object c, Object d) {
+    int ci, bi = expectInt(b);
+    try {
+      ci = expectInt(c);
+    } 
+    catch (Bail e) {
+      ci = 0x7fffffff;
+    }
+    int len = met(a, d);
+
+    if ( (0 == ci) || (bi >= len) ) {
+      return 0L;
+    }
+
+    if ( (bi + ci) > len ) {
+      ci = len - bi;
+    }
+
+    if ( (bi == 0) && (ci == len) ) {
+      return d;
+    }
+    else {
+      int[] sal = slaq(a, ci);
+      chop(a,  bi, ci, 0, sal, d);
       return malt(sal);
     }
   }

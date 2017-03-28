@@ -11,10 +11,7 @@ public abstract class CanNode extends PairGateNode {
 
   @Specialization
   protected Object can(long a, Cell b) {
-    if ( a >= 32 || a < 0 ) {
-      throw new Bail();
-    }
-    return Atom.can((byte) a, new List(b));
+    return Atom.can(Atom.bloq(a), new List(b));
   }
 
 }
