@@ -6,11 +6,11 @@ import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Noun;
 
-public abstract class CatNode extends TrelGateNode {
+public abstract class MugNode extends UnaryGateNode {
 
   @Specialization
-  protected Object cat(long a, Object b, Object c) {
-    return Atom.cat(Atom.expectBloq(a), Atom.expect(b), Atom.expect(c));
+  protected int mug(Object noun) {
+    return Noun.mug(noun);
   }
 
 }

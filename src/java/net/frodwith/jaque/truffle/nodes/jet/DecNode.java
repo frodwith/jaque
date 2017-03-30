@@ -8,7 +8,7 @@ import net.frodwith.jaque.data.Atom;
 public abstract class DecNode extends UnaryGateNode {
 
   @Specialization
-  protected long decrement(long atom) {
+  protected long dec(long atom) {
     if ( atom == 0 ) {
       System.err.print("decrement underflow");
       throw new Bail();
@@ -17,7 +17,7 @@ public abstract class DecNode extends UnaryGateNode {
   }
   
   @Specialization
-  protected Object decrement(int[] atom) {
+  protected Object dec(int[] atom) {
     return Atom.dec(atom);
   }
 
