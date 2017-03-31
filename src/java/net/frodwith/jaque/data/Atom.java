@@ -644,7 +644,7 @@ public class Atom {
     return TypesGen.isLong(atom) && 0L == TypesGen.asLong(atom);
   }
   
-  public static Object lsh(byte bloq, int bits, Object atom) {
+  public static Object lsh(byte bloq, int count, Object atom) {
     int len = met(bloq, atom),
         big;
 
@@ -652,14 +652,14 @@ public class Atom {
       return 0L;
     }
     try {
-      big = Math.addExact(bits, len);
+      big = Math.addExact(count, len);
     }
     catch (ArithmeticException e) {
       throw new Bail();
     }
     
     int[] sal = slaq(bloq, big);
-    chop(bloq, 0, len, bits, sal, atom);
+    chop(bloq, 0, len, count, sal, atom);
 
     return malt(sal);
   }
@@ -1022,6 +1022,21 @@ public class Atom {
       b = a[i];
       a[i] = a[j];
       a[j] = b;
+    }
+  }
+  
+  public static Object rsh(byte bloq, int count, Object atom) {
+    int len = met(bloq, atom);
+
+    if ( count >= len ) {
+      return 0L;
+    }
+    else {
+      int[] sal = slaq(bloq, len - count);
+
+      chop(bloq, count, len - count, 0, sal, atom);
+
+      return malt(sal);
     }
   }
 
