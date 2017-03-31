@@ -1,5 +1,6 @@
 package net.frodwith.jaque.data;
 
+import com.sangupta.murmur.Murmur3;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
@@ -65,7 +66,6 @@ public class Atom {
   
   public static final Object MEMO = stringToCord("memo");
   
-  
   public static int[] add(int[] a, int[] b) {
     Square s   = new Square(a, b);
     int[] dst  = new int[s.len+1];
@@ -101,13 +101,6 @@ public class Atom {
       words[whole] = 1 << parts;
       return words;
     }
-  }
-  
-  public static byte bloq(long atom) {
-    if ( atom >= 32 || atom < 0) {
-      throw new Bail();
-    }
-    return (byte) atom;
   }
   
   public static Object can(byte a, Iterable<Object> b) {
@@ -153,13 +146,31 @@ public class Atom {
 
     return malt(sal);
   }
-
+  
   public static int cap(Object atom) {
     int b = met(atom);
     if ( b < 2 ) {
       throw new Bail();
     }
     return getNthBit(atom, b - 2) ? 3 : 2;
+  }
+
+  public static Object cat(byte a, Object b, Object c) {
+    int lew = met(a, b),
+        ler = met(a, c),
+        all = lew + ler;
+    
+    if ( 0 == all ) {
+      return 0L;
+    }
+    else {
+      int[] sal = slaq(a, all);
+
+      chop(a, 0, lew, 0, sal, b);
+      chop(a, 0, ler, lew, sal, c);
+
+      return malt(sal);
+    }
   }
   
   public static void chop(byte met, int fum, int wid, int tou, int[] dst, Object src) {
@@ -256,39 +267,40 @@ public class Atom {
     } 
   }
   
-  public static long dis(long a, long b) {
-    return a & b;
-  }
-
-  public static Object dis(Object a, Object b) {
-    byte w   = 5;
-    int  lna = met(w, a);
-    int  lnb = met(w, b);
-
-    if ( (0 == lna) && (0 == lnb) ) {
-      return 0L;
-    }
-    else {
-      int i, len = Math.max(lna, lnb);
-      int[] sal  = new int[len];
-      int[] bow  = TypesGen.asImplicitIntArray(b);
-
-      chop(w, 0, lna, 0, sal, a);
-
-      for ( i = 0; i < len; i++ ) {
-        sal[i] &= (i >= lnb) ? 0 : bow[i];
-      }
-
-      return malt(sal);
-    } 
-  }
-  
   public static String cordToString(Object atom) {
     try {
       return new String(toByteArray(atom, LITTLE_ENDIAN), "UTF-8");
     }
     catch (UnsupportedEncodingException e) {
       return null;
+    }
+  }
+
+  public static Object cut(byte a, Object b, Object c, Object d) {
+    int ci, bi = expectInt(b);
+    try {
+      ci = expectInt(c);
+    } 
+    catch (Bail e) {
+      ci = 0x7fffffff;
+    }
+    int len = met(a, d);
+
+    if ( (0 == ci) || (bi >= len) ) {
+      return 0L;
+    }
+
+    if ( (bi + ci) > len ) {
+      ci = len - bi;
+    }
+
+    if ( (bi == 0) && (ci == len) ) {
+      return d;
+    }
+    else {
+      int[] sal = slaq(a, ci);
+      chop(a,  bi, ci, 0, sal, d);
+      return malt(sal);
     }
   }
   
@@ -323,6 +335,33 @@ public class Atom {
     }
   }
   
+  public static long dis(long a, long b) {
+    return a & b;
+  }
+
+  public static Object dis(Object a, Object b) {
+    byte w   = 5;
+    int  lna = met(w, a);
+    int  lnb = met(w, b);
+
+    if ( (0 == lna) && (0 == lnb) ) {
+      return 0L;
+    }
+    else {
+      int i, len = Math.max(lna, lnb);
+      int[] sal  = new int[len];
+      int[] bow  = TypesGen.asImplicitIntArray(b);
+
+      chop(w, 0, lna, 0, sal, a);
+
+      for ( i = 0; i < len; i++ ) {
+        sal[i] &= (i >= lnb) ? 0 : bow[i];
+      }
+
+      return malt(sal);
+    } 
+  }
+  
   public static Object div(int[] x, int[] y) {
     int cmp = compare(x,y);
     if ( cmp < 0 ) {
@@ -352,7 +391,7 @@ public class Atom {
     }
     return div(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
-
+  
   private static int[] divmod(int[] x, int[] y) {
     int xlen = x.length,
         ylen = y.length;
@@ -372,6 +411,61 @@ public class Atom {
 
     MPN.divide(xwords, xlen, ywords, ylen);
     return xwords;
+  }
+
+  public static Cell dvr(int[] x, int[] y) {
+    int cmp = compare(x,y);
+    if ( cmp < 0 ) {
+      return new Cell(0L, y);
+    }
+    else if ( 0 == cmp ) {
+      return new Cell(1L, 0L);
+    }
+    else if ( 1 == y.length ) {
+      int[] q = new int[x.length];
+      int rem = MPN.divmod_1(q, x, x.length, y[0]);
+      return new Cell(malt(q), rem);
+    }
+    else {
+      int[] w = divmod(x,y);
+      return new Cell(
+          malt(Arrays.copyOfRange(w, y.length, x.length + 3 - y.length)),
+          malt(Arrays.copyOfRange(w, 0, y.length)));
+    }   
+  }
+
+  public static Cell dvr(long a, long b) {
+    return new Cell(a / b, a % b);
+  }
+  
+  public static Cell dvr(Object a, Object b) {
+    if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
+      return dvr(TypesGen.asLong(a), TypesGen.asLong(b));
+    }
+    return dvr(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
+  }
+  
+  public static Object end(byte a, Object b, Object c) {
+    int bi;
+
+    try {
+      bi = expectInt(b);
+    }
+    catch (Bail e) {
+      return c;
+    }
+    if ( 0 == bi ) {
+      return 0L;
+    }
+
+    int len = met(a, c);
+    if ( bi >= len ) {
+      return c;
+    }
+
+    int[] sal = slaq(a, bi);
+    chop(a, 0, bi, 0, sal, c);
+    return malt(sal);
   }
   
   public static boolean equals(int[] a, int[] b) {
@@ -396,6 +490,31 @@ public class Atom {
       throw new Bail();
     }
     return o;
+  }
+  
+  public static byte expectBloq(long atom) {
+    if ( atom >= 32 || atom < 0) {
+      throw new Bail();
+    }
+    return (byte) atom;
+  }
+  
+  public static int expectInt(Object a) {
+    long al = expectLong(a);
+    int  ai = (int) al;
+    if ( al != ai ) {
+      throw new Bail();
+    }
+    return ai;
+  }
+  
+  public static long expectLong(Object a) {
+    try {
+      return TypesGen.expectLong(a);
+    }
+    catch (UnexpectedResultException e) {
+      throw new Bail();
+    }
   }
   
   public static Object fromByteArray(byte[] pill, boolean endian) {
@@ -478,7 +597,7 @@ public class Atom {
       return getNthBit((int[]) atom, n);
     }
   }
-  
+
   public static int[] increment(int[] atom) {
     int top = atom[atom.length];
     try {
@@ -494,11 +613,11 @@ public class Atom {
       return w;
     }
   }
-  
+
   public static long increment(long atom) throws ArithmeticException {
     return Math.incrementExact(atom);
   }
-  
+
   public static Object increment(Object atom) {
     if ( TypesGen.isLong(atom) ) {
       try {
@@ -512,7 +631,7 @@ public class Atom {
       return increment(TypesGen.asIntArray(atom));
     }
   }
-
+  
   public static boolean isLessThanUnsigned(long n1, long n2) {
     boolean comp = (n1 < n2);
     if ((n1 < 0) != (n2 < 0)) {
@@ -520,11 +639,11 @@ public class Atom {
     }
     return comp;
   }
-
+  
   public static boolean isZero(Object atom) {
     return TypesGen.isLong(atom) && 0L == TypesGen.asLong(atom);
   }
-
+  
   public static Object lsh(byte bloq, int bits, Object atom) {
     int len = met(bloq, atom),
         big;
@@ -647,6 +766,33 @@ public class Atom {
     return met((byte)0, atom);
   }
   
+  public static long mix(long a, long b) {
+    return a ^ b;
+  }
+
+  public static Object mix(Object a, Object b) {
+    byte w   = 5;
+    int  lna = met(w, a);
+    int  lnb = met(w, b);
+
+    if ( (0 == lna) && (0 == lnb) ) {
+      return 0L;
+    }
+    else {
+      int i, len = Math.max(lna, lnb);
+      int[] sal  = new int[len];
+      int[] bow  = TypesGen.asImplicitIntArray(b);
+
+      chop(w, 0, lna, 0, sal, a);
+
+      for ( i = 0; i < lnb; i++ ) {
+        sal[i] ^= bow[i];
+      }
+
+      return malt(sal);
+    } 
+  }
+
   public static Object mod(int[] x, int[] y) {
     int cmp = compare(x,y);
     if ( cmp < 0 ) {
@@ -692,7 +838,7 @@ public class Atom {
       ++off;
     }
   }
-
+  
   private static int mug_words_in(int off, int nwd, int[] wod) {
     if (0 == nwd) {
       return off;
@@ -743,11 +889,11 @@ public class Atom {
     MPN.mul(dest, x, xlen, y, ylen);
     return malt(dest);
   }
-  
+
   public static long mul(long a, long b) throws ArithmeticException {
     return Math.multiplyExact(a, b);
   }
-  
+
   public static Object mul(Object a, Object b) {
     if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
       try {
@@ -757,6 +903,12 @@ public class Atom {
       }
     }
     return mul(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
+  }
+  
+  public static long muk(int seed, int length, Object atom) {
+    assert Atom.met((byte) 5, seed) <= 1;
+    assert Atom.met(length) <= 31;
+    return Murmur3.hash_x86_32(toByteArray(atom, LITTLE_ENDIAN), length, seed);
   }
 
   public static Object peg(Object axis, Object to) {
@@ -775,6 +927,94 @@ public class Atom {
     }
   }
   
+  public static Object rap(byte a, Iterable<Object> b) {
+    int tot = 0;
+    try {
+      for ( Object i : b ) {
+        tot = Math.addExact(tot, met(a, Atom.expect(i)));
+      }
+    }
+    catch ( ArithmeticException e ) {
+      throw new Bail();
+    }
+      
+    if ( 0 == tot ) {
+      return 0L;
+    }
+    
+    int[] sal = slaq(a, tot);
+    int pos = 0;
+    
+    for ( Object i : b ) {
+      chop(a, 0, met(a, i), pos, sal, i);
+    }
+    
+    return malt(sal);
+  }
+  
+  public static Object rep(byte a, Iterable<Object> b) {
+    int tot = 0;
+    try {
+      for ( Object i : b ) {
+        Atom.expect(i);
+        tot = Math.incrementExact(tot);
+      }
+    }
+    catch ( ArithmeticException e ) {
+      throw new Bail();
+    }
+    
+    int[] sal = slaq(a, tot);
+    int pos = 0;
+    
+    for ( Object i : b ) {
+      chop(a, 0, 1, pos++, sal, i);
+    }
+    return malt(sal);
+  }
+  
+  public static Object rip(byte a, Object b) {
+    int[] words = TypesGen.asImplicitIntArray(b);
+    Object pir = 0L;
+    if ( a < 5 ) {
+      int met = met(a, b),
+          mek = ((1 << (1 << a)) - 1);
+
+      for ( int i = 0; i < met; ++i ) {
+        int pat = met - (i + 1),
+            bit = pat << a,
+            wor = bit >>> 5,
+            sif = bit & 31,
+            src = words[wor],
+            rip = (src >> sif) & mek;
+
+        pir = new Cell((long) rip, pir);
+      }
+    }
+    else {
+      byte sang = (byte) (a - 5);
+      int met = met(a, b),
+          len = met((byte) 5, b),
+          san = 1 << sang,
+          dif = (met << sang) - len,
+          tub = (0 == dif) ? san : san - dif;
+
+      for ( int i = 0; i < met; ++i ) {
+        int pat = met - (i + 1),
+            wut = pat << sang,
+            sap = ((0 == i) ? tub : san);
+        int[] sal = new int[sap];
+        
+        for ( int j = 0; j < sap; ++j ) {
+          sal[j] = words[wut + j];
+        }
+        
+        pir = new Cell(malt(sal), pir);
+      }
+    }
+    return pir;
+  }
+  
   private static void reverseBytes(byte[] a) {
     int i, j;
     byte b;
@@ -784,7 +1024,7 @@ public class Atom {
       a[j] = b;
     }
   }
-  
+
   public static int[] slaq(byte bloq, int len) {
     int big = ((len << bloq) + 31) >>> 5;
     return new int[big];
@@ -798,7 +1038,7 @@ public class Atom {
       return null;
     }
   }
-
+  
   public static int[] sub(int[] a, int[] b) {
     Square s = new Square(a, b);
     int[] dst = new int[s.len];
@@ -808,7 +1048,7 @@ public class Atom {
     }
     return dst;
   }
-
+  
   public static long sub(long a, long b) {
     if ( -1 == compare(a, b) ) {
       throw new Bail();
@@ -817,7 +1057,7 @@ public class Atom {
       return a - b;
     }
   }
-  
+
   public static Object sub(Object a, Object b) {
     if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
       return sub(TypesGen.asLong(a), TypesGen.asLong(b));
@@ -828,7 +1068,7 @@ public class Atom {
       return malt(sub(aa, ba));
     }
   }
-
+  
   public static byte[] toByteArray(Object atom, boolean endian) {
     if (isZero(atom)) {
       return new byte[1];
@@ -857,17 +1097,17 @@ public class Atom {
     }
     return buf;
   }
-
+  
   public static String toString(Object atom) {
     return toString(atom, 10);
   }
-  
+
   public static String toString(Object atom, int radix) {
     StringBuilder b = new StringBuilder();
     write(b, TypesGen.asImplicitIntArray(atom), radix);
     return b.toString();
   }
-  
+
   public static void write(StringBuilder b, int[] cur, int radix) {
     int len   = cur.length,
         size  = len,
@@ -891,70 +1131,6 @@ public class Atom {
       char t = b.charAt(j);
       b.setCharAt(j, b.charAt(i));
       b.setCharAt(i, t);
-    }
-  }
-
-  public static Object cat(byte a, Object b, Object c) {
-    int lew = met(a, b),
-        ler = met(a, c),
-        all = lew + ler;
-    
-    if ( 0 == all ) {
-      return 0L;
-    }
-    else {
-      int[] sal = slaq(a, all);
-
-      chop(a, 0, lew, 0, sal, b);
-      chop(a, 0, ler, lew, sal, c);
-
-      return malt(sal);
-    }
-  }
-  
-  public static long expectLong(Object a) {
-    try {
-      return TypesGen.expectLong(a);
-    }
-    catch (UnexpectedResultException e) {
-      throw new Bail();
-    }
-  }
-  
-  public static int expectInt(Object a) {
-    long al = expectLong(a);
-    int  ai = (int) al;
-    if ( al != ai ) {
-      throw new Bail();
-    }
-    return ai;
-  }
-
-  public static Object cut(byte a, Object b, Object c, Object d) {
-    int ci, bi = expectInt(b);
-    try {
-      ci = expectInt(c);
-    } 
-    catch (Bail e) {
-      ci = 0x7fffffff;
-    }
-    int len = met(a, d);
-
-    if ( (0 == ci) || (bi >= len) ) {
-      return 0L;
-    }
-
-    if ( (bi + ci) > len ) {
-      ci = len - bi;
-    }
-
-    if ( (bi == 0) && (ci == len) ) {
-      return d;
-    }
-    else {
-      int[] sal = slaq(a, ci);
-      chop(a,  bi, ci, 0, sal, d);
-      return malt(sal);
     }
   }
 }
