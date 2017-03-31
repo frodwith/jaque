@@ -9,7 +9,7 @@
                  "-Djvmci.class.path.append=/home/pdriver/graal/graal-core/mxbuild/dists/graal.jar"
                  "-Xbootclasspath/a:/home/pdriver/graal/truffle/mxbuild/dists/truffle-api.jar"
 ;                "-Dgraal.TraceTruffleCompilation=true" 
-;                 "-Dgraal.Dump"
+;                "-Dgraal.Dump"
 ;                "-Dcom.sun.management.jmxremote"
 ;                "-Dcom.sun.management.jmxremote.ssl=false"
 ;                "-Dcom.sun.management.jmxremote.authenticate=false"
@@ -24,6 +24,7 @@
   :source-paths      ["src/clojure"] 
   :java-source-paths ["gen" "src/java"]
   :dependencies [[org.clojure/clojure "1.8.0"]
+                 [com.sangupta/murmur "1.0.0"]
                  [com.oracle.truffle/truffle-api "0.22"]
 ;                 [com.oracle.truffle/truffle-dsl-processor "0.22"]
 ;                 [com.oracle.truffle/truffle-tck "0.20"]

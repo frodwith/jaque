@@ -3,9 +3,9 @@
   (:import net.frodwith.jaque.truffle.Context
            net.frodwith.jaque.data.Cell
            (net.frodwith.jaque.truffle.driver Arm AxisArm)
-           net.frodwith.jaque.truffle.nodes.jet.DecrementNodeGen))
+           net.frodwith.jaque.truffle.nodes.jet.DecNodeGen))
 
-(def context (Context. (into-array Arm [(AxisArm. "main/dec" 2 DecrementNodeGen)])))
+(def context (Context. (into-array Arm [(AxisArm. "main/dec" 2 DecNodeGen)])))
 
 (defn nock [bus fol]
   (.nock context bus fol))

@@ -1,5 +1,7 @@
 package net.frodwith.jaque.truffle.nodes.jet;
 
+import net.frodwith.jaque.Bail;
+import net.frodwith.jaque.truffle.FragmentationException;
 import net.frodwith.jaque.truffle.nodes.FragmentationNode;
 
 public abstract class GateNode extends ImplementationNode {
@@ -8,7 +10,12 @@ public abstract class GateNode extends ImplementationNode {
 
   @Override
   public Object doJet(Object subject) {
-    return this.doGate(fragment.executeFragment(subject));
+    try {
+      return this.doGate(fragment.executeFragment(subject));
+    }
+    catch ( FragmentationException e) {
+      throw new Bail();
+    }
   }
 
 }

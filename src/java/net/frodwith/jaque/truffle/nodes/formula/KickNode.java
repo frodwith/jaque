@@ -17,12 +17,14 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.RootNode;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.KickLabel;
 import net.frodwith.jaque.Location;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.truffle.Context;
+import net.frodwith.jaque.truffle.FragmentationException;
 import net.frodwith.jaque.truffle.TailException;
 import net.frodwith.jaque.truffle.TypesGen;
 import net.frodwith.jaque.truffle.nodes.DispatchNode;
@@ -89,24 +91,23 @@ public abstract class KickNode extends FormulaNode {
     return list.toArray(new FragmentationNode[0]);
   }
 
-  /* This is a specialization guard, so there is no point profiling it */
   @ExplodeLoop
   protected boolean isFine(Object[] constants, FragmentationNode[] nodes, Object noun) {
     try {
       int i, top = nodes.length - 1;
       for ( i = 0; i < top; ++i ) {
         noun = nodes[i].executeFragment(noun);
-        if ( constants[i] != TypesGen.asCell(noun).head ) {
+        if ( constants[i] != TypesGen.expectCell(noun).head ) {
           return false;
         }
       }
       noun = nodes[i].executeFragment(noun);
       return constants[i] == noun;
     }
-    catch (Bail e) {
+    catch ( FragmentationException e ) {
       return false;
     }
-    catch (ClassCastException e) {
+    catch ( UnexpectedResultException e ) {
       return false;
     }
   }
@@ -172,7 +173,17 @@ public abstract class KickNode extends FormulaNode {
     Map<KickLabel,CallTarget> kicks = context.kicks;
     CallTarget t = kicks.get(label);
     if ( null == t ) {
-      Cell formula = TypesGen.asCell(fragment.executeFragment(core));
+      Cell formula;
+      try {
+        formula = TypesGen.expectCell(fragment.executeFragment(core));
+      }
+      catch ( UnexpectedResultException e ) {
+        throw new Bail();
+      }
+      catch ( FragmentationException e ) {
+        throw new Bail();
+      }
+
       FormulaNode f = context.parseCell(formula, true);
       RootNode root = new JaqueRootNode(f);
       t = Truffle.getRuntime().createCallTarget(root);
@@ -224,7 +235,16 @@ public abstract class KickNode extends FormulaNode {
   protected Object doNock(VirtualFrame frame, Cell core,
       @Cached("getFragmentationNode()") FragmentationNode fragment,
       @Cached("getNockDispatch()") NockDispatchNode dispatch) {
-    Cell formula = TypesGen.asCell(fragment.executeFragment(core));
+    Cell formula;
+    try {
+      formula = TypesGen.expectCell(fragment.executeFragment(core));
+    }
+    catch ( UnexpectedResultException e ) {
+      throw new Bail();
+    }
+    catch ( FragmentationException e ) {
+      throw new Bail();
+    }
     return dispatch.executeNock(frame, core, formula);
   }
   

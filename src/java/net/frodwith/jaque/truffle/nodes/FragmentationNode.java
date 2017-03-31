@@ -1,10 +1,11 @@
 package net.frodwith.jaque.truffle.nodes;
 
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
-import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Axis;
 import net.frodwith.jaque.data.Fragment;
+import net.frodwith.jaque.truffle.FragmentationException;
 import net.frodwith.jaque.truffle.TypesGen;
 
 public class FragmentationNode extends JaqueNode {
@@ -23,16 +24,15 @@ public class FragmentationNode extends JaqueNode {
   }
   
   @ExplodeLoop
-  public Object executeFragment(Object subject) {
+  public Object executeFragment(Object subject) throws FragmentationException {
     try {
-      Object o = subject;
       for ( ReadNode n : reads ) {
-        o = n.executeRead(TypesGen.asCell(o));
+        subject = n.executeRead(TypesGen.expectCell(subject));
       }
-      return o;
+      return subject;
     }
-    catch (ClassCastException e) {
-      throw new Bail();
+    catch (UnexpectedResultException e) {
+      throw new FragmentationException();
     }
   }
   

@@ -6,12 +6,15 @@ import java.util.Map;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
+import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.Location;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.Context;
+import net.frodwith.jaque.truffle.FragmentationException;
 import net.frodwith.jaque.truffle.TypesGen;
 import net.frodwith.jaque.truffle.nodes.FragmentationNode;
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
@@ -35,8 +38,16 @@ public final class FastHintNode extends DynamicHintFormula {
     else {
       CompilerAsserts.neverPartOfCompilation();
       FragmentationNode fragment = new FragmentationNode(clue.parentAxis);
-      //insert(fragment);
-      Cell parentCore = TypesGen.asCell(fragment.executeFragment(core));
+      Cell parentCore;
+      try {
+        parentCore = TypesGen.expectCell(fragment.executeFragment(core));
+      }
+      catch ( FragmentationException e ) {
+        throw new Bail();
+      }
+      catch ( UnexpectedResultException e ) {
+        throw new Bail();
+      }
       Cell parentBattery = TypesGen.asCell(parentCore.head);
       Location parentLoc = context.locations.get(parentBattery);
       if ( null == parentLoc ) {
