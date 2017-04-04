@@ -74,7 +74,12 @@ public class Atom {
   }
   
   public static long add(long a, long b) throws ArithmeticException {
-    return Math.addExact(a, b);
+    long c = a + b;
+    if ( Long.compareUnsigned(c, a) < 0 ||
+         Long.compareUnsigned(c, b) < 0 ) {
+      throw new ArithmeticException();
+    }
+    return c;
   }
   
   public static Object add(Object a, Object b) {
@@ -94,10 +99,9 @@ public class Atom {
     }
     else {
       int whole = (int) (a >> 5),
-          parts = (int) a & 0xFFFF,
-          len = parts > 0 ? whole + 2 : whole + 1;
+          parts = (int) a & 31;
 
-      int[] words = new int[len];
+      int[] words = new int[whole+1];
       words[whole] = 1 << parts;
       return words;
     }
@@ -549,7 +553,7 @@ public class Atom {
   }
   
   public static Object fromString(String s) {
-      return fromString(s, 10);
+    return fromString(s, 10);
   }
   
   public static Object fromString(String s, int radix) {
@@ -687,7 +691,7 @@ public class Atom {
       return words;
     }
     else if (words.length == 1) {
-      return (long) words[0];
+      return (long) words[0] & 0xffffffffL;
     }
     else {
       return ((long)words[1] << 32) | ((long)words[0] & 0xffffffffL);

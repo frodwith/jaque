@@ -35,6 +35,7 @@ import net.frodwith.jaque.truffle.nodes.formula.hint.DiscardHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.FastHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.MemoHintNode;
 import net.frodwith.jaque.truffle.nodes.jet.AddNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.BexNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.DecNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.DivNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.LessThanNodeGen;
@@ -235,6 +236,7 @@ public class Context {
     Arm[] drivers = new Arm[] {
       new AxisArm("main/lib/dec", 2L, DecNodeGen.class),
       new AxisArm("main/lib/add", 2L, AddNodeGen.class),
+      new AxisArm("main/lib/bex", 2L, BexNodeGen.class),
     };
     Context c = new Context(drivers);
     try {
