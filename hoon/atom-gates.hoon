@@ -1,5 +1,5 @@
 =+  ^=  answers
-    :*  (add 2 2)  (add 4 4)  (add 255 16)  (add 0xffff 0xabcd)
+    :~  (add 2 2)  (add 4 4)  (add 255 16)  (add 0xffff 0xabcd)
         (add 0xffff.ffff.ffff.ffff 0xdead.beef.cede.deaf)
         %+  add
           0xffff.ffff.ffff.ffff.ffff.ffff.ffff.ffff.ffff.ffff
@@ -14,21 +14,26 @@
               [2 11]
               [18 0xabcd.deed.dead]
           ==
-        0
+        :: 15
+        (cap 2)  (cap 3)  (cap 7)  (cap 15)
+        (cap 0xffff.ffff.ffff.ffff.ffff.ffff.ffff.abcd.dcba.feed)
+        :: 20
     ==
     ::
 ::::::
 ::
-=-  [7 gate-formula 9 2 [0 2] [1 answers] 0 7]
+=-
+  %-  jam
+  [7 gate-formula 9 2 [0 2] [1 answers] 0 7]
   ^=  gate-formula
-  !=  
+  !=
   ::
 ::::
 ::
 =>  0
 =-
   =/  s/(list @)
-    :*  (add 2 2)  (add 4 4)  (add 255 16)  (add 0xffff 0xabcd)
+    :~  (add 2 2)  (add 4 4)  (add 255 16)  (add 0xffff 0xabcd)
         (add 0xffff.ffff.ffff.ffff 0xdead.beef.cede.deaf)
         %+  add
           0xffff.ffff.ffff.ffff.ffff.ffff.ffff.ffff.ffff.ffff
@@ -43,7 +48,9 @@
               [2 11]
               [18 0xabcd.deed.dead]
           ==
-        0
+        :: 15
+        (cap 2)  (cap 3)  (cap 7)  (cap 15)
+        (cap 0xffff.ffff.ffff.ffff.ffff.ffff.ffff.abcd.dcba.feed)
     ==
   |=  t/(list @)
   =|  i/@
@@ -98,6 +105,17 @@
     ^-  @
     ?~  b  0
     (mix (end a p.i.b q.i.b) (lsh a p.i.b $(b t.b)))
+  ::
+  ++  cap                                                 ::  tree head
+    ~/  %cap
+    |=  a/@
+    ^-  ?($2 $3)
+    ?-  a
+      $2        %2
+      $3        %3
+      ?($0 $1)  !!
+      *         $(a (div a 2))
+    ==
   ::
   ++  dec                                                 ::  decrement
     ~/  %dec

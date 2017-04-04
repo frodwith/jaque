@@ -14,39 +14,6 @@ import net.frodwith.jaque.truffle.TypesGen;
  */
 public class Noun {
   
-  private static void write(StringBuilder b, Object noun) {
-    if ( isCell(noun) ) {
-      Cell c = TypesGen.asCell(noun);
-      b.append("[");
-      write(b, c.head);
-      b.append(" ");
-      write(b, c.tail);
-      b.append("]");
-    }
-    else {
-      Atom.write(b, TypesGen.asImplicitIntArray(noun), 10);
-    }
-  }
-  
-  public static String toString(Object noun) {
-    StringBuilder b = new StringBuilder();
-    write(b, noun);
-    return b.toString();
-  }
-
-  public static boolean isAtom(Object noun) {
-    return TypesGen.isLong(noun) || TypesGen.isIntArray(noun);
-  }
-
-  public static boolean isCell(Object noun) {
-    return TypesGen.isCell(noun);
-  }
-
-  public static boolean isNoun(Object obj) {
-    return isCell(obj) || isAtom(obj);
-  }
-
-  
   public static boolean equals(Object a, Object b) {
     if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
       return TypesGen.asLong(a) == TypesGen.asLong(b);
@@ -62,6 +29,25 @@ public class Noun {
     }
   }
   
+  public static boolean isAtom(Object noun) {
+    return TypesGen.isLong(noun) || TypesGen.isIntArray(noun);
+  }
+
+  public static boolean isCell(Object noun) {
+    return TypesGen.isCell(noun);
+  }
+
+  public static boolean isNoun(Object obj) {
+    return isCell(obj) || isAtom(obj);
+  }
+  
+  public static Object key(Object noun) {
+    if ( isCell(noun) ) {
+      return noun;
+    }
+    return new Atom(noun);
+  }
+
   public static int mug(Object noun) {
     if ( noun instanceof Cell) {
       return Cell.mug((Cell) noun);
@@ -71,6 +57,7 @@ public class Noun {
     }
   }
 
+  
   /* used by both atom and cell mug methods, so package scope */
   static int mug_fnv(int has) {
     return (has * ((int)16777619));
@@ -79,7 +66,7 @@ public class Noun {
   static int mug_out(int has) {
     return (has >>> 31) ^ (has & 0x7fffffff);
   }
-  
+
   public static Object parse(String src) {
     StringBuilder b = null;
     int i, len = src.length();
@@ -150,7 +137,7 @@ public class Noun {
       return readRec(tree.get(0));
     }
   }
-
+  
   private static Object readRec(Object o) {
     if (o instanceof String) {
       return Atom.fromString((String) o);
@@ -170,6 +157,26 @@ public class Noun {
     }
     else {
       throw new IllegalArgumentException();
+    }
+  }
+  
+  public static String toString(Object noun) {
+    StringBuilder b = new StringBuilder();
+    write(b, noun);
+    return b.toString();
+  }
+
+  private static void write(StringBuilder b, Object noun) {
+    if ( isCell(noun) ) {
+      Cell c = TypesGen.asCell(noun);
+      b.append("[");
+      write(b, c.head);
+      b.append(" ");
+      write(b, c.tail);
+      b.append("]");
+    }
+    else {
+      Atom.write(b, TypesGen.asImplicitIntArray(noun), 10);
     }
   }
   

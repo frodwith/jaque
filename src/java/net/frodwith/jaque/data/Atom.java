@@ -1,8 +1,11 @@
 package net.frodwith.jaque.data;
 
 import com.sangupta.murmur.Murmur3;
+
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
@@ -58,13 +61,25 @@ public class Atom {
     }
   }
   private static final int[] MINIMUM_INDIRECT = new int[] {0, 0, 1};
+
   public static final boolean BIG_ENDIAN = true;
   public static final boolean LITTLE_ENDIAN = false;
+
   public static final long YES = 0L;
   public static final long NO = 1L;
+
   public static final Object FAST = stringToCord("fast");
-  
   public static final Object MEMO = stringToCord("memo");
+  
+  public final Object value;
+  
+ /*
+ * Only make an instance if you need .equals and .hashCode() for a map, etc.
+ */ 
+  public Atom(Object atom) {
+    assert Noun.isAtom(atom);
+    this.value = atom;
+  }
   
   public static int[] add(int[] a, int[] b) {
     Square s   = new Square(a, b);
@@ -224,16 +239,7 @@ public class Atom {
   } 
   
   public static int compare(long a, long b) {
-    if (a == b) {
-      return 0;
-    }
-    else {
-      boolean lth = a < b;
-      if ( (a < 0) != (b < 0) ) {
-        lth = !lth;
-      }
-      return lth ? -1 : 1;
-    }
+    return Long.compareUnsigned(a, b);
   }
   
   // -1, 0, 1 for less than, equal, or greater than respectively
@@ -277,6 +283,61 @@ public class Atom {
     }
     catch (UnsupportedEncodingException e) {
       return null;
+    }
+  }
+  
+  private static Cell cue(Map<Object,Object> m, Object a, Object b) throws UnexpectedResultException {
+    Object p, q;
+
+    if ( isZero(cut((byte) 0, b, 1L, a)) ) {
+      Object x = increment(b);
+      Cell   c = rub(x, a);
+
+      p = increment(c.head);
+      q = c.tail;
+      m.put(Noun.key(b), q);
+    }
+    else {
+      Object c = add(2L, b),
+             l = increment(b);
+      
+      if ( isZero(cut((byte) 0, l, 1L, a)) ) {
+        Cell u, v;
+        Object w, x, y;
+        
+        u = cue(m, a, c);
+        x = add(u.head, c);
+        v = cue(m, a, x);
+        w = new Cell(
+            TypesGen.expectCell(u.tail).head,
+            TypesGen.expectCell(v.tail).head);
+        y = add(u.head, v.head);
+        p = add(2L, y);
+        q = w;
+        m.put(Noun.key(b), q);
+      }
+      else {
+        Cell d = rub(c, a);
+        Object x = m.get(Noun.key(d.tail));
+        
+        if ( null == x ) {
+          throw new Bail();
+        }
+
+        p = add(2L, d.head);
+        q = x;
+      }
+    }
+    return new Cell(p, new Cell(q, 0L));
+  }
+  
+  public static Object cue(Object a) {
+    try {
+      Cell x = cue(new HashMap<Object,Object>(), a, 0L);
+      return TypesGen.expectCell(x.tail).head;
+    }
+    catch ( UnexpectedResultException e ) {
+      throw new Bail();
     }
   }
 
@@ -476,6 +537,12 @@ public class Atom {
     return Arrays.equals(a,  b);
   }
   
+  @Override
+  public boolean equals(Object b) {
+    return (b instanceof Atom)
+        && equals(value, ((Atom) b).value);
+  }
+  
   public static boolean equals(long a, long b) {
     return a == b;
   }
@@ -484,9 +551,7 @@ public class Atom {
     return ( TypesGen.isLong(a) 
         && TypesGen.isLong(b)
         && equals(TypesGen.asLong(a), TypesGen.asLong(b)) )
-      || ( TypesGen.isIntArray(a)
-        && TypesGen.isIntArray(b)
-        && equals(TypesGen.asIntArray(a), TypesGen.asIntArray(b)));
+        || TypesGen.asImplicitIntArray(a).equals(TypesGen.asImplicitIntArray(b));
   }
   
   public static Object expect(Object o) {
@@ -601,6 +666,10 @@ public class Atom {
       return getNthBit((int[]) atom, n);
     }
   }
+  
+  public int hashCode() {
+    return mug(value);
+  }
 
   public static int[] increment(int[] atom) {
     int top = atom[atom.length];
@@ -634,14 +703,6 @@ public class Atom {
     else {
       return increment(TypesGen.asIntArray(atom));
     }
-  }
-  
-  public static boolean isLessThanUnsigned(long n1, long n2) {
-    boolean comp = (n1 < n2);
-    if ((n1 < 0) != (n2 < 0)) {
-      comp = !comp;
-    }
-    return comp;
   }
   
   public static boolean isZero(Object atom) {
@@ -1017,6 +1078,44 @@ public class Atom {
       }
     }
     return pir;
+  }
+  
+  public static Cell rub(Object a, Object b) {
+    Object c, d, e, w, x, y, z, p, q, m;
+
+    m = add(a, (long) met(b));
+    x = a;
+
+    while ( isZero(cut((byte)0, x, 1L, b)) ) {
+      y = increment(x);
+      
+      //  Sanity check: crash if decoding more bits than available
+      if ( compare(x, m) > 0 ) {
+        throw new Bail();
+      }
+
+      x = y;
+    }
+
+    if ( equals(x, a) ) {
+      return new Cell(1L, 0L);
+    }
+    c = sub(x, a);
+    d = increment(x);
+
+    x = dec(c);
+    y = bex(expectLong(x));
+    z = cut((byte)0, d, x, b);
+
+    e = add(y, z);
+    w = add(c, c);
+    y = add(w, e);
+    z = add(d, x);
+
+    p = add(w, e);
+    q = cut((byte)0, z, e, b);
+    
+    return new Cell(p, q);
   }
   
   private static void reverseBytes(byte[] a) {

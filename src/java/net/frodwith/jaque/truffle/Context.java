@@ -37,6 +37,7 @@ import net.frodwith.jaque.truffle.nodes.formula.hint.MemoHintNode;
 import net.frodwith.jaque.truffle.nodes.jet.AddNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.BexNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.CanNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.CapNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.DecNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.DivNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.LessThanNodeGen;
@@ -239,6 +240,7 @@ public class Context {
       new AxisArm("main/mood/lib/add", 2L, AddNodeGen.class),
       new AxisArm("main/mood/lib/bex", 2L, BexNodeGen.class),
       new AxisArm("main/mood/lib/can", 2L, CanNodeGen.class),
+      new AxisArm("main/mood/lib/cap", 2L, CapNodeGen.class),
     };
     Context c = new Context(drivers);
     try {
@@ -251,9 +253,9 @@ public class Context {
       Cell call    = TypesGen.asCell(Noun.parse(calls));
       System.out.println(c.nock(kernel, call));
       */
-      byte[] bytes = Files.readAllBytes(Paths.get("nock/atom-gates.nock"));
-      String fos   = new String(bytes, "UTF-8").trim();
-      Cell formula = TypesGen.asCell(Noun.parse(fos));
+      byte[] bytes = Files.readAllBytes(Paths.get("pills/atom-gates.pill"));
+      Object src = Atom.fromByteArray(bytes, Atom.LITTLE_ENDIAN);
+      Cell formula = TypesGen.asCell(Atom.cue(src));
       System.out.println(c.nock(0L, formula));
     }
     catch (IOException e) {
