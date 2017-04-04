@@ -39,6 +39,7 @@ import net.frodwith.jaque.truffle.nodes.jet.BexNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.CanNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.CapNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.CatNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.ConNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.DecNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.DivNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.LessThanNodeGen;
@@ -243,6 +244,7 @@ public class Context {
       new AxisArm("main/mood/lib/can", 2L, CanNodeGen.class),
       new AxisArm("main/mood/lib/cap", 2L, CapNodeGen.class),
       new AxisArm("main/mood/lib/cat", 2L, CatNodeGen.class),
+      new AxisArm("main/mood/lib/con", 2L, ConNodeGen.class),
     };
     Context c = new Context(drivers);
     try {

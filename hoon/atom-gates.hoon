@@ -22,6 +22,10 @@
         %^  cat  4  0xabcd.dead.cade.aced.dace.feef
           0xdead.beef.feed.cade.aced.dddd
         :: 24
+        (con 1 2)  (con 0xff00 0xff)
+        %+  con  0xbeef.feed.cede.deaf
+          0xdeaf.cede.feed.beef.fade
+        :: 27
     ==
     ::
 ::::::
@@ -60,6 +64,10 @@
         %^  cat  4  0xabcd.dead.cade.aced.dace.feef
           0xdead.beef.feed.cade.aced.dddd
         :: 24
+        (con 1 2)  (con 0xff00 0xff)
+        %+  con  0xbeef.feed.cede.deaf
+          0xdeaf.cede.feed.beef.fade
+        :: 27
     ==
   |=  t/(list @)
   =|  i/@
@@ -126,6 +134,28 @@
       *         $(a (div a 2))
     ==
   ::
+  ++  cat                                                 ::  concatenate
+    ~/  %cat
+    |=  {a/bloq b/@ c/@}
+    (add (lsh a (met a b) c) b)
+  ::
+  ++  con                                                 ::  binary or
+    ~/  %con
+    |=  {a/@ b/@}
+    =+  [c=0 d=0]
+    |-  ^-  @
+    ?:  ?&(=(0 a) =(0 b))  d
+    %=  $
+      a   (rsh 0 1 a)
+      b   (rsh 0 1 b)
+      c   +(c)
+      d   %+  add  d
+            %^  lsh  0  c
+            ?&  =(0 (end 0 1 a))
+                =(0 (end 0 1 b))
+            ==
+    ==
+  ::
   ++  dec                                                 ::  decrement
     ~/  %dec
     |=  a/@
@@ -179,11 +209,6 @@
       c   +(c)
       d   (add d (lsh 0 c =((end 0 1 a) (end 0 1 b))))
     ==
-  ::
-  ++  cat                                                 ::  concatenate
-    ~/  %cat
-    |=  {a/bloq b/@ c/@}
-    (add (lsh a (met a b) c) b)
   ::
   ++  met                                                 ::  measure
     ~/  %met
