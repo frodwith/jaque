@@ -752,10 +752,10 @@ public class Atom {
       return words;
     }
     else if (words.length == 1) {
-      return (long) words[0] & 0xffffffffL;
+      return words[0] & 0xffffffffL;
     }
     else {
-      return ((long)words[1] << 32) | ((long)words[0] & 0xffffffffL);
+      return ((words[1] & 0xffffffffL) << 32) | (words[0] & 0xffffffffL);
     }
   }
   
@@ -779,7 +779,7 @@ public class Atom {
         return 0;
       }
       else {
-        int left = (int) v >>> 32;
+        int left = (int) (v >>> 32);
         if ( left == 0 ) {
           gal = 0;
           daz = (int) v;
@@ -788,8 +788,6 @@ public class Atom {
           gal = 1;
           daz = left; 
         }
-        gal = (v >>> 32) == 0 ? 0 : 1;
-        daz = (int) v;
       }
     }
     else {

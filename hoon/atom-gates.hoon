@@ -18,6 +18,10 @@
         (cap 2)  (cap 3)  (cap 7)  (cap 15)
         (cap 0xffff.ffff.ffff.ffff.ffff.ffff.ffff.abcd.dcba.feed)
         :: 20
+        (cat 0 1 2)  (cat 1 0xff 0xff)  (cat 2 0xffff.ffff.ffff 0xff)
+        %^  cat  4  0xabcd.dead.cade.aced.dace.feef
+          0xdead.beef.feed.cade.aced.dddd
+        :: 24
     ==
     ::
 ::::::
@@ -51,6 +55,11 @@
         :: 15
         (cap 2)  (cap 3)  (cap 7)  (cap 15)
         (cap 0xffff.ffff.ffff.ffff.ffff.ffff.ffff.abcd.dcba.feed)
+        :: 20
+        (cat 0 1 2)  (cat 1 0xff 0xff)  (cat 2 0xffff.ffff.ffff 0xff)
+        %^  cat  4  0xabcd.dead.cade.aced.dace.feef
+          0xdead.beef.feed.cade.aced.dddd
+        :: 24
     ==
   |=  t/(list @)
   =|  i/@
@@ -170,6 +179,20 @@
       c   +(c)
       d   (add d (lsh 0 c =((end 0 1 a) (end 0 1 b))))
     ==
+  ::
+  ++  cat                                                 ::  concatenate
+    ~/  %cat
+    |=  {a/bloq b/@ c/@}
+    (add (lsh a (met a b) c) b)
+  ::
+  ++  met                                                 ::  measure
+    ~/  %met
+    |=  {a/bloq b/@}
+    ^-  @
+    =+  c=0
+    |-
+    ?:  =(0 b)  c
+    $(b (rsh a 1 b), c +(c))
   ::
   ++  mod                                                 ::  remainder
     ~/  %mod
