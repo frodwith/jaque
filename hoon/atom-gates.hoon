@@ -38,6 +38,16 @@
         %+  dis  0xbeef.feed.cede.deaf
           0xdeaf.cede.feed.beef.fade
         :: 38
+        (div 4 2)  (div 16 4)  (div 17 4)  (div 64 31)  (div 0xffff 0xa)
+        (div 0xcade.beef.feed.fede.fade.faad 0xaad.deaf)
+        (div 0xcade.beef.feed.fede.fade.faad 0xfaad.deaf.beef)
+        (div 0xcade.beef.feed.fede.fade.faad 0x1.faad.deaf.beef.abcd)
+        :: 46
+        (dvr 4 2)  (dvr 16 4)  (dvr 17 4)  (dvr 64 31)  (dvr 0xffff 0xa)
+        (dvr 0xcade.beef.feed.fede.fade.faad 0xaad.deaf)
+        (dvr 0xcade.beef.feed.fede.fade.faad 0xfaad.deaf.beef)
+        (dvr 0xcade.beef.feed.fede.fade.faad 0x1.faad.deaf.beef.abcd)
+        :: 53
     ==
     ::
 ::::::
@@ -52,7 +62,7 @@
 ::
 =>  0
 =-
-  =/  s/(list @)
+  =/  s/(list *)
     :~  (add 2 2)  (add 4 4)  (add 255 16)  (add 0xffff 0xabcd)
         (add 0xffff.ffff.ffff.ffff 0xdead.beef.cede.deaf)
         %+  add
@@ -92,8 +102,18 @@
         %+  dis  0xbeef.feed.cede.deaf
           0xdeaf.cede.feed.beef.fade
         :: 38
+        (div 4 2)  (div 16 4)  (div 17 4)  (div 64 31)  (div 0xffff 0xa)
+        (div 0xcade.beef.feed.fede.fade.faad 0xaad.deaf)
+        (div 0xcade.beef.feed.fede.fade.faad 0xfaad.deaf.beef)
+        (div 0xcade.beef.feed.fede.fade.faad 0x1.faad.deaf.beef.abcd)
+        :: 46
+        (dvr 4 2)  (dvr 16 4)  (dvr 17 4)  (dvr 64 31)  (dvr 0xffff 0xa)
+        (dvr 0xcade.beef.feed.fede.fade.faad 0xaad.deaf)
+        (dvr 0xcade.beef.feed.fede.fade.faad 0xfaad.deaf.beef)
+        (dvr 0xcade.beef.feed.fede.fade.faad 0x1.faad.deaf.beef.abcd)
+        :: 53
     ==
-  |=  t/(list @)
+  |=  t/(list *)
   =|  i/@
   |-
   ?~  s
@@ -194,6 +214,7 @@
     ?:  =(a +(b))  b
     $(b +(b))
   ::
+
   ++  dis                                                 ::  binary and
     ~/  %dis
     |=  {a/@ b/@}
@@ -220,6 +241,12 @@
     |-
     ?:  (lth a b)  c
     $(a (sub a b), c +(c))
+  ::
+  ++  dvr
+    ~/  %dvr
+    |=  {a/@ b/@}  ^-  {p/@ q/@}
+    ?<  =(0 b)
+    [(div a b) (mod a b)]
   ::
   ++  end                                                 ::  tail
     ~/  %end

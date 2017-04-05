@@ -441,13 +441,12 @@ public class Atom {
       return malt(q);
     }
     else {
-      return malt(
-          Arrays.copyOfRange(divmod(x,y), y.length, x.length + 3 - y.length));
+      return divmod(x,y).head;
     }
   }
   
   public static long div(long a, long b) {
-    return a / b;
+    return Long.divideUnsigned(a, b);
   }
   
   public static Object div(Object a, Object b) {
@@ -457,9 +456,10 @@ public class Atom {
     return div(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
   
-  private static int[] divmod(int[] x, int[] y) {
+  private static Cell divmod(int[] x, int[] y) {
     int xlen = x.length,
-        ylen = y.length;
+        ylen = y.length,
+        i, rlen, qlen;
     int[] xwords = Arrays.copyOf(x, xlen+2),
           ywords = Arrays.copyOf(y, ylen);
 
@@ -475,7 +475,18 @@ public class Atom {
     }
 
     MPN.divide(xwords, xlen, ywords, ylen);
-    return xwords;
+    rlen = ylen;
+    MPN.rshift0(ywords, xwords, 0, rlen, nshift);
+    qlen = xlen + 1 - ylen;
+    xwords = Arrays.copyOfRange(xwords, ylen, ylen+qlen);
+    while ( rlen > 1 && 0 == ywords[rlen - 1] ) {
+      --rlen; 
+    }
+    if ( ywords[rlen-1] < 0 ) {
+      ywords[rlen++] = 0;
+    }
+    
+    return new Cell(malt(xwords), malt(ywords));
   }
 
   public static Cell dvr(int[] x, int[] y) {
@@ -489,13 +500,10 @@ public class Atom {
     else if ( 1 == y.length ) {
       int[] q = new int[x.length];
       int rem = MPN.divmod_1(q, x, x.length, y[0]);
-      return new Cell(malt(q), rem);
+      return new Cell(malt(q), (long) rem);
     }
     else {
-      int[] w = divmod(x,y);
-      return new Cell(
-          malt(Arrays.copyOfRange(w, y.length, x.length + 3 - y.length)),
-          malt(Arrays.copyOfRange(w, 0, y.length)));
+      return divmod(x,y);
     }   
   }
 
@@ -866,15 +874,15 @@ public class Atom {
     }
     else if ( 1 == y.length ) {
       int[] q = new int[x.length];
-      return MPN.divmod_1(q, x, x.length, y[0]);
+      return (long) MPN.divmod_1(q, x, x.length, y[0]);
     }
     else {
-      return malt(Arrays.copyOfRange(divmod(x,y), 0, y.length));
+      return divmod(x,y).tail;
     }
   }
   
   public static long mod(long a, long b) {
-    return a % b;
+    return Long.remainderUnsigned(a, b);
   }
   
   public static Object mod(Object a, Object b) {

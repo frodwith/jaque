@@ -44,6 +44,7 @@ import net.frodwith.jaque.truffle.nodes.jet.CutNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.DecNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.DisNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.DivNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.DvrNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.LessThanNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.LthNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.ModNodeGen;
@@ -249,6 +250,8 @@ public class Context {
       new AxisArm("main/mood/lib/cut", 2L, CutNodeGen.class),
       new AxisArm("main/mood/lib/dec", 2L, DecNodeGen.class),
       new AxisArm("main/mood/lib/dis", 2L, DisNodeGen.class),
+      new AxisArm("main/mood/lib/div", 2L, DivNodeGen.class),
+      new AxisArm("main/mood/lib/dvr", 2L, DvrNodeGen.class),
     };
     Context c = new Context(drivers);
     try {

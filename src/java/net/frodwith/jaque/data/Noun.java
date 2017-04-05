@@ -162,18 +162,22 @@ public class Noun {
   
   public static String toString(Object noun) {
     StringBuilder b = new StringBuilder();
-    write(b, noun);
+    write(b, noun, false);
     return b.toString();
   }
 
-  private static void write(StringBuilder b, Object noun) {
+  private static void write(StringBuilder b, Object noun, boolean tail) {
     if ( isCell(noun) ) {
       Cell c = TypesGen.asCell(noun);
-      b.append("[");
-      write(b, c.head);
+      if ( !tail ) {
+        b.append("[");
+      }
+      write(b, c.head, false);
       b.append(" ");
-      write(b, c.tail);
-      b.append("]");
+      write(b, c.tail, true);
+      if ( !tail ) {
+        b.append("]");
+      }
     }
     else {
       Atom.write(b, TypesGen.asImplicitIntArray(noun), 10);
