@@ -40,7 +40,9 @@ import net.frodwith.jaque.truffle.nodes.jet.CanNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.CapNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.CatNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.ConNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.CutNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.DecNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.DisNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.DivNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.LessThanNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.LthNodeGen;
@@ -238,13 +240,15 @@ public class Context {
     };
     */
     Arm[] drivers = new Arm[] {
-      new AxisArm("main/mood/lib/dec", 2L, DecNodeGen.class),
       new AxisArm("main/mood/lib/add", 2L, AddNodeGen.class),
       new AxisArm("main/mood/lib/bex", 2L, BexNodeGen.class),
       new AxisArm("main/mood/lib/can", 2L, CanNodeGen.class),
       new AxisArm("main/mood/lib/cap", 2L, CapNodeGen.class),
       new AxisArm("main/mood/lib/cat", 2L, CatNodeGen.class),
       new AxisArm("main/mood/lib/con", 2L, ConNodeGen.class),
+      new AxisArm("main/mood/lib/cut", 2L, CutNodeGen.class),
+      new AxisArm("main/mood/lib/dec", 2L, DecNodeGen.class),
+      new AxisArm("main/mood/lib/dis", 2L, DisNodeGen.class),
     };
     Context c = new Context(drivers);
     try {

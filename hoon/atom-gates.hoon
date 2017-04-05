@@ -26,6 +26,18 @@
         %+  con  0xbeef.feed.cede.deaf
           0xdeaf.cede.feed.beef.fade
         :: 27
+        (cut 0 [2 0] 4)  (cut 0 [3 2] 0xff)  (cut 3 [4 0] 0xabcd)
+        %^  cut  6  [2 1]
+           ::    one long     ::    two longs     ::       three      ::
+          0xa0a1.b2b3.c4c5.d6d7.e8e9.f0f1.dead.beef.cade.fade.deaf.fece.face
+        :: 31
+        (dec 1)  (dec 43)  (dec 0xface.deaf.dead.beef)  
+        (dec 0x1.0000.0000.0000.0000)
+        :: 35
+        (dis 1 2)  (dis 0xff00 0xff)
+        %+  dis  0xbeef.feed.cede.deaf
+          0xdeaf.cede.feed.beef.fade
+        :: 38
     ==
     ::
 ::::::
@@ -68,6 +80,18 @@
         %+  con  0xbeef.feed.cede.deaf
           0xdeaf.cede.feed.beef.fade
         :: 27
+        (cut 0 [2 0] 4)  (cut 0 [3 2] 0xff)  (cut 3 [4 0] 0xabcd)
+        %^  cut  6  [2 1]
+           ::    one long     ::    two longs     ::       three      ::
+          0xa0a1.b2b3.c4c5.d6d7.e8e9.f0f1.dead.beef.cade.fade.deaf.fece.face
+        :: 31
+        (dec 1)  (dec 43)  (dec 0xface.deaf.dead.beef)  
+        (dec 0x1.0000.0000.0000.0000)
+        :: 35
+        (dis 1 2)  (dis 0xff00 0xff)
+        %+  dis  0xbeef.feed.cede.deaf
+          0xdeaf.cede.feed.beef.fade
+        :: 38
     ==
   |=  t/(list @)
   =|  i/@
@@ -139,6 +163,11 @@
     |=  {a/bloq b/@ c/@}
     (add (lsh a (met a b) c) b)
   ::
+  ++  cut                                                 ::  slice
+    ~/  %cut
+    |=  {a/bloq {b/@u c/@u} d/@}
+    (end a c (rsh a b d))
+  ::
   ++  con                                                 ::  binary or
     ~/  %con
     |=  {a/@ b/@}
@@ -164,6 +193,23 @@
     |-  ^-  @
     ?:  =(a +(b))  b
     $(b +(b))
+  ::
+  ++  dis                                                 ::  binary and
+    ~/  %dis
+    |=  {a/@ b/@}
+    =|  {c/@ d/@}
+    |-  ^-  @
+    ?:  ?|(=(0 a) =(0 b))  d
+    %=  $
+      a   (rsh 0 1 a)
+      b   (rsh 0 1 b)
+      c   +(c)
+      d   %+  add  d
+            %^  lsh  0  c
+            ?|  =(0 (end 0 1 a))
+                =(0 (end 0 1 b))
+            ==
+    ==
   ::
   ++  div                                                 ::  divide
     ~/  %div
