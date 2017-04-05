@@ -1,3 +1,4 @@
+!:
 =+  ^=  answers
     :~  (add 2 2)  (add 4 4)  (add 255 16)  (add 0xffff 0xabcd)
         (add 0xffff.ffff.ffff.ffff 0xdead.beef.cede.deaf)
@@ -86,7 +87,11 @@
         (mug 0)  (mug 1)  (mug 0xffff.ffff)  (mug 0xffff.ffff.ffff.ffff)
         (mug [0 0])  (mug [0 0 0])
         (mug [[0xffff.ffff 0] 1 [2 3] [4 5 6] 7])
-        :: 114
+        :: 114 - not testing muk because it's complicated, test oob
+        (mul 0 1)  (mul 1 5)  (mul 2 2)  (mul 256 256)  (mul 0xffff 0xffff)
+        :: 119 
+        (peg 2 7)  (peg 3 16)  (peg 16 3)  (peg 0xffaf 0xabcd.dead.beef.cade)
+        :: 123
     ==
     ::
 ::::::
@@ -189,7 +194,11 @@
         (mug 0)  (mug 1)  (mug 0xffff.ffff)  (mug 0xffff.ffff.ffff.ffff)
         (mug [0 0])  (mug [0 0 0])
         (mug [[0xffff.ffff 0] 1 [2 3] [4 5 6] 7])
-        :: 114
+        :: 114 - not testing muk because it's complicated, test oob
+        (mul 0 1)  (mul 1 5)  (mul 2 2)  (mul 256 256)  (mul 0xffff 0xffff)
+        :: 119
+        (peg 2 7)  (peg 3 16)  (peg 16 3)  (peg 0xffaf 0xabcd.dead.beef.cade)
+        :: 123
     ==
   |=  t/(list *)
   =|  i/@
@@ -435,6 +444,18 @@
       ?.  =(0 f)  f
       ^$(b +(b))
     $(c (fnv (mix c (cut 3 [d 1] a))), d +(d))
+  ::
+  ++  peg                                                 ::  tree connect
+    ~/  %peg
+    |=  {a/@ b/@}
+    ?<  =(0 a)
+    ^-  @
+    ?-  b
+      $1  a
+      $2  (mul a 2)
+      $3  +((mul a 2))
+      *   (add (mod b 2) (mul $(b (div b 2)) 2))
+    ==
   ::
   ++  rsh                                                 ::  right-shift
     ~/  %rsh

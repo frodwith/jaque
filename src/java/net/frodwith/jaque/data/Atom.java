@@ -85,7 +85,7 @@ public class Atom {
     Square s   = new Square(a, b);
     int[] dst  = new int[s.len+1];
     dst[s.len] = MPN.add_n(dst, s.x, s.y, s.len);
-    return dst;
+    return (int[]) malt(dst);
   }
   
   public static long add(long a, long b) throws ArithmeticException {
@@ -991,9 +991,9 @@ public class Atom {
     else {
       int c = met(to),
           d = c - 1;
-      long e = d << 1;
 
-      Object f = sub(to, e),
+      Object e = lsh((byte)0, d, 1L),
+             f = sub(to, e),
              g = lsh((byte) 0, d, axis);
       
       return add(f, g);

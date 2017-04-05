@@ -56,6 +56,8 @@ import net.frodwith.jaque.truffle.nodes.jet.MetNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.MixNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.ModNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.MugNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.MulNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.PegNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 import net.frodwith.jaque.truffle.nodes.formula.FragmentNode;
 import net.frodwith.jaque.truffle.nodes.formula.IdentityNode;
@@ -269,6 +271,8 @@ public class Context {
       new AxisArm("main/mood/lib/mix", 2L, MixNodeGen.class),
       new AxisArm("main/mood/lib/mod", 2L, ModNodeGen.class),
       new AxisArm("main/mood/lib/mug", 2L, MugNodeGen.class),
+      new AxisArm("main/mood/lib/mul", 2L, MulNodeGen.class),
+      new AxisArm("main/mood/lib/peg", 2L, PegNodeGen.class),
     };
     Context c = new Context(drivers);
     try {
