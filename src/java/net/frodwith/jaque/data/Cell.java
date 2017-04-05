@@ -1,11 +1,5 @@
 package net.frodwith.jaque.data;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import net.frodwith.jaque.truffle.TypesGen;
 
 /* Because we must use Object fields for the head and the tail to accomodate the atom

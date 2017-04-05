@@ -1,7 +1,6 @@
 package net.frodwith.jaque.truffle.nodes.formula;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.profiles.ValueProfile;
 
 import net.frodwith.jaque.data.Cell;
 

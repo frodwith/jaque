@@ -1,12 +1,9 @@
 package net.frodwith.jaque.truffle.nodes;
 
-import net.frodwith.jaque.truffle.NockLanguage;
-import net.frodwith.jaque.truffle.TailException;
-
-import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.RootNode;
-import com.oracle.truffle.api.profiles.BranchProfile;
+
+import net.frodwith.jaque.truffle.NockLanguage;
 
 public class JaqueRootNode extends RootNode {
   @Child public FunctionNode root;

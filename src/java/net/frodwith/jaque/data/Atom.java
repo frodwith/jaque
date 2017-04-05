@@ -461,7 +461,7 @@ public class Atom {
   private static Cell divmod(int[] x, int[] y) {
     int xlen = x.length,
         ylen = y.length,
-        i, rlen, qlen;
+        rlen, qlen;
     int[] xwords = Arrays.copyOf(x, xlen+2),
           ywords = Arrays.copyOf(y, ylen);
 

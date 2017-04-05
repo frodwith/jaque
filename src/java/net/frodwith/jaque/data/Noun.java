@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Stack;
 
-import gnu.math.MPN;
-import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.truffle.TypesGen;
 
 /* This is not the base class for nock objects, because nock objects are Objects.

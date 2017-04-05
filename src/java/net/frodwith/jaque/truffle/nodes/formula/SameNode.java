@@ -2,9 +2,9 @@ package net.frodwith.jaque.truffle.nodes.formula;
 
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
+
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
-import net.frodwith.jaque.data.Noun;
 
 public abstract class SameNode extends BinaryFormulaNode {
 

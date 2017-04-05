@@ -4,7 +4,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
-import net.frodwith.jaque.data.Noun;
 
 public abstract class DeepNode extends UnaryFormulaNode {
 

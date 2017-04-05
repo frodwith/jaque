@@ -1,11 +1,10 @@
 package net.frodwith.jaque.truffle.nodes;
 
-import net.frodwith.jaque.truffle.NockLanguage;
-import net.frodwith.jaque.truffle.TailException;
-
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.RootNode;
+
+import net.frodwith.jaque.truffle.NockLanguage;
 
 public class TopRootNode extends RootNode {
   @Child private DispatchNode dispatch;
