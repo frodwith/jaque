@@ -456,6 +456,8 @@ public class Atom {
     return div(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
   
+  /* This code is substantially adapted from Kawa's IntNum.java -- see the note at
+   * the top of gnu.math.MPN */
   private static Cell divmod(int[] x, int[] y) {
     int xlen = x.length,
         ylen = y.length,
@@ -772,9 +774,9 @@ public class Atom {
     if ( b < 2 ) {
       throw new Bail();
     }
-    long c = 1 << (b - 1),
-         d = 1 << (b - 2);
-    Object e = sub(atom, c);
+    Object c = bex(b - 1),
+           d = bex(b - 2),
+           e = sub(atom, c);
     return con(e, d);
   }
   

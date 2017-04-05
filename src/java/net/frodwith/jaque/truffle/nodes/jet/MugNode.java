@@ -9,8 +9,8 @@ import net.frodwith.jaque.data.Noun;
 public abstract class MugNode extends UnaryGateNode {
 
   @Specialization
-  protected int mug(Object noun) {
-    return Noun.mug(noun);
+  protected long mug(Object noun) {
+    return (long) Noun.mug(noun);
   }
 
 }

@@ -45,11 +45,17 @@ import net.frodwith.jaque.truffle.nodes.jet.DecNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.DisNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.DivNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.DvrNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.LessThanNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.EndNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.GteNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.GthNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.LshNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.LteNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.LthNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.MasNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.MetNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.MixNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.ModNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.MulNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.SubNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.MugNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 import net.frodwith.jaque.truffle.nodes.formula.FragmentNode;
 import net.frodwith.jaque.truffle.nodes.formula.IdentityNode;
@@ -252,6 +258,17 @@ public class Context {
       new AxisArm("main/mood/lib/dis", 2L, DisNodeGen.class),
       new AxisArm("main/mood/lib/div", 2L, DivNodeGen.class),
       new AxisArm("main/mood/lib/dvr", 2L, DvrNodeGen.class),
+      new AxisArm("main/mood/lib/end", 2L, EndNodeGen.class),
+      new AxisArm("main/mood/lib/gte", 2L, GteNodeGen.class),
+      new AxisArm("main/mood/lib/gth", 2L, GthNodeGen.class),
+      new AxisArm("main/mood/lib/lsh", 2L, LshNodeGen.class),
+      new AxisArm("main/mood/lib/lte", 2L, LteNodeGen.class),
+      new AxisArm("main/mood/lib/lth", 2L, LthNodeGen.class),
+      new AxisArm("main/mood/lib/mas", 2L, MasNodeGen.class),
+      new AxisArm("main/mood/lib/met", 2L, MetNodeGen.class),
+      new AxisArm("main/mood/lib/mix", 2L, MixNodeGen.class),
+      new AxisArm("main/mood/lib/mod", 2L, ModNodeGen.class),
+      new AxisArm("main/mood/lib/mug", 2L, MugNodeGen.class),
     };
     Context c = new Context(drivers);
     try {
