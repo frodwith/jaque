@@ -1019,7 +1019,9 @@ public class Atom {
     int pos = 0;
     
     for ( Object i : b ) {
-      chop(a, 0, met(a, i), pos, sal, i);
+      int len = met(a, i);
+      chop(a, 0, len, pos, sal, i);
+      pos += len;
     }
     
     return malt(sal);
