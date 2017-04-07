@@ -67,6 +67,8 @@ import net.frodwith.jaque.truffle.nodes.jet.PegNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.RapNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.RepNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.RipNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.RshNodeGen;
+import net.frodwith.jaque.truffle.nodes.jet.SubNodeGen;
 
 public class Context {
   
@@ -276,6 +278,8 @@ public class Context {
       new AxisArm("main/mood/lib/rap", 2L, RapNodeGen.class),
       new AxisArm("main/mood/lib/rep", 2L, RepNodeGen.class),
       new AxisArm("main/mood/lib/rip", 2L, RipNodeGen.class),
+      new AxisArm("main/mood/lib/rsh", 2L, RshNodeGen.class),
+      new AxisArm("main/mood/lib/sub", 2L, SubNodeGen.class),
     };
     Context c = new Context(drivers);
     try {

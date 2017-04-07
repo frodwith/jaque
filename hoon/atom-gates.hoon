@@ -119,6 +119,11 @@
               0x1.faad.deaf.beef.abcd
           ==
         :: 135
+        (rsh 0 16 0xff00)  (rsh 1 1 0xff)  (rsh 5 2 0xdead.feed.cade.deaf)
+        (rsh 0 39 0xdead.feed.cade.deaf.faad.cede)
+        :: 139
+        (sub 2 1)  (sub 0xffff 0xff)  (sub 0x1.ffff.ffff 0xff)
+        (sub 0x1.ffff.ffff.ffff.ffff 0xacbd.dbca)
     ==
     ::
 ::::::
@@ -254,6 +259,11 @@
               0x1.faad.deaf.beef.abcd
           ==
         :: 135
+        (rsh 0 16 0xff00)  (rsh 1 1 0xff)  (rsh 5 2 0xdead.feed.cade.deaf)
+        (rsh 0 39 0xdead.feed.cade.deaf.faad.cede)
+        :: 139
+        (sub 2 1)  (sub 0xffff 0xff)  (sub 0x1.ffff.ffff 0xff)
+        (sub 0x1.ffff.ffff.ffff.ffff 0xacbd.dbca)
     ==
   |=  t/(list *)
   =|  i/@
