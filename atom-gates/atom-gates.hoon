@@ -1,3 +1,4 @@
+:: urb -d @@atom-gates.hoon -f atom-gates.pill
 =+  ^=  answers
     :~  (add 2 2)  (add 4 4)  (add 255 16)  (add 0xffff 0xabcd)
         (add 0xffff.ffff.ffff.ffff 0xdead.beef.cede.deaf)

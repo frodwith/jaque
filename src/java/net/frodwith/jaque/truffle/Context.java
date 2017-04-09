@@ -68,7 +68,6 @@ import net.frodwith.jaque.truffle.nodes.jet.RapNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.RepNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.RipNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.RshNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.SubNodeGen;
 
 public class Context {
   
@@ -241,64 +240,4 @@ public class Context {
     return Truffle.getRuntime().createCallTarget(top).call(subject);
   }
 
-  public static void main(String[] args) {
-    /*
-    Arm[] drivers = new Arm[] {
-      new AxisArm("kmat/math/dec", 2L, DecNodeGen.class),
-      new AxisArm("kmat/math/add", 2L, AddNodeGen.class),
-      new AxisArm("kmat/math/sub", 2L, SubNodeGen.class),
-      new AxisArm("kmat/math/lth", 2L, LthNodeGen.class),
-    };
-    */
-    Arm[] drivers = new Arm[] {
-      new AxisArm("main/mood/lib/add", 2L, AddNodeGen.class),
-      new AxisArm("main/mood/lib/bex", 2L, BexNodeGen.class),
-      new AxisArm("main/mood/lib/can", 2L, CanNodeGen.class),
-      new AxisArm("main/mood/lib/cap", 2L, CapNodeGen.class),
-      new AxisArm("main/mood/lib/cat", 2L, CatNodeGen.class),
-      new AxisArm("main/mood/lib/con", 2L, ConNodeGen.class),
-      new AxisArm("main/mood/lib/cut", 2L, CutNodeGen.class),
-      new AxisArm("main/mood/lib/dec", 2L, DecNodeGen.class),
-      new AxisArm("main/mood/lib/dis", 2L, DisNodeGen.class),
-      new AxisArm("main/mood/lib/div", 2L, DivNodeGen.class),
-      new AxisArm("main/mood/lib/dvr", 2L, DvrNodeGen.class),
-      new AxisArm("main/mood/lib/end", 2L, EndNodeGen.class),
-      new AxisArm("main/mood/lib/gte", 2L, GteNodeGen.class),
-      new AxisArm("main/mood/lib/gth", 2L, GthNodeGen.class),
-      new AxisArm("main/mood/lib/lsh", 2L, LshNodeGen.class),
-      new AxisArm("main/mood/lib/lte", 2L, LteNodeGen.class),
-      new AxisArm("main/mood/lib/lth", 2L, LthNodeGen.class),
-      new AxisArm("main/mood/lib/mas", 2L, MasNodeGen.class),
-      new AxisArm("main/mood/lib/met", 2L, MetNodeGen.class),
-      new AxisArm("main/mood/lib/mix", 2L, MixNodeGen.class),
-      new AxisArm("main/mood/lib/mod", 2L, ModNodeGen.class),
-      new AxisArm("main/mood/lib/mug", 2L, MugNodeGen.class),
-      new AxisArm("main/mood/lib/mul", 2L, MulNodeGen.class),
-      new AxisArm("main/mood/lib/peg", 2L, PegNodeGen.class),
-      new AxisArm("main/mood/lib/rap", 2L, RapNodeGen.class),
-      new AxisArm("main/mood/lib/rep", 2L, RepNodeGen.class),
-      new AxisArm("main/mood/lib/rip", 2L, RipNodeGen.class),
-      new AxisArm("main/mood/lib/rsh", 2L, RshNodeGen.class),
-      new AxisArm("main/mood/lib/sub", 2L, SubNodeGen.class),
-    };
-    Context c = new Context(drivers);
-    try {
-      /*
-      byte[] bytes = Files.readAllBytes(Paths.get("/home/pdriver/math-kernel.nock"));
-      String fos   = new String(bytes, "UTF-8").trim();
-      Cell formula = TypesGen.asCell(Noun.parse(fos));
-      Cell kernel  = TypesGen.asCell(c.nock(0L, formula));
-      String calls = "[8 [9 22 0 1] 9 2 [0 4] [1 15] 0 11]";
-      Cell call    = TypesGen.asCell(Noun.parse(calls));
-      System.out.println(c.nock(kernel, call));
-      */
-      byte[] bytes = Files.readAllBytes(Paths.get("pills/atom-gates.pill"));
-      Object src = Atom.fromByteArray(bytes, Atom.LITTLE_ENDIAN);
-      Cell formula = TypesGen.asCell(Atom.cue(src));
-      System.out.println(c.nock(0L, formula));
-    }
-    catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
 }
