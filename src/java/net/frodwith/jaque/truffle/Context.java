@@ -117,7 +117,7 @@ public class Context {
           if ( Atom.isZero(arg) ) {
             return new BailNode();
           }
-          if ( Atom.equals(1L, arg) ) {
+          if ( Noun.equals(1L, arg) ) {
             return new IdentityNode();
           }
           else {
