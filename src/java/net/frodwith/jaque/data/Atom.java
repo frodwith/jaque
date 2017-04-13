@@ -3,8 +3,10 @@ package net.frodwith.jaque.data;
 import com.sangupta.murmur.Murmur3;
 
 import java.io.UnsupportedEncodingException;
+import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -70,7 +72,12 @@ public class Atom {
 
   public static final Object FAST = stringToCord("fast");
   public static final Object MEMO = stringToCord("memo");
-  
+  public static final Object SPOT = stringToCord("spot");
+  public static final Object MEAN = stringToCord("mean");
+  public static final Object HUNK = stringToCord("hunk");
+  public static final Object LOSE = stringToCord("lose");
+  private static final NumberFormat dotted = NumberFormat.getNumberInstance(Locale.GERMAN);
+
   public final Object value;
   
  /*
@@ -1227,16 +1234,57 @@ public class Atom {
   }
   
   public static String toString(Object atom) {
-    return toString(atom, 10);
+    StringBuilder b = new StringBuilder();
+    pretty(b, TypesGen.asImplicitIntArray(atom));
+    return b.toString();
   }
 
   public static String toString(Object atom, int radix) {
     StringBuilder b = new StringBuilder();
-    write(b, TypesGen.asImplicitIntArray(atom), radix);
+    raw(b, TypesGen.asImplicitIntArray(atom), radix);
     return b.toString();
   }
 
-  public static void write(StringBuilder b, int[] cur, int radix) {
+  public static void pretty(StringBuilder b, int[] cur) {
+    if ( 1 == cur.length && Long.compareUnsigned(cur[0], 65536) < 0 ) {
+      b.append(dotted.format(cur[0]));
+    }
+    else if ( isTas(cur) ) {
+      b.append('%');
+      b.append(cordToString(cur));
+    }
+    else if ( isTa(cur) ) {
+      b.append('\'');
+      b.append(cordToString(cur));
+      b.append('\'');
+    }
+    else {
+      b.append("0x");
+      raw(b, cur, 16);
+    }
+  }
+
+  private static boolean isTas(Object atom) {
+    for ( char c : cordToString(atom).toCharArray() ) {
+      if ( !Character.isLowerCase(c)
+          && !Character.isDigit(c)
+          && '-' != c) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static boolean isTa(Object atom) {
+    for ( char c : cordToString(atom).toCharArray() ) {
+      if ( c < 32 || c > 127 ) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public static void raw(StringBuilder b, int[] cur, int radix) {
     int len   = cur.length,
         size  = len,
         i     = b.length(),

@@ -178,7 +178,7 @@ public class Noun {
       }
     }
     else {
-      Atom.write(b, TypesGen.asImplicitIntArray(noun), 10);
+      Atom.pretty(b, TypesGen.asImplicitIntArray(noun));
     }
   }
   

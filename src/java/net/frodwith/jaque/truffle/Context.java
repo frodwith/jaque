@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
@@ -40,6 +41,7 @@ import net.frodwith.jaque.truffle.nodes.formula.SameNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.hint.DiscardHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.FastHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.MemoHintNode;
+import net.frodwith.jaque.truffle.nodes.formula.hint.StackHintNode;
 import net.frodwith.jaque.truffle.nodes.jet.AddNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.BexNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.CanNodeGen;
@@ -76,12 +78,22 @@ public class Context {
   public final Map<Cell, Location> locations;
   public final Map<String, Arm[]> drivers;
   
+  public final Stack<Object> spot;
+  public final Stack<Object> mean;
+  public final Stack<Object> hunk;
+  public final Stack<Object> lose;
+
   public Context(Arm[] arms) {
     this.kicks = new HashMap<KickLabel, CallTarget>();
     this.nocks = new HashMap<Cell, CallTarget>();
     this.locations = new HashMap<Cell, Location>();
     this.drivers = new HashMap<String, Arm[]>();
     
+    this.spot = new Stack<Object>();
+    this.mean = new Stack<Object>();
+    this.hunk = new Stack<Object>();
+    this.lose = new Stack<Object>();
+
     Map<String, List<Arm>> temp = new HashMap<String, List<Arm>>();
     if ( null != arms ) {
       for ( Arm a : arms ) {
@@ -211,6 +223,18 @@ public class Context {
             Object kind  = dyn.head;
             if ( Atom.FAST.equals(kind) ) {
               return new FastHintNode(this, dynF, next);
+            }
+            else if ( Atom.SPOT.equals(kind) ) {
+              return new StackHintNode(spot, dynF, next);
+            }
+            else if ( Atom.MEAN.equals(kind) ) {
+              return new StackHintNode(mean, dynF, next);
+            }
+            else if ( Atom.LOSE.equals(kind) ) {
+              return new StackHintNode(lose, dynF, next);
+            }
+            else if ( Atom.HUNK.equals(kind) ) {
+              return new StackHintNode(hunk, dynF, next);
             }
             else {
               return new DiscardHintNode(dynF, next);
