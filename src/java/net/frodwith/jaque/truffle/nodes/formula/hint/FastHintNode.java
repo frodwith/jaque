@@ -106,7 +106,7 @@ public final class FastHintNode extends DynamicHintFormula {
           throw new ClueParsingException();
         }
 
-        long atom = TypesGen.asLong(noun);
+        long atom = TypesGen.asLong(t);
         int  small = (int) atom;
         if ( small != atom ) {
           throw new ClueParsingException();
@@ -152,7 +152,7 @@ public final class FastHintNode extends DynamicHintFormula {
       return f.tail;
     }
     
-    private static Object parseHookAxis(Object nock) throws ClueParsingException {
+    private static Object parseHookAxis(Object nock) {
       nock = skipHints(nock);
       Cell f = TypesGen.asCell(nock);
       Object op = f.head;
@@ -171,7 +171,7 @@ public final class FastHintNode extends DynamicHintFormula {
           }
         }
       }
-      throw new ClueParsingException();
+      return null;
     }
 
     private static Map<String,Object> parseHooks(Object noun) throws ClueParsingException {
@@ -190,7 +190,10 @@ public final class FastHintNode extends DynamicHintFormula {
           throw new ClueParsingException();
         }
         Cell nock = TypesGen.asCell(i.tail);
-        map.put(term, parseHookAxis(nock));
+        Object axis = parseHookAxis(nock);
+        if ( null != axis ) {
+          map.put(term, axis);
+        }
         list = pair.tail;
       }
 

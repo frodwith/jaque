@@ -1,5 +1,7 @@
 package net.frodwith.jaque.data;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+
 import net.frodwith.jaque.truffle.TypesGen;
 
 /* Because we must use Object fields for the head and the tail to accomodate the atom
@@ -46,6 +48,7 @@ public class Cell {
     }
   }
   
+  @TruffleBoundary
   public static int mug(Cell c) {
     if ( c.hash == 0 ) {
       c.hash = mug_both(Noun.mug(c.head), Noun.mug(c.tail));
@@ -53,10 +56,12 @@ public class Cell {
     return c.hash;
   }
 
+  @TruffleBoundary
   public boolean equals(Object o) {
     return TypesGen.isCell(o) && equals(this, TypesGen.asCell(o));
   }
   
+  @TruffleBoundary
   public int hashCode() {
     return mug(this);
   }

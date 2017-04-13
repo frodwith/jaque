@@ -51,6 +51,7 @@
         roc     (.tail pill)
         m       (MachineRec. (Context. jets) ken roc)]
     (.nock m 0 ken) ; "to register jets". Goes away in slim-boot?
+    (println "live: kernel activated")
     (prn "compiled: " (.wish m (Atom/stringToCord "~&  'hello, arvo!'  &")))))
 
 (defn boot-formula [jam-path jet-path]
