@@ -61,12 +61,7 @@ public class Cell {
     return TypesGen.isCell(o) && equals(this, TypesGen.asCell(o));
   }
   
-  @TruffleBoundary
   public int hashCode() {
     return mug(this);
-  }
-  
-  public String toString() {
-    return Noun.toString(this);
   }
 }

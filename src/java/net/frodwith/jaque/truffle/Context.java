@@ -12,10 +12,13 @@ import java.util.Stack;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 
+import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.KickLabel;
 import net.frodwith.jaque.Location;
 import net.frodwith.jaque.data.Atom;
+import net.frodwith.jaque.data.Axis;
 import net.frodwith.jaque.data.Cell;
+import net.frodwith.jaque.data.Fragment;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.driver.Arm;
 import net.frodwith.jaque.truffle.driver.AxisArm;
@@ -41,6 +44,7 @@ import net.frodwith.jaque.truffle.nodes.formula.SameNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.hint.DiscardHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.FastHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.MemoHintNode;
+import net.frodwith.jaque.truffle.nodes.formula.hint.SlogHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.StackHintNode;
 import net.frodwith.jaque.truffle.nodes.jet.AddNodeGen;
 import net.frodwith.jaque.truffle.nodes.jet.BexNodeGen;
@@ -133,7 +137,7 @@ public class Context {
             return new IdentityNode();
           }
           else {
-            return new FragmentNode(arg);
+            return new FragmentNode(Atom.expect(arg));
           }
         }
         case 1: {
@@ -199,30 +203,34 @@ public class Context {
         case 9: {
           Cell c = TypesGen.asCell(arg),
                t = TypesGen.asCell(c.tail);
-          Object axis = c.head;
+          Axis a = new Axis(Atom.expect(c.head));
+          Fragment first = a.iterator().next();
           FormulaNode core = parseCell(t, false);
 
-          return KickNodeGen.create(core, this, tail, Atom.cap(axis) == 2, axis);
+          return KickNodeGen.create(core, this, tail, first == Fragment.HEAD, a.atom);
         }
         case 10: {
           Cell    cell = TypesGen.asCell(arg);
           FormulaNode next = parseCell(TypesGen.asCell(cell.tail), tail);
           Object  head = cell.head;
           if ( Noun.isAtom(head) ) {
-            if ( Atom.MEMO.equals(head) ) {
-              return new MemoHintNode(next);
-            }
-            else {
-              // What do you do with static hints you don't recognize? Nothing...
-              return next;
-            }
+            // What do you do with static hints you don't recognize? Nothing...
+            System.err.println("unrecognized static hint: " + Atom.toString(head));
+            return next;
           }
           else {
             Cell dyn     = TypesGen.asCell(head);
             FormulaNode dynF = parseCell(TypesGen.asCell(dyn.tail), false);
             Object kind  = dyn.head;
-            if ( Atom.FAST.equals(kind) ) {
+
+            if ( Atom.MEMO.equals(kind) ) {
+              return new MemoHintNode(next);
+            }
+            else if ( Atom.FAST.equals(kind) ) {
               return new FastHintNode(this, dynF, next);
+            }
+            else if ( Atom.SLOG.equals(kind) ) {
+              return new SlogHintNode(dynF, next);
             }
             else if ( Atom.SPOT.equals(kind) ) {
               return new StackHintNode(spot, dynF, next);
@@ -237,6 +245,7 @@ public class Context {
               return new StackHintNode(hunk, dynF, next);
             }
             else {
+              System.err.println("unrecognized dynamic hint: " + Atom.toString(kind));
               return new DiscardHintNode(dynF, next);
             }
           }
@@ -259,9 +268,29 @@ public class Context {
   public Object nock(Object subject, Cell formula) {
     FormulaNode program = parseCell(formula, true);
     JaqueRootNode root  = new JaqueRootNode(program);
-    CallTarget target   = Truffle.getRuntime().createCallTarget(root);
-    TopRootNode top     = new TopRootNode(target);
-    return Truffle.getRuntime().createCallTarget(top).call(subject);
+    CallTarget inner    = Truffle.getRuntime().createCallTarget(root);
+    TopRootNode top     = new TopRootNode(inner);
+    CallTarget outer    = Truffle.getRuntime().createCallTarget(top);
+    
+    spot.clear();
+    mean.clear();
+    lose.clear();
+    hunk.clear();
+    try {
+      return outer.call(subject);
+    }
+    catch (Bail e) {
+      /*
+      Object tone = mean.pop();
+      if ( null != tone ) {
+        System.err.println(Noun.toString(tone));
+      }
+      */
+      while ( !spot.isEmpty() ) {
+        System.err.println(Noun.toString(spot.pop()));
+      }
+      throw e;
+    }
   }
 
 }

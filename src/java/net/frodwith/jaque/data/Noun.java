@@ -1,5 +1,11 @@
 package net.frodwith.jaque.data;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Stack;
@@ -159,26 +165,56 @@ public class Noun {
   }
   
   public static String toString(Object noun) {
-    StringBuilder b = new StringBuilder();
-    write(b, noun, false);
-    return b.toString();
+    StringWriter out = new StringWriter();
+    try {
+      pretty(out, noun, false);
+      return out.toString();
+    }
+    catch ( IOException e ) {
+      return null;
+    }
   }
 
-  private static void write(StringBuilder b, Object noun, boolean tail) {
+  private static void pretty(Writer out, Object noun, boolean tail) throws IOException {
     if ( isCell(noun) ) {
       Cell c = TypesGen.asCell(noun);
       if ( !tail ) {
-        b.append("[");
+        out.write('[');
       }
-      write(b, c.head, false);
-      b.append(" ");
-      write(b, c.tail, true);
+      pretty(out, c.head, false);
+      out.write(' ');
+      pretty(out, c.tail, true);
       if ( !tail ) {
-        b.append("]");
+        out.write(']');
       }
     }
     else {
-      Atom.pretty(b, TypesGen.asImplicitIntArray(noun));
+      Atom.pretty(out, TypesGen.asImplicitIntArray(noun));
+    }
+  }
+  
+  public static void print(Object noun) {
+    print(noun, new OutputStreamWriter(System.out));
+  }
+
+  public static void println(Object noun) {
+    println(noun, new OutputStreamWriter(System.out));
+  }
+  
+  public static void print(Object noun, OutputStreamWriter out) {
+    try {
+      pretty(out, noun, false);
+    }
+    catch ( IOException e ) {
+    }
+  }
+
+  public static void println(Object noun, OutputStreamWriter out) {
+    print(noun, out);
+    try {
+      out.write('\n');
+    }
+    catch ( IOException e ) {
     }
   }
   

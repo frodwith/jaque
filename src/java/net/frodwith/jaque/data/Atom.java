@@ -2,12 +2,18 @@ package net.frodwith.jaque.data;
 
 import com.sangupta.murmur.Murmur3;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Stack;
 
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
@@ -76,7 +82,11 @@ public class Atom {
   public static final Object MEAN = stringToCord("mean");
   public static final Object HUNK = stringToCord("hunk");
   public static final Object LOSE = stringToCord("lose");
+  public static final Object SLOG = stringToCord("slog");
+  public static final Object LEAF = stringToCord("leaf");
   private static final NumberFormat dotted = NumberFormat.getNumberInstance(Locale.GERMAN);
+
+
 
   public final Object value;
   
@@ -1233,39 +1243,58 @@ public class Atom {
     return buf;
   }
   
+  public String toString() {
+    return toString(value);
+  }
+  
   public static String toString(Object atom) {
-    StringBuilder b = new StringBuilder();
-    pretty(b, TypesGen.asImplicitIntArray(atom));
-    return b.toString();
+    StringWriter out = new StringWriter();
+    try {
+      pretty(out, TypesGen.asImplicitIntArray(atom));
+      return out.toString();
+    }
+    catch ( IOException e ) {
+      return null;
+    }
   }
 
   public static String toString(Object atom, int radix) {
-    StringBuilder b = new StringBuilder();
-    raw(b, TypesGen.asImplicitIntArray(atom), radix);
-    return b.toString();
+    StringWriter out = new StringWriter();
+    try {
+      raw(out, TypesGen.asImplicitIntArray(atom), radix);
+      return out.toString();
+    }
+    catch ( IOException e ) {
+      return null;
+    }
   }
 
-  public static void pretty(StringBuilder b, int[] cur) {
+  public static void pretty(Writer out, int[] cur) throws IOException {
     if ( 1 == cur.length && Long.compareUnsigned(cur[0], 65536) < 0 ) {
-      b.append(dotted.format(cur[0]));
-    }
-    else if ( isTas(cur) ) {
-      b.append('%');
-      b.append(cordToString(cur));
-    }
-    else if ( isTa(cur) ) {
-      b.append('\'');
-      b.append(cordToString(cur));
-      b.append('\'');
+      out.write(dotted.format(cur[0]));
     }
     else {
-      b.append("0x");
-      raw(b, cur, 16);
+      String cord = cordToString(cur);
+      if ( null != cord ) {
+        if ( isTas(cord) ) {
+          out.write('%');
+          out.write(cordToString(cur));
+          return;
+        }
+        else if ( isTa(cord) ) {
+          out.write('\'');
+          out.write(cordToString(cur));
+          out.write('\'');
+          return;
+        }
+      }
+      out.write("0x");
+      raw(out, cur, 16);
     }
   }
 
-  private static boolean isTas(Object atom) {
-    for ( char c : cordToString(atom).toCharArray() ) {
+  private static boolean isTas(String s) {
+    for ( char c : s.toCharArray() ) {
       if ( !Character.isLowerCase(c)
           && !Character.isDigit(c)
           && '-' != c) {
@@ -1275,8 +1304,8 @@ public class Atom {
     return true;
   }
 
-  private static boolean isTa(Object atom) {
-    for ( char c : cordToString(atom).toCharArray() ) {
+  private static boolean isTa(String s) {
+    for ( char c : s.toCharArray() ) {
       if ( c < 32 || c > 127 ) {
         return false;
       }
@@ -1284,29 +1313,25 @@ public class Atom {
     return true;
   }
 
-  public static void raw(StringBuilder b, int[] cur, int radix) {
-    int len   = cur.length,
-        size  = len,
-        i     = b.length(),
-        j     = i - 1;
-    
-    cur = Arrays.copyOf(cur, cur.length);
+  public static void raw(Writer out, int[] cur, int radix) throws IOException {
+    Stack<Integer> digits = new Stack<Integer>();
 
-    for(;;) {
-      int dig = MPN.divmod_1(cur, cur, size, radix);
-      b.append(Character.forDigit(dig, radix));
-      ++j;
+    int len = cur.length,
+        size = len;
+
+    cur = Arrays.copyOf(cur, len);
+
+    while ( true ) {
+      digits.push(MPN.divmod_1(cur, cur, size, radix));
       if (cur[len-1] == 0) {
         if (--len == 0) {
           break;
         }
       }
     }
-
-    for (; i < j; ++i, --j) {
-      char t = b.charAt(j);
-      b.setCharAt(j, b.charAt(i));
-      b.setCharAt(i, t);
+    
+    while ( !digits.empty() ) {
+      out.write(Character.forDigit(digits.pop(), radix));
     }
   }
 }

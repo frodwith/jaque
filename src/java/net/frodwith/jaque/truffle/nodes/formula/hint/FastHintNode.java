@@ -55,6 +55,7 @@ public final class FastHintNode extends DynamicHintFormula {
         return null;
       }
       String label = parentLoc.label + "/" + clue.name;
+      System.out.println(label);
       return new Location(clue.name, label, clue.parentAxis, clue.hooks, 
           core, parentLoc, context.drivers.get(label));
     }

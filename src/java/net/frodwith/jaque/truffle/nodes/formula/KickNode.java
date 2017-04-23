@@ -49,7 +49,6 @@ public abstract class KickNode extends FormulaNode {
   protected abstract boolean getInBattery();
   
   @Specialization(
-    limit  = "1",
     guards = { "driver != null",
                "isFine(constants, nodes, core)" })
   protected Object doJet(VirtualFrame frame, Cell core,
@@ -97,12 +96,12 @@ public abstract class KickNode extends FormulaNode {
       int i, top = nodes.length - 1;
       for ( i = 0; i < top; ++i ) {
         noun = nodes[i].executeFragment(noun);
-        if ( constants[i] != TypesGen.expectCell(noun).head ) {
+        if ( !constants[i].equals(TypesGen.expectCell(noun).head) ) {
           return false;
         }
       }
       noun = nodes[i].executeFragment(noun);
-      return constants[i] == noun;
+      return constants[i].equals(noun);
     }
     catch ( FragmentationException e ) {
       return false;
@@ -145,7 +144,6 @@ public abstract class KickNode extends FormulaNode {
 
   // Unregistered location, cached target, tail call
   @Specialization(
-    limit = "1",
     guards = { "getInBattery()",
                "getIsTail()",
                "core.head == cachedBattery" })
@@ -183,9 +181,10 @@ public abstract class KickNode extends FormulaNode {
       catch ( FragmentationException e ) {
         throw new Bail();
       }
-
+      
+      Location reg = context.locations.get(core.head);
       FormulaNode f = context.parseCell(formula, true);
-      RootNode root = new JaqueRootNode(f);
+      RootNode root = (null == reg) ? new JaqueRootNode(f) : new JaqueRootNode(f, reg.label);
       t = Truffle.getRuntime().createCallTarget(root);
       kicks.put(label, t);
     }
@@ -194,7 +193,6 @@ public abstract class KickNode extends FormulaNode {
 
   // Unregistered location, cached target, direct call
   @Specialization(
-    limit = "1",
     guards = { "getInBattery()",
                "core.head == cachedBattery" })
   protected Object doCachedCall(VirtualFrame frame, Cell core,
