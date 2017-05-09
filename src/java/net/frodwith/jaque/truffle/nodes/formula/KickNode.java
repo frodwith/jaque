@@ -96,7 +96,7 @@ public abstract class KickNode extends FormulaNode {
       int i, top = nodes.length - 1;
       for ( i = 0; i < top; ++i ) {
         noun = nodes[i].executeFragment(noun);
-        if ( !constants[i].equals(TypesGen.expectCell(noun).head) ) {
+        if ( !batteryMatch(TypesGen.expectCell(constants[i]), TypesGen.expectCell(noun)) ) {
           return false;
         }
       }
@@ -113,7 +113,12 @@ public abstract class KickNode extends FormulaNode {
   
   @TruffleBoundary // hash operations
   protected Location getLocation(Cell core) {
-    return getContext().locations.get(TypesGen.asCell(core.head));
+    try {
+      return getContext().locations.get(TypesGen.expectCell(core.head));
+    }
+    catch ( UnexpectedResultException e ) {
+      return null;
+    }
   }
 
   @TruffleBoundary
@@ -146,13 +151,34 @@ public abstract class KickNode extends FormulaNode {
   @Specialization(
     guards = { "getInBattery()",
                "getIsTail()",
-               "core.head == cachedBattery" })
+               "batteryMatch(cachedBattery, core)" })
   protected Object doCachedTail(Cell core,
-      @Cached("core.head") Object cachedBattery,
+      @Cached("batteryCache(core)") Cell cachedBattery,
       @Cached("getLabel(core)") KickLabel label,
       @Cached("getFragmentationNode()") FragmentationNode fragment,
       @Cached("getTarget(label, core, fragment)") CallTarget target) {
     throw new TailException(target, new Object[] { core });
+  }
+
+  protected static Cell batteryCache(Cell core) {
+    try {
+      Cell battery = TypesGen.expectCell(core.head);
+      battery.calculateMug();
+      return battery;
+    }
+    catch (UnexpectedResultException e) {
+      return null;
+    }
+  }
+
+  protected static boolean batteryMatch(Cell cachedBattery, Cell core) {
+    try {
+      Cell testBattery = TypesGen.expectCell(core.head);
+      return testBattery.hashCode() == cachedBattery.mug;
+    }
+    catch (UnexpectedResultException e) {
+      return false;
+    }
   }
   
   protected FragmentationNode getFragmentationNode() {
@@ -160,8 +186,13 @@ public abstract class KickNode extends FormulaNode {
   }
   
   protected KickLabel getLabel(Cell core) {
-    Cell battery = TypesGen.asCell(core.head);
-    return new KickLabel(battery, getAxis());
+    try {
+      Cell battery = TypesGen.expectCell(core.head);
+      return new KickLabel(battery, getAxis());
+    }
+    catch (UnexpectedResultException e ) {
+      return null;
+    }
   }
 
   @TruffleBoundary // hash operations
@@ -194,9 +225,9 @@ public abstract class KickNode extends FormulaNode {
   // Unregistered location, cached target, direct call
   @Specialization(
     guards = { "getInBattery()",
-               "core.head == cachedBattery" })
+               "batteryMatch(cachedBattery, core)" })
   protected Object doCachedCall(VirtualFrame frame, Cell core,
-      @Cached("core.head") Object cachedBattery,
+      @Cached("batteryCache(core)") Cell cachedBattery,
       @Cached("getLabel(core)") KickLabel label,
       @Cached("getFragmentationNode()") FragmentationNode fragment,
       @Cached("getTarget(label, core, fragment)") CallTarget target,

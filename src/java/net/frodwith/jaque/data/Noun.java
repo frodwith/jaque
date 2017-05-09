@@ -53,8 +53,8 @@ public class Noun {
   }
 
   public static int mug(Object noun) {
-    if ( noun instanceof Cell) {
-      return Cell.mug((Cell) noun);
+    if ( TypesGen.isCell(noun) ) {
+      return Cell.getMug(TypesGen.asCell(noun));
     }
     else {
       return Atom.mug(noun);

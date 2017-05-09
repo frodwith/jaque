@@ -14,8 +14,7 @@ import net.frodwith.jaque.truffle.TypesGen;
 public class Cell {
   public final Object head;
   public final Object tail;
-
-  private int hash;
+  public int mug;
   
   public Cell(Object head, Object tail) {
     this.head = head;
@@ -40,20 +39,24 @@ public class Cell {
     if (a == b) {
       return true;
     }
-    if (a.hash != 0 && b.hash != 0 && a.hash != b.hash) {
+    if (a.mug != 0 && b.mug != 0 && a.mug != b.mug) {
       return false;
     }
     else {
       return Noun.equals(a.head, b.head) && Noun.equals(a.tail, b.tail);
     }
   }
+
+  public void calculateMug() {
+    mug = mug_both(Noun.mug(head), Noun.mug(tail));
+  }
   
   @TruffleBoundary
-  public static int mug(Cell c) {
-    if ( c.hash == 0 ) {
-      c.hash = mug_both(Noun.mug(c.head), Noun.mug(c.tail));
+  public static int getMug(Cell c) {
+    if ( 0 == c.mug ) {
+      c.calculateMug();
     }
-    return c.hash;
+    return c.mug;
   }
 
   @TruffleBoundary
@@ -62,6 +65,6 @@ public class Cell {
   }
   
   public int hashCode() {
-    return mug(this);
+    return getMug(this);
   }
 }

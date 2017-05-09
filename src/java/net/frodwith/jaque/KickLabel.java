@@ -13,7 +13,7 @@ public class KickLabel {
   }
   
   public int hashCode() {
-    return Cell.mug(battery) ^ Atom.mug(axis);
+    return Cell.getMug(battery) ^ Atom.mug(axis);
   }
   
   public boolean equals(Object o) {

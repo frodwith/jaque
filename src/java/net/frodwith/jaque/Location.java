@@ -3,6 +3,9 @@ package net.frodwith.jaque;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
+
+import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.TypesGen;
 import net.frodwith.jaque.truffle.driver.Arm;
@@ -36,8 +39,19 @@ public final class Location {
     this.nameToAxis = hooks;
     this.axisToName = new HashMap<Object, String>();
     this.isStatic = (null == parent) || (Noun.equals(3L, axisToParent) && parent.isStatic);
-    this.noun = isStatic ? noun : TypesGen.asCell(noun).head;
-    
+    if ( isStatic ) {
+      this.noun = noun;
+    }
+    else {
+      try {
+        Cell battery = TypesGen.expectCell(TypesGen.expectCell(noun).head);
+        battery.calculateMug();
+        this.noun = battery;
+      }
+      catch ( UnexpectedResultException e ) {
+        throw new RuntimeException("Registering dynamic location of non-core");
+      }
+    }
 
     for ( Map.Entry<String, Object> e : hooks.entrySet() ) {
       axisToName.put(e.getValue(), e.getKey());
