@@ -53,11 +53,11 @@
     (let [txt (Atom/stringToCord src)
           gat (.nock context kernel-core (noun [9 20 0 1]))
           pro (.slam m gat txt)]
-      (println "txt" (Atom/cordToString txt))
-      (print "head of wish gate")
-      (Noun/println (.head gat) *out*)
-      (print "head of wish product")
-      (Noun/println (.head pro) *out*)
+      ;(println "txt" (Atom/cordToString txt))
+      ;(print "head of wish gate")
+      ;(Noun/println (.head gat) *out*)
+      ;(print "head of wish product")
+      ;(Noun/println (.head pro) *out*)
       pro)))
 
 (defn boot-pill [pill-path jet-path]

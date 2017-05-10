@@ -258,6 +258,7 @@ public class Context {
               this);
         }
         default: {
+          printSpots();
           throw new IllegalArgumentException();
         }
       }
@@ -286,10 +287,14 @@ public class Context {
         System.err.println(Noun.toString(tone));
       }
       */
-      while ( !spot.isEmpty() ) {
-        System.err.println(Noun.toString(spot.pop()));
-      }
+      printSpots();
       throw e;
+    }
+  }
+  
+  private void printSpots() {
+    while ( !spot.isEmpty() ) {
+      System.err.println(Noun.toString(spot.pop()));
     }
   }
 

@@ -48,15 +48,14 @@ public class Cell {
   }
 
   public void calculateMug() {
-    mug = mug_both(Noun.mug(head), Noun.mug(tail));
+    if ( 0 == mug ) {
+      mug = mug_both(Noun.mug(head), Noun.mug(tail));
+    }
   }
   
   @TruffleBoundary
   public static int getMug(Cell c) {
-    if ( 0 == c.mug ) {
-      c.calculateMug();
-    }
-    return c.mug;
+    return c.hashCode();
   }
 
   @TruffleBoundary
@@ -64,7 +63,9 @@ public class Cell {
     return TypesGen.isCell(o) && equals(this, TypesGen.asCell(o));
   }
   
+  @TruffleBoundary
   public int hashCode() {
-    return getMug(this);
+    calculateMug();
+    return mug;
   }
 }
