@@ -39,11 +39,24 @@ public class Cell {
     if (a == b) {
       return true;
     }
-    if (a.mug != 0 && b.mug != 0 && a.mug != b.mug) {
-      return false;
+    else if ( 0 != a.mug && 0 != b.mug ) {
+      return equalsMugged(a, b);
     }
     else {
       return Noun.equals(a.head, b.head) && Noun.equals(a.tail, b.tail);
+    }
+  }
+
+  // fast-path: if i am mugged, my head and tail are also mugged
+  public static boolean equalsMugged(Cell a, Cell b) {
+    if ( a == b ) {
+      return true;
+    }
+    else if ( a.mug != b.mug ) {
+      return false;
+    }
+    else {
+      return Noun.equalsMugged(a.head, b.head) && Noun.equalsMugged(a.tail, b.tail);
     }
   }
 

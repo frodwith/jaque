@@ -174,7 +174,7 @@ public abstract class KickNode extends FormulaNode {
   protected static boolean batteryMatch(Cell cachedBattery, Cell core) {
     try {
       Cell testBattery = TypesGen.expectCell(core.head);
-      return testBattery.hashCode() == cachedBattery.mug;
+      return Cell.equals(testBattery, cachedBattery);
     }
     catch (UnexpectedResultException e) {
       return false;

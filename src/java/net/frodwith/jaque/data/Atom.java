@@ -578,7 +578,7 @@ public class Atom {
     return ( TypesGen.isLong(a) 
         && TypesGen.isLong(b)
         && equals(TypesGen.asLong(a), TypesGen.asLong(b)) )
-        || TypesGen.asImplicitIntArray(a).equals(TypesGen.asImplicitIntArray(b));
+        || Arrays.equals(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
   
   public static Object expect(Object o) {

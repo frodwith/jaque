@@ -19,17 +19,42 @@ import net.frodwith.jaque.truffle.TypesGen;
 public class Noun {
   
   public static boolean equals(Object a, Object b) {
-    if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
-      return TypesGen.asLong(a) == TypesGen.asLong(b);
+    if ( a == b ) {
+      return true;
     }
-    else if ( TypesGen.isIntArray(a) && TypesGen.isIntArray(b) ) {
-      return Arrays.equals(TypesGen.asIntArray(a), TypesGen.asIntArray(b));
+    else if ( TypesGen.isCell(a) ) {
+      if ( TypesGen.isCell(b) ) {
+        return Cell.equals(TypesGen.asCell(a), TypesGen.asCell(b));
+      }
+      else {
+        return false;
+      }
     }
-    else if ( TypesGen.isCell(a) && TypesGen.isCell(b) ) {
-      return Cell.equals(TypesGen.asCell(a), TypesGen.asCell(b));
+    else if ( TypesGen.isCell(b) ) {
+      return false;
     }
     else {
+      return Atom.equals(a, b);
+    }
+  }
+
+  public static boolean equalsMugged(Object a, Object b) {
+    if ( a == b ) {
+      return true;
+    }
+    else if ( TypesGen.isCell(a) ) {
+      if ( TypesGen.isCell(b) ) {
+        return Cell.equalsMugged(TypesGen.asCell(a), TypesGen.asCell(b));
+      }
+      else {
+        return false;
+      }
+    }
+    else if ( TypesGen.isCell(b) ) {
       return false;
+    }
+    else {
+      return Atom.equals(a, b);
     }
   }
   
@@ -204,8 +229,10 @@ public class Noun {
   public static void print(Object noun, OutputStreamWriter out) {
     try {
       pretty(out, noun, false);
+      out.flush();
     }
     catch ( IOException e ) {
+      e.printStackTrace();
     }
   }
 
@@ -213,9 +240,11 @@ public class Noun {
     print(noun, out);
     try {
       out.write('\n');
+      out.flush();
     }
     catch ( IOException e ) {
+      e.printStackTrace();
     }
   }
-  
+
 }

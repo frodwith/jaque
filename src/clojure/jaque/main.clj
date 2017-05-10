@@ -72,12 +72,12 @@
         m       (MachineRec. ctx ken roc)]
     ; (.nock m 0 ken) ; "to register jets". Goes away in slim-boot?
     (println "live: kernel activated")
-    (Noun/println (.call m "add" (noun [40 2])))))
+    (Noun/println (.call m "add" (noun [40 2])) *out*)))
 
 (defn boot-formula [jam-path jet-path]
   (let [formula (read-jam jam-path)
         jets    (read-jets jet-path)]
-    (prn (.nock (Context. jets) 0 formula))))
+    (Noun/println (.nock (Context. jets) 0 formula) *out*)))
 
 (def cli-options
   [["-M" "--formula PATH" "Path to jammed nock formula (nock with 0 subject, print result)"]
