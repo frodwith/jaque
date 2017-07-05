@@ -10,4 +10,12 @@ public class Tape {
     return list;
   }
 
+  public static String toString(Object tape) {
+    StringBuilder b = new StringBuilder();
+    for ( Object atom : new List(tape)) {
+      b.append((char) Atom.expectInt(atom));
+    }
+    return b.toString();
+  }
+
 }

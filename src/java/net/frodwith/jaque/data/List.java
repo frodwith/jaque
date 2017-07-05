@@ -53,7 +53,7 @@ public class List implements Iterable<Object> {
   }
 
   public static Object lent(Object ram) {
-    Object i = 0;
+    Object i = 0L;
     for ( Object x : new List(ram) ) {
       i = Atom.increment(i);
     }

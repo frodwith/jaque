@@ -3,19 +3,19 @@ package net.frodwith.jaque.data;
 import net.frodwith.jaque.Bail;
 
 public final class Tank {
-  private static final Object SPACE = Character.getNumericValue(' ');
+  private static final long SPACE = 32L;
 
   private static final Object re_ram(Object tac) {
     Cell c = Cell.expect(tac);
-    int  tem = Atom.expectUnsignedInt(c.head);
+    long  tem = Atom.expectLong(c.head);
     
-    if ( Atom.LEAF == tem ) {
+    if ( Atom.LEAF.equals(tem) ) {
       return c.tail;
     }
-    else if ( Atom.PALM == tem ) {
+    else if ( Atom.PALM.equals(tem) ) {
       return re_ram_palm(c.tail);
     }
-    else if ( Atom.ROSE == tem ) {
+    else if ( Atom.ROSE.equals(tem) ) {
       return re_ram_rose(c.tail);
     }
     else {
@@ -53,15 +53,15 @@ public final class Tank {
   
   private static final Object re_win_buc(Object tac, Object tab, Object edg, Object lug) {
     Cell c = Cell.expect(tac);
-    int tem = Atom.expectUnsignedInt(c.head);
+    long tem = Atom.expectLong(c.head);
     
-    if ( Atom.LEAF == tem ) {
+    if ( Atom.LEAF.equals(tem) ) {
       return re_win_leaf(tac, tab, edg, lug);
     }
-    else if ( Atom.PALM == tem ) {
+    else if ( Atom.PALM.equals(tem) ) {
       return re_win_palm(tac, tab, edg, lug);
     }
-    else if ( Atom.ROSE == tem ) {
+    else if ( Atom.ROSE.equals(tem) ) {
       return re_win_rose(tac, tab, edg, lug);
     }
     else {
@@ -70,7 +70,7 @@ public final class Tank {
   }
   
   private static final Object re_win_din(Object tab, Object edg) {
-    return Atom.mod(Atom.add(2, tab), Atom.mul(2, Atom.div(edg, 3)));
+    return Atom.mod(Atom.add(2L, tab), Atom.mul(2L, Atom.div(edg, 3L)));
   }
   
   private static final Object re_win_fit(Object tac, Object tab, Object edg) {
@@ -87,7 +87,7 @@ public final class Tank {
   }
   
   private static final Object re_win_palm(Object tac, Object tab, Object edg, Object lug) {
-    if ( 0 == Atom.compare(Atom.YES, re_win_fit(tac, tab, edg)) ) {
+    if ( re_win_fit(tac, tab, edg).equals(Atom.YES) ) {
       return re_win_rig(re_ram(tac), tab, lug);
     }
     else {
@@ -100,12 +100,12 @@ public final class Tank {
       }
       Cell res = Cell.expect(bub.tail);
       if ( Atom.isZero(res.tail) ) {
-        Object bat = Atom.add(2,  tab),
+        Object bat = Atom.add(2L,  tab),
                gul = re_win_buc(res.head, tab, edg, lug);
         return re_win_rig(qua.q, bat, gul);
       }
       else {
-        Object lyn = Atom.mul(2,  List.lent(res)),
+        Object lyn = Atom.mul(2L,  List.lent(res)),
                qyr = re_win_palm_qyr(tab, edg, lyn, res, lug);
         return re_win_wig(qua.q, tab, edg, qyr);
       }
@@ -118,7 +118,7 @@ public final class Tank {
     }
     Cell c = Cell.expect(res);
     Object cat = c.head,
-           sub = Atom.sub(lyn, 2),
+           sub = Atom.sub(lyn, 2L),
            bat = Atom.add(tab, sub),
            gul = re_win_palm_qyr(tab, edg, sub, c.tail, lug);
 
@@ -134,7 +134,7 @@ public final class Tank {
     Cell bub = Cell.expect(c.tail);
     Trel tre = Trel.expect(bub.head);
     
-    if ( 0 == Atom.compare(Atom.YES, re_win_fit(tac, tab, edg)) ) {
+    if ( re_win_fit(tac, tab, edg).equals(Atom.YES) ) {
       return re_win_rig(re_ram(tac), tab, lug);
     }
     else {
@@ -175,7 +175,7 @@ public final class Tank {
     Object lin = List.lent(hom),
            wug = Atom.increment(Atom.add(tab, lin));
 
-    if ( 0 != Atom.compare(Atom.NO, re_win_wig_mir(c.head, wug)) ) {
+    if ( re_win_wig_mir(c.head, wug).equals(Atom.NO) ) {
       return re_win_rig(hom, tab, lug);
     }
     else {
@@ -194,7 +194,7 @@ public final class Tank {
       return Atom.YES;
     }
     Cell c = Cell.expect(mir);
-    if ( 0 != Atom.compare(SPACE, c.head) ) {
+    if ( c.head.equals(SPACE) ) {
       return Atom.NO;
     }
     return re_win_wig_mir(c.tail, Atom.dec(wug));

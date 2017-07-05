@@ -78,19 +78,19 @@ public class Atom {
   public static final long NO = 1L;
 
   /* Don't try to make these an enum somewhere. Or do, see if I care. But I warned you. */
-  public static final long FAST = mote("fast"),
-                           MEMO = mote("memo"),
-                           SPOT = mote("spot"),
-                           MEAN = mote("mean"),
-                           HUNK = mote("hunk"),
-                           LOSE = mote("lose"),
-                           SLOG = mote("slog"),
-                           LEAF = mote("leaf"),
-                           ROSE = mote("rose"),
-                           PALM = mote("palm");
+  public static final Object FAST = mote("fast"),
+                             MEMO = mote("memo"),
+                             SPOT = mote("spot"),
+                             MEAN = mote("mean"),
+                             HUNK = mote("hunk"),
+                             LOSE = mote("lose"),
+                             SLOG = mote("slog"),
+                             LEAF = mote("leaf"),
+                             ROSE = mote("rose"),
+                             PALM = mote("palm");
 
   public static long mote(String s) {
-    return expectUnsignedInt(cordToString(s));
+    return expectUnsignedInt(stringToCord(s));
   }
 
   private static final NumberFormat dotted = NumberFormat.getNumberInstance(Locale.GERMAN);
@@ -612,7 +612,7 @@ public class Atom {
   
   public static int expectUnsignedInt(Object a) {
     long al  = expectLong(a);
-    if ( al != (al & 0x00000000FFFFFFFF) ) {
+    if ( al != (al & 0x00000000FFFFFFFFL) ) {
       throw new Bail();
     }
     return (int) al;
