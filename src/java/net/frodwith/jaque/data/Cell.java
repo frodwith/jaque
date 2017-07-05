@@ -1,7 +1,9 @@
 package net.frodwith.jaque.data;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
+import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.truffle.TypesGen;
 
 /* Because we must use Object fields for the head and the tail to accomodate the atom
@@ -35,6 +37,7 @@ public class Cell {
     }
   }
   
+  @TruffleBoundary
   public static boolean equals(Cell a, Cell b) {
     if (a == b) {
       return true;
@@ -48,6 +51,7 @@ public class Cell {
   }
 
   // fast-path: if i am mugged, my head and tail are also mugged
+  @TruffleBoundary
   public static boolean equalsMugged(Cell a, Cell b) {
     if ( a == b ) {
       return true;
@@ -60,25 +64,32 @@ public class Cell {
     }
   }
 
+  @TruffleBoundary
   public void calculateMug() {
     if ( 0 == mug ) {
       mug = mug_both(Noun.mug(head), Noun.mug(tail));
     }
   }
   
-  @TruffleBoundary
   public static int getMug(Cell c) {
     return c.hashCode();
   }
 
-  @TruffleBoundary
   public boolean equals(Object o) {
     return TypesGen.isCell(o) && equals(this, TypesGen.asCell(o));
   }
   
-  @TruffleBoundary
   public int hashCode() {
     calculateMug();
     return mug;
+  }
+  
+  public static Cell expect(Object noun) {
+    try {
+      return TypesGen.expectCell(noun);
+    }
+    catch ( UnexpectedResultException e ){
+      throw new Bail();
+    }
   }
 }

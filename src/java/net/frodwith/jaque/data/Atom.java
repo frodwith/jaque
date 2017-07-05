@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Stack;
 
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -76,18 +77,23 @@ public class Atom {
   public static final long YES = 0L;
   public static final long NO = 1L;
 
-  public static final Object FAST = stringToCord("fast");
-  public static final Object MEMO = stringToCord("memo");
-  public static final Object SPOT = stringToCord("spot");
-  public static final Object MEAN = stringToCord("mean");
-  public static final Object HUNK = stringToCord("hunk");
-  public static final Object LOSE = stringToCord("lose");
-  public static final Object SLOG = stringToCord("slog");
-  public static final Object LEAF = stringToCord("leaf");
+  /* Don't try to make these an enum somewhere. Or do, see if I care. But I warned you. */
+  public static final long FAST = mote("fast"),
+                           MEMO = mote("memo"),
+                           SPOT = mote("spot"),
+                           MEAN = mote("mean"),
+                           HUNK = mote("hunk"),
+                           LOSE = mote("lose"),
+                           SLOG = mote("slog"),
+                           LEAF = mote("leaf"),
+                           ROSE = mote("rose"),
+                           PALM = mote("palm");
+
+  public static long mote(String s) {
+    return expectUnsignedInt(cordToString(s));
+  }
+
   private static final NumberFormat dotted = NumberFormat.getNumberInstance(Locale.GERMAN);
-
-
-
   public final Object value;
   
  /*
@@ -604,6 +610,14 @@ public class Atom {
     return ai;
   }
   
+  public static int expectUnsignedInt(Object a) {
+    long al  = expectLong(a);
+    if ( al != (al & 0x00000000FFFFFFFF) ) {
+      throw new Bail();
+    }
+    return (int) al;
+  }
+
   public static long expectLong(Object a) {
     try {
       return TypesGen.expectLong(a);

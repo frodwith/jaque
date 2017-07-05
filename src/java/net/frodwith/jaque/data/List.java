@@ -43,4 +43,31 @@ public class List implements Iterable<Object> {
       }
     }
   }
+
+  public static Object weld(Object dex, Object sin) {
+    if ( Atom.isZero(dex) ) {
+      return sin;
+    }
+    Cell c = Cell.expect(dex);
+    return new Cell(c.head, weld(c.tail, sin));
+  }
+
+  public static Object lent(Object ram) {
+    Object i = 0;
+    for ( Object x : new List(ram) ) {
+      i = Atom.increment(i);
+    }
+    return i;
+  }
+
+  public static Object slag(Object a, Object b) {
+    while ( !Atom.isZero(a) ) {
+      if ( !Noun.isCell(b) ) {
+        return 0L;
+      }
+      b = Cell.expect(b).tail;
+      a = Atom.dec(a);
+    }
+    return b;
+  }
 }
