@@ -10,12 +10,12 @@ public final class LiteralLongNode extends FormulaNode {
   }
 
   @Override
-  public Object executeGeneric(VirtualFrame frame) {
+  public long executeLong(VirtualFrame frame) {
     return value;
   }
 
   @Override
-  public long executeLong(VirtualFrame frame) {
+  public Object executeGeneric(VirtualFrame frame) {
     return value;
   }
 

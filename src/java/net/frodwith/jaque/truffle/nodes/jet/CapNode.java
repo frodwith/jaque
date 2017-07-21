@@ -4,7 +4,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 
 import net.frodwith.jaque.data.Atom;
 
-public abstract class CapNode extends UnaryGateNode {
+public abstract class CapNode extends GateNode {
 
   @Specialization
   protected long cap(long atom) {

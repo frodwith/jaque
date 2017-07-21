@@ -1,18 +1,13 @@
 package net.frodwith.jaque.truffle.nodes.jet;
 
-import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Cell;
-import net.frodwith.jaque.truffle.TypesGen;
 
-public abstract class PairGateNode extends GateNode {
+public abstract class PairGateNode extends SampleNode {
   protected abstract Object executePair(Object a, Object b);
   
   @Override
-  public Object doGate(Object subject) {
-    if ( !TypesGen.isCell(subject) ) {
-      throw new Bail();
-    }
-    Cell c = TypesGen.asCell(subject);
+  public Object doSample(Object sample) {
+    Cell c = Cell.expect(sample);
     return executePair(c.head, c.tail);
   }
 }

@@ -61,16 +61,11 @@
       pro)))
 
 (defn boot-pill [pill-path jet-path]
-  (let [pill    ^Cell (read-jam pill-path)
-        jets    (read-jets jet-path)
-        ;ken     (.head pill)
-        ken pill ; ivory?
-        ; roc     (.tail pill) ; technically, yes.
+  (let [jets    (read-jets jet-path)
+        ken     (read-jam pill-path)
         ctx     (Context. jets)
-        ; roc     (.nock ctx 0 ken) ; but maybe, just maybe
-        roc     (.tail (.tail (.nock ctx 0 ken))) ; ivory-boot?
+        roc     (.tail (.tail (.nock ctx 0 ken)))
         m       (MachineRec. ctx ken roc)]
-    ; (.nock m 0 ken) ; "to register jets". Goes away in slim-boot?
     (println "live: kernel activated")
     (Noun/println (.call m "add" (noun [40 2])) *out*)))
 

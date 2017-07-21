@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
+import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.TypesGen;
@@ -55,6 +56,10 @@ public final class Location {
 
     for ( Map.Entry<String, Object> e : hooks.entrySet() ) {
       axisToName.put(e.getValue(), e.getKey());
+    }
+    
+    if ( name == "hex" ) {
+      System.err.println("here");
     }
 
     this.drivers = new HashMap<Object, Class<? extends ImplementationNode>>();

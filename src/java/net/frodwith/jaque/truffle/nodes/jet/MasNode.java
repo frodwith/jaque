@@ -4,7 +4,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 
 import net.frodwith.jaque.data.Atom;
 
-public abstract class MasNode extends UnaryGateNode {
+public abstract class MasNode extends GateNode {
 
   @Specialization
   protected long mas(long atom) {

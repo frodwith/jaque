@@ -7,6 +7,8 @@ import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.List;
+import net.frodwith.jaque.data.Tank;
+import net.frodwith.jaque.data.Tape;
 import net.frodwith.jaque.truffle.TypesGen;
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 
@@ -19,30 +21,20 @@ public final class SlogHintNode extends DynamicHintFormula {
   @Override
   public Object executeGeneric(VirtualFrame frame) {
     try {
-      Cell slog = TypesGen.expectCell(hint.executeGeneric(frame));
-      Cell tank = TypesGen.expectCell(slog.tail);
-      int pri  = Atom.expectInt(slog.head);
-      StringBuilder b = new StringBuilder();
+      Cell slog = Cell.expect(hint.executeGeneric(frame));
+      Cell tank = Cell.expect(slog.tail);
+      int  pri  = Atom.expectInt(slog.head);
       
       if ( pri > 0 ) {
         for ( int i = 0; i < pri; ++i ) {
-          b.append('>');
+          System.out.print('>');
         }
-        b.append(' ');
+        System.out.print(' ');
       }
-
-      if ( Atom.LEAF.equals(tank.head) ) {
-        for ( Object o : new List(tank.tail) ) {
-          b.append((char) Atom.expectInt(o));
-        }
-        System.out.println(b);
+      
+      for ( Object line : new List(Tank.wash(2L, 80L, tank)) ) {
+        System.out.println(Tape.toString(line));
       }
-      else {
-        System.err.println("too dumb to print this tank");
-        System.err.println(tank);
-      }
-    }
-    catch ( UnexpectedResultException e ) {
     }
     catch ( Bail e ) {
     }
