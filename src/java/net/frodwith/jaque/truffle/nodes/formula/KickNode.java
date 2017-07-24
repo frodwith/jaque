@@ -58,9 +58,12 @@ public abstract class KickNode extends FormulaNode {
       @Cached("getLocation(core)") Location loc,
       @Cached("makeConstants(loc)") Object[] constants,
       @Cached("makeLocationNodes(loc)") FragmentationNode[] nodes,
-      @Cached("getDriver(loc, axis)") ImplementationNode driver) {
+      @Cached("getLabel(core)") KickLabel label,
+      @Cached("getFragmentationNode()") FragmentationNode fragment,
+      @Cached("getTarget(label, core, fragment)") CallTarget target,
+      @Cached("getDriver(loc, axis, target)") ImplementationNode driver) {
     squawk("jet", core);
-    return driver.doJet(core);
+    return driver.doJet(frame, core);
   }
   
   protected Object[] makeConstants(Location loc) {
@@ -125,10 +128,10 @@ public abstract class KickNode extends FormulaNode {
     }
   }
   
-  private static Set<String> noSeen = new HashSet<String>();
+  //private static Set<String> noSeen = new HashSet<String>();
 
   @TruffleBoundary
-  protected ImplementationNode getDriver(Location loc, Object axis) {
+  protected ImplementationNode getDriver(Location loc, Object axis, CallTarget fallback) {
     CompilerAsserts.neverPartOfCompilation();
     if ( null == loc ) {
       return null;
@@ -153,8 +156,8 @@ public abstract class KickNode extends FormulaNode {
       return null;
     }
     try {
-      Method cons = klass.getMethod("create", Context.class);
-      return (ImplementationNode) cons.invoke(null, getContext());
+      Method cons = klass.getMethod("create", Context.class, CallTarget.class);
+      return (ImplementationNode) cons.invoke(null, getContext(), fallback);
     }
     catch (NoSuchMethodException e) {
       e.printStackTrace();
@@ -170,9 +173,13 @@ public abstract class KickNode extends FormulaNode {
   
   public void squawk(String dbg, Cell core) {
     Location loc = getLocation(core);
+    Object axis = getAxis();
     String name = loc == null ? "unregistered" : loc.label;
     if ( null != loc ) {
-      System.err.println(dbg + ": axis " + getAxis() + " of " + name);
+      String arm = loc.axisToName.containsKey(axis) 
+                 ? loc.axisToName.get(axis)
+                 : "/" + axis;
+      System.err.println(dbg + ": " + arm + " of " + name);
     }
   }
 

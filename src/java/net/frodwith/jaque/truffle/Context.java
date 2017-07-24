@@ -22,6 +22,7 @@ import net.frodwith.jaque.data.Fragment;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.driver.Arm;
 import net.frodwith.jaque.truffle.driver.AxisArm;
+import net.frodwith.jaque.truffle.driver.NamedArm;
 import net.frodwith.jaque.truffle.nodes.JaqueRootNode;
 import net.frodwith.jaque.truffle.nodes.TopRootNode;
 import net.frodwith.jaque.truffle.nodes.formula.BailNode;
@@ -111,7 +112,9 @@ public class Context {
     }
     
     for ( Map.Entry<String, List<Arm>> e : temp.entrySet() ) {
-      drivers.put(e.getKey(), e.getValue().toArray(new Arm[0]));
+      List<Arm> al = e.getValue();
+      Arm[] aa = new Arm[al.size()];
+      drivers.put(e.getKey(), al.toArray(aa));
     }
   }
   

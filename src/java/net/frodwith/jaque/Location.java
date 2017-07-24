@@ -53,15 +53,11 @@ public final class Location {
         throw new RuntimeException("Registering dynamic location of non-core");
       }
     }
-
+    
     for ( Map.Entry<String, Object> e : hooks.entrySet() ) {
       axisToName.put(e.getValue(), e.getKey());
     }
     
-    if ( name == "hex" ) {
-      System.err.println("here");
-    }
-
     this.drivers = new HashMap<Object, Class<? extends ImplementationNode>>();
     if ( null != arms ) {
       for ( Arm a : arms ) {

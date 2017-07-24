@@ -5,7 +5,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.data.Atom;
 
-public abstract class DecNode extends UnaryGateNode {
+public abstract class DecNode extends GateNode {
 
   @Specialization
   protected long dec(long atom) {

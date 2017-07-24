@@ -4,7 +4,7 @@
   (:require [clojure.edn :as edn])
   (:require [clojure.tools.cli :as cli])
   (:require [jaque.noun :refer [noun]])
-  (:import (net.frodwith.jaque.truffle.driver Arm AxisArm)
+  (:import (net.frodwith.jaque.truffle.driver Arm NamedArm AxisArm)
            (net.frodwith.jaque
              data.Atom data.Cell data.Noun
              truffle.Context
@@ -12,14 +12,25 @@
   (:gen-class))
 
 (defn read-jets [path]
-	(let [jets (edn/read (java.io.PushbackReader. (io/reader path)))]
-    (into-array Arm
-      (map (fn [[label class-name]]
-             (let [klass (Class/forName class-name)]
-               (if-not (isa? klass ImplementationNode)
-                 (throw (Exception. (str "Invalid jet class" class-name)))
-                 (AxisArm. label 2 klass))))
-           (:gates jets)))))
+	(let [jets  (edn/read (java.io.PushbackReader. (io/reader path)))
+        klass (fn [class-name]
+                (let [k (Class/forName class-name)]
+                  (if (isa? k ImplementationNode)
+                    k
+                    (throw (Exception. (str "Invalid jet class" class-name))))))
+
+        gates (map (fn [[label class-name]]
+                     (AxisArm. label 2 (klass class-name)))
+                   (:gates jets))
+        arms  (map (fn [[label typ class-name]]
+                     (let [k (klass class-name)]
+                       (cond (contains? typ :name) 
+                               (NamedArm. label (:name typ) k)
+                             (contains? typ :axis)
+                               (AxisArm. label (:axis typ) k)
+                             :else (throw (Exception. "Invalid arm type" (str typ))))))
+                   (:arms jets))]
+    (into-array Arm (concat arms gates))))
 
 (defn read-jam [path]
   (let [file (io/as-file path)]
