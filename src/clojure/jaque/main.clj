@@ -62,13 +62,24 @@
           pro (.slam m gat txt)]
       pro)))
 
-(defn boot-pill [pill-path jet-path]
-  (let [jets    (read-jets jet-path)
-        ken     (read-jam pill-path)
-        ctx     (Context. jets)
-        roc     (.tail (.tail (.nock ctx 0 ken)))
-        m       (MachineRec. ctx ken roc)]
-    (println "live: kernel activated")
+(defn boot-ivory [pill-path jet-path]
+  (let [jets (read-jets jet-path)
+        ken  (read-jam pill-path)
+        ctx  (Context. jets)
+        roc  (.tail (.tail (.nock ctx 0 ken)))
+        m    (MachineRec. ctx ken roc)]
+    (println "ivory: kernel activated")
+    (Noun/println (call m "add" (noun [40 2])) *out*)))
+
+(defn boot-solid [pill-path jet-path]
+  (let [jets (read-jets jet-path)
+        sys  (read-jam pill-path)
+        ctx  (Context. jets)
+        ken  (.head sys)
+        roc  (.tail sys)
+        cor  (.nock ctx 0 ken) ; "to bind jets"
+        m    (MachineRec. ctx ken roc)]
+    (println "solid: kernel activated")
     (Noun/println (call m "add" (noun [40 2])) *out*)))
 
 (defn boot-formula [jam-path jet-path]
@@ -78,7 +89,8 @@
 
 (def cli-options
   [["-M" "--formula PATH" "Path to jammed nock formula (nock with 0 subject, print result)"]
-   ["-B" "--pill PATH" "Path to urbit boot pill"]
+   ["-I" "--ivory PATH" "Path to ivory pill"]
+   ["-B" "--solid PATH" "Path to solid pill"]
    ["-J" "--jets PATH" "Path to EDN jet config"]
    ["-h" "--help"]])
 
@@ -88,11 +100,11 @@
         (println summary)
 			errors
         (println errors)
-      (and (:pill options) (:formula options))
-        (println "formula and pill are mutually exclusive")
-      (:pill options)
-        (boot-pill (:pill options) (:jets options))
+      (not= 1 (count (filter #(contains? options %) [:ivory :solid :formula])))
+        (println "Pick one of [formula,solid,ivory]")
+      (:ivory options)
+        (boot-ivory (:ivory options) (:jets options))
+      (:solid options)
+        (boot-solid (:solid options) (:jets options))
       (:formula options)
-        (boot-formula (:formula options) (:jets options))
-      :else
-        (println "specify one of formula or pill"))))
+        (boot-formula (:formula options) (:jets options)))))
