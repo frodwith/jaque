@@ -179,7 +179,7 @@ public abstract class KickNode extends FormulaNode {
       String arm = loc.axisToName.containsKey(axis) 
                  ? loc.axisToName.get(axis)
                  : "/" + axis;
-      System.err.println(dbg + ": " + arm + " of " + name);
+      //System.err.println(dbg + ": " + arm + " of " + name);
     }
   }
 

@@ -54,21 +54,12 @@
     (let [core (noun [(.head gate) sample (.tail (.tail gate))])
           fom  (noun [9 2 0 1])]
       (.nock context core fom)))
-
-    ;(let [fom (noun [9 2 [0 2] [1 sample] 0 7])]
-    ;  (println "slam formula" (Noun/toString fom))
-    ;  (.nock context gate fom)))
   (call [m gate-name sample]
     (.slam m (.wish m gate-name) sample))
   (wish [m src]
     (let [txt (Atom/stringToCord src)
           gat (.nock context kernel-core (noun [9 20 0 1]))
           pro (.slam m gat txt)]
-      ;(println "txt" (Atom/cordToString txt))
-      ;(print "head of wish gate")
-      ;(Noun/println (.head gat) *out*)
-      ;(print "head of wish product")
-      ;(Noun/println (.head pro) *out*)
       pro)))
 
 (defn boot-pill [pill-path jet-path]
@@ -78,7 +69,7 @@
         roc     (.tail (.tail (.nock ctx 0 ken)))
         m       (MachineRec. ctx ken roc)]
     (println "live: kernel activated")
-    (Noun/println (.call m "add" (noun [40 2])) *out*)))
+    (Noun/println (call m "add" (noun [40 2])) *out*)))
 
 (defn boot-formula [jam-path jet-path]
   (let [formula (read-jam jam-path)

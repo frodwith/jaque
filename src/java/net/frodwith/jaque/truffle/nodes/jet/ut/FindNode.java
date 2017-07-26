@@ -3,6 +3,7 @@ package net.frodwith.jaque.truffle.nodes.jet.ut;
 import com.oracle.truffle.api.dsl.Specialization;
 
 import net.frodwith.jaque.data.Cell;
+import net.frodwith.jaque.data.Noun;
 
 public abstract class FindNode extends PartialMemoNode {
   @Specialization
@@ -14,6 +15,8 @@ public abstract class FindNode extends PartialMemoNode {
     Object sut = Cell.expect(van.tail).head,
            way = sam.head,
            hyp = sam.tail;
+    
+    Noun.println(hyp);
     
     return new Cell(tip("find", van), new Cell(sut, new Cell(way, hyp)));
   }

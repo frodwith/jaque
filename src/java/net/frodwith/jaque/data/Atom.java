@@ -1016,7 +1016,7 @@ public class Atom {
   }
 
   public static Object peg(Object axis, Object to) {
-    if ( equals(axis, 1L) ) {
+    if ( equals(to, 1L) ) {
       return axis;
     }
     else {

@@ -1,8 +1,5 @@
 package net.frodwith.jaque.truffle;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,8 +18,6 @@ import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Fragment;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.driver.Arm;
-import net.frodwith.jaque.truffle.driver.AxisArm;
-import net.frodwith.jaque.truffle.driver.NamedArm;
 import net.frodwith.jaque.truffle.nodes.JaqueRootNode;
 import net.frodwith.jaque.truffle.nodes.TopRootNode;
 import net.frodwith.jaque.truffle.nodes.formula.BailNode;
@@ -42,39 +37,12 @@ import net.frodwith.jaque.truffle.nodes.formula.LiteralLongNode;
 import net.frodwith.jaque.truffle.nodes.formula.NockNode;
 import net.frodwith.jaque.truffle.nodes.formula.PushNode;
 import net.frodwith.jaque.truffle.nodes.formula.SameNodeGen;
+import net.frodwith.jaque.truffle.nodes.formula.hint.BawkHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.DiscardHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.FastHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.MemoHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.SlogHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.StackHintNode;
-import net.frodwith.jaque.truffle.nodes.jet.AddNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.BexNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.CanNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.CapNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.CatNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.ConNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.CutNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.DecNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.DisNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.DivNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.DvrNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.EndNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.GteNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.GthNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.LshNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.LteNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.LthNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.MasNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.MetNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.MixNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.ModNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.MugNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.MulNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.PegNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.RapNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.RepNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.RipNodeGen;
-import net.frodwith.jaque.truffle.nodes.jet.RshNodeGen;
 
 public class Context {
   
@@ -228,6 +196,9 @@ public class Context {
 
             if ( Atom.MEMO.equals(kind) ) {
               return new MemoHintNode(next);
+            }
+            else if ( kind.equals(Atom.mote("bawk")) ) {
+              return new BawkHintNode(dynF, next);
             }
             else if ( Atom.FAST.equals(kind) ) {
               return new FastHintNode(this, dynF, next);
