@@ -16,8 +16,6 @@ public abstract class FindNode extends PartialMemoNode {
            way = sam.head,
            hyp = sam.tail;
     
-    Noun.println(hyp);
-    
     return new Cell(tip("find", van), new Cell(sut, new Cell(way, hyp)));
   }
 }
