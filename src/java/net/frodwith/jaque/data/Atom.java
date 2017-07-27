@@ -104,11 +104,11 @@ public class Atom {
     this.value = atom;
   }
   
-  public static int[] add(int[] a, int[] b) {
+  public static Object add(int[] a, int[] b) {
     Square s   = new Square(a, b);
     int[] dst  = new int[s.len+1];
     dst[s.len] = MPN.add_n(dst, s.x, s.y, s.len);
-    return (int[]) malt(dst);
+    return malt(dst);
   }
   
   public static long add(long a, long b) throws ArithmeticException {

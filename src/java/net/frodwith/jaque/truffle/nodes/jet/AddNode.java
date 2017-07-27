@@ -12,7 +12,7 @@ public abstract class AddNode extends PairGateNode {
   }
 
   @Specialization
-  protected int[] add(int[] a, int[] b) {
+  protected Object add(int[] a, int[] b) {
     return Atom.add(a, b);
   }
 

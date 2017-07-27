@@ -28,3 +28,7 @@
                           (Cell. (noun (first items)) (f (rest items) (dec n)))))
                       (seq a) (count a))
         :else (throw (IllegalArgumentException.))))
+
+(defn seq->it [s]
+  (noun (conj (into [] s) 0)))
+
