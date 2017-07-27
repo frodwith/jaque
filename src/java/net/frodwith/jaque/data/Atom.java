@@ -1,22 +1,27 @@
 package net.frodwith.jaque.data;
 
-import com.sangupta.murmur.Murmur3;
-
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Stack;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
+
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.sangupta.murmur.Murmur3;
 
 import gnu.math.MPN;
 import net.frodwith.jaque.Bail;
@@ -102,6 +107,55 @@ public class Atom {
   public Atom(Object atom) {
     assert Noun.isAtom(atom);
     this.value = atom;
+  }
+
+  private static byte[] forceBytes(byte[] src, int maxLen) {
+    if ( src.length == maxLen ) {
+      return src;
+    }
+    if ( src.length > maxLen ) {
+      throw new Bail();
+    }
+    byte[] r = new byte[32];
+    System.arraycopy(src, 0, r, 0, src.length);
+    return r;
+  }
+  
+  private static Object doAesc(int mode, Object a, Object b) {
+    byte[] ay = forceBytes(toByteArray(a, LITTLE_ENDIAN), 32),
+           by = forceBytes(toByteArray(b, LITTLE_ENDIAN), 16);
+    
+    try {
+      Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
+      SecretKeySpec k = new SecretKeySpec(ay, "AES");
+      c.init(mode, k);
+
+      return fromByteArray(Arrays.copyOfRange(c.doFinal(by), 0, 16), LITTLE_ENDIAN);
+    }
+    catch (BadPaddingException e) {
+      e.printStackTrace();
+    }
+    catch (IllegalBlockSizeException e) {
+      e.printStackTrace();
+    }
+    catch (InvalidKeyException e) {
+      e.printStackTrace();
+    } 
+    catch (NoSuchAlgorithmException e) {
+      e.printStackTrace();
+    }
+    catch (NoSuchPaddingException e) {
+      e.printStackTrace();
+    }
+    throw new Bail();   
+  }
+  
+  public static Object aescEn(Object key, Object txt) {
+    return doAesc(Cipher.ENCRYPT_MODE, key, txt);
+  }
+
+  public static Object aescDe(Object key, Object txt) {
+    return doAesc(Cipher.DECRYPT_MODE, key, txt);
   }
   
   public static Object add(int[] a, int[] b) {
@@ -1187,6 +1241,42 @@ public class Atom {
   public static int[] slaq(byte bloq, int len) {
     int big = ((len << bloq) + 31) >>> 5;
     return new int[big];
+  }
+  
+  public static Object shan(Object atom) {
+    byte[] bytes, hash;
+
+    bytes = Atom.toByteArray(atom, LITTLE_ENDIAN);
+    try {
+      hash = MessageDigest.getInstance("SHA-1").digest(bytes);
+      // XX: Why is this backwards?
+      return Atom.fromByteArray(hash, BIG_ENDIAN);
+    }
+    catch (NoSuchAlgorithmException e) {
+      e.printStackTrace();
+      throw new Bail();
+    }
+  }
+  
+  private static Object sha_help(Object len, Object atom, String algo) {
+    byte[] bytes, hash;
+    bytes = Atom.toByteArray(cut((byte)3, 0L, len, atom), LITTLE_ENDIAN);
+    try {
+      hash = MessageDigest.getInstance(algo).digest(bytes);
+      return Atom.fromByteArray(hash, LITTLE_ENDIAN);
+    }
+    catch (NoSuchAlgorithmException e) {
+      e.printStackTrace();
+      throw new Bail();
+    }   
+  }
+  
+  public static Object shay(Object len, Object atom) {
+    return sha_help(len, atom, "SHA-256");
+  }
+
+  public static Object shal(Object len, Object atom) {
+    return sha_help(len, atom, "SHA-512");
   }
 
   public static Object stringToCord(String s) {

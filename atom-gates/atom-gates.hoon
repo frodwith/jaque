@@ -90,7 +90,7 @@
         :: 114 - not testing muk because it's complicated, test oob
         (mul 0 1)  (mul 1 5)  (mul 2 2)  (mul 256 256)  (mul 0xffff 0xffff)
         :: 119
-        (peg 2 7)  (peg 3 16)  (peg 16 3)  (peg 0xffaf 0xabcd.dead.beef.cade)
+        (peg 2 7)  (peg 1 16)  (peg 16 3)  (peg 0xffaf 0xabcd.dead.beef.cade)
         :: 123
         (rap 2 ~[2 4 6])  (rap 4 ~[0xff 0xaa 0xcc 0xdd])
         (rap 5 ~[0xdead.beef 0xfeed.daab])
@@ -230,7 +230,7 @@
         :: 114 - not testing muk because it's complicated, test oob
         (mul 0 1)  (mul 1 5)  (mul 2 2)  (mul 256 256)  (mul 0xffff 0xffff)
         :: 119
-        (peg 2 7)  (peg 3 16)  (peg 16 3)  (peg 0xffaf 0xabcd.dead.beef.cade)
+        (peg 2 7)  (peg 1 16)  (peg 16 3)  (peg 0xffaf 0xabcd.dead.beef.cade)
         :: 123
         (rap 2 ~[2 4 6])  (rap 4 ~[0xff 0xaa 0xcc 0xdd])
         (rap 5 ~[0xdead.beef 0xfeed.daab])
