@@ -4,6 +4,7 @@
   (:require [clojure.edn :as edn])
   (:require [clojure.tools.cli :as cli])
   (:require [jaque.noun :refer [noun seq->it]])
+  (:refer-clojure :exclude [time])
   (:import (java.nio.file Paths)
            (net.frodwith.jaque.truffle.driver Arm NamedArm AxisArm)
            (net.frodwith.jaque
@@ -46,17 +47,23 @@
   (Atom/cue (atom-from-file (io/as-file path))))
 
 (defprotocol Machine
-  (nock [m subject formula])
+  (time [m da])
+  (numb [m])
   (slam [m gate sample])
   (call [m gate-name sample])
   (arvo-gate [m axis])
   (poke [m ovo])
-  (wish [m src]))
+  (plan [m ovo])
+  (wish [m src])
+  (nock [m subject formula]))
 
-(defrecord MachineRec [context now kernel-formula kernel-core]
+(defrecord MachineRec [context arvo poke-q now wen sev sen]
   Machine
-  (nock [m subject formula]
-    (.nock context subject formula))
+  (time [m da]
+    (assoc m :now da :wen (call m "scot" [:da da])))
+  (numb [m]
+    (let [n (Noun/mug now)]
+      (assoc m :sev sev :sen (call m "scot" [:uv n]))))
   (slam [m gate sample]
     (let [core (noun [(.head gate) sample (.tail (.tail gate))])
           fom  (noun [9 2 0 1])]
@@ -64,11 +71,26 @@
   (call [m gate-name sample]
     (slam m (wish m gate-name) sample))
   (arvo-gate [m axis]
-    (nock m kernel-core (noun [9 axis 0 1])))
+    (nock m arvo (noun [9 axis 0 1])))
+  (plan [m ovo]
+    (assoc m :poke-q (conj poke-q ovo)))
   (poke [m ovo]
     (slam m (arvo-gate m 42) (noun [now ovo])))
   (wish [m src]
-    (slam m (arvo-gate m 20) (Atom/stringToCord src))))
+    (slam m (arvo-gate m 20) (Atom/stringToCord src)))
+  (nock [m subject formula]
+    (.nock context subject formula)))
+
+(defn ames-init [m]
+  (plan m (noun [[0 :newt (:sen m) 0] :barn 0])))
+
+(defn dill-init [m]
+  (let [pax [0 :term 1 0]
+        lan #(plan %1 (noun [pax %2]))]
+    (-> m 
+        (lan [:boot :sith 0 0 0]) ; only fakezod for now
+        (lan [:blew 80 24])       ; only real terminals
+        (lan [:hail 0]))))
 
 (defn path-to-noun [base path]
   (let [nested   (map (fn [p]
@@ -82,29 +104,38 @@
         size     (.length file)
         contents (atom-from-file file)
         dat      [mim size contents]]
-    (Noun/println pax *out*)
     (noun [pax 0 dat])))
 
-(defn unhidden [path]
-  (not-any? #(.startsWith (.toString %) ".") path))
-
-(defn dir-events [dirpath]
+(defn sync-home [m dirpath]
   (let [f    (io/file dirpath)
         base (Paths/get (.toURI f))]
     (if (or (nil? f)
             (not (.isDirectory f)))
-      []
-      (map (partial path-to-noun base)
-           (filter unhidden
-                   (map #(.relativize base (Paths/get (.toURI %)))
-                        (filter #(.isFile %) (file-seq f))))))))
+      (do (println "bad initial sync directory")
+          m)
+      (let [files (filter #(.isFile %) (file-seq f))
+            rels  (map #(.relativize base (Paths/get (.toURI %))) files)
+            vis   (filter (fn [path] (not-any? #(.startsWith (.toString %) ".") path)) rels)
+            can   (seq->it (map (partial path-to-noun base) vis))
+            pax   [0 :sync (:sen m) 0]
+            fav   [:into 0 0 can]]
+        (plan m (noun [pax fav]))))))
+
+(defn boot [ctx roc]
+  (let [m (-> (map->MachineRec {:context ctx 
+                                :arvo    roc
+                                :poke-q  clojure.lang.PersistentQueue/EMPTY})
+              (time (Time/now))
+              (numb))]
+    (println "arvo time: " (Atom/cordToString (:wen m)))
+    m))
 
 (defn boot-ivory [pill-path jet-path]
   (let [jets (read-jets jet-path)
         ken  (read-jam pill-path)
         ctx  (Context. jets)
         roc  (.tail (.tail (.nock ctx 0 ken)))
-        m    (MachineRec. ctx (Time/now) ken roc)]
+        m    (boot ctx roc)]
     (println "ivory: kernel activated")
     (Noun/println (call m "add" (noun [40 2])) *out*)))
 
@@ -114,21 +145,26 @@
         ctx  (Context. jets)
         ken  (.head sys)
         roc  (.tail sys)
-        cor  (.nock ctx 0 ken) ; "to bind jets"
-        m    (MachineRec. ctx (Time/now) ken roc)
-        init (dir-events arvo-path)
-        can  (seq->it init)
-        sev  (Noun/mug (:now m))
-        sen  (call m "scot" [:uv sev])
-        pax  [0 :sync sen 0]
-        fav  [:into 0 0 can]
-        egg  (noun [pax fav])]
-    (println "solid: kernel activated")
-    ;; i think we're supposed to send clay %init before we send all this
-    ;; %into -- in general, let's start trying to emulate the normal boot
-    ;; sequence and not get ahead of ourselves...
-    (poke m egg)
-    (println "i think we poked it jim")))
+        cor  (let [c (.nock ctx 0 ken)] ; "to bind jets"
+               (println "solid: kernel activated")
+               c)
+        m    (-> (boot ctx roc)
+                 (ames-init)
+                 (dill-init)
+                 (sync-home arvo-path))]
+    (loop [m m
+           q (:poke-q m)]
+      (let [h (first q)]
+        (if (nil? h)
+          m
+          (do
+            (Noun/println h *out*)
+            (let [res (poke m h)]
+              (print "---poke finished: ")
+              (Noun/println (.head res) *out*)
+              (recur (assoc m :kernel (.tail res))
+                     (rest q)))))))
+    (Noun/println (call m "add" [40 2]) *out*)))
 
 (defn boot-formula [jam-path jet-path]
   (let [formula (read-jam jam-path)

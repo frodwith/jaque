@@ -27,7 +27,8 @@
                           (Cell. (noun (first items)) (noun (second items)))
                           (Cell. (noun (first items)) (f (rest items) (dec n)))))
                       (seq a) (count a))
-        :else (throw (IllegalArgumentException.))))
+        :else (do (println "bad noun: " a)
+                  (throw (IllegalArgumentException.)))))
 
 (defn seq->it [s]
   (noun (conj (into [] s) 0)))

@@ -713,12 +713,12 @@ public class Atom {
   }
 
   public static int[] increment(int[] atom) {
-    int top = atom[atom.length];
+    int top = atom[atom.length -1];
     try {
       int newTop = Math.incrementExact(top);
       int[] dst = new int[atom.length];
       System.arraycopy(atom, 0, dst, 0, atom.length - 1);
-      dst[atom.length] = newTop;
+      dst[atom.length-1] = newTop;
       return dst;
     } 
     catch (ArithmeticException e) {
