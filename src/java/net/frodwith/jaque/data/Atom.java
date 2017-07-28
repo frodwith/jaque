@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -18,6 +19,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -109,21 +111,22 @@ public class Atom {
     this.value = atom;
   }
 
-  private static byte[] forceBytes(byte[] src, int maxLen) {
+  private static byte[] forceBytes(Object a, int maxLen) {
+    byte[] src = toByteArray(a, LITTLE_ENDIAN);
     if ( src.length == maxLen ) {
       return src;
     }
     if ( src.length > maxLen ) {
       throw new Bail();
     }
-    byte[] r = new byte[32];
+    byte[] r = new byte[maxLen];
     System.arraycopy(src, 0, r, 0, src.length);
     return r;
   }
   
   private static Object doAesc(int mode, Object a, Object b) {
-    byte[] ay = forceBytes(toByteArray(a, LITTLE_ENDIAN), 32),
-           by = forceBytes(toByteArray(b, LITTLE_ENDIAN), 16);
+    byte[] ay = forceBytes(a, 32),
+           by = forceBytes(b, 16);
     
     try {
       Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
@@ -158,6 +161,76 @@ public class Atom {
     return doAesc(Cipher.DECRYPT_MODE, key, txt);
   }
   
+  public static byte[] reverse(byte[] in) {
+    int i, j, m = in.length;
+    byte[] out = new byte[m];
+    for ( i = 0, j = m - 1; i < m; ++i, --j ) {
+      out[i] = in[j];
+    }
+    return out;
+  }
+  
+  private static Object aes_cbc(int mode, int keysize, Object key, Object iv, Object msg) {
+    int len = met((byte)3, msg),
+        out = (len % 16 == 0)
+            ? len
+            : len + 16 - (len % 16);
+    byte[] ky = reverse(forceBytes(key, keysize)),
+           iy = reverse(forceBytes(iv, 16)),
+           my = reverse(forceBytes(msg, out));
+    
+    try {
+      Cipher c = Cipher.getInstance("AES/CBC/NoPadding");
+      SecretKeySpec k = new SecretKeySpec(ky, "AES");
+      c.init(mode, k, new IvParameterSpec(iy));
+
+      return fromByteArray(Arrays.copyOfRange(reverse(c.doFinal(my)), 0, out), LITTLE_ENDIAN);
+    }
+    catch (BadPaddingException e) {
+      e.printStackTrace();
+    } 
+    catch (IllegalBlockSizeException e) {
+      e.printStackTrace();
+    } 
+    catch (InvalidKeyException e) {
+      e.printStackTrace();
+    }
+    catch (InvalidAlgorithmParameterException e) {
+      e.printStackTrace();
+    }
+    catch (NoSuchAlgorithmException e) {
+      e.printStackTrace();
+    }
+    catch (NoSuchPaddingException e) {
+      e.printStackTrace();
+    }
+    throw new Bail();   
+  }
+  
+  public static Object aes_cbca_en(Object key, Object iv, Object msg) {
+    return aes_cbc(Cipher.ENCRYPT_MODE, 16, key, iv, msg);
+  }
+
+  public static Object aes_cbca_de(Object key, Object iv, Object msg) {
+    return aes_cbc(Cipher.DECRYPT_MODE, 16, key, iv, msg);
+  }
+
+  public static Object aes_cbcb_en(Object key, Object iv, Object msg) {
+    return aes_cbc(Cipher.ENCRYPT_MODE, 24, key, iv, msg);
+  }
+
+  public static Object aes_cbcb_de(Object key, Object iv, Object msg) {
+    return aes_cbc(Cipher.DECRYPT_MODE, 24, key, iv, msg);
+  }
+
+  public static Object aes_cbcc_en(Object key, Object iv, Object msg) {
+    return aes_cbc(Cipher.ENCRYPT_MODE, 32, key, iv, msg);
+  }
+
+  public static Object aes_cbcc_de(Object key, Object iv, Object msg) {
+    return aes_cbc(Cipher.DECRYPT_MODE, 32, key, iv, msg);
+  }
+
   public static Object add(int[] a, int[] b) {
     Square s   = new Square(a, b);
     int[] dst  = new int[s.len+1];
