@@ -4,10 +4,10 @@ import com.oracle.truffle.api.dsl.Specialization;
 
 import net.frodwith.jaque.data.Atom;
 
-public abstract class AesCbcaDeNode extends TrelGateNode {
+public abstract class AesCbcaDeNode extends AesCbcNode {
 
   @Specialization
-  protected Object en(Object key, Object iv, Object msg) {
+  protected Object de(Object key, Object iv, Object msg) {
     return Atom.aes_cbca_de(key, iv, msg);
   }
 

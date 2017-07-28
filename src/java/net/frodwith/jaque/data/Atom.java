@@ -169,6 +169,59 @@ public class Atom {
     }
     return out;
   }
+
+  private static Object aes_ecb(int mode, int keysize, Object key, Object block) {
+    byte[] ky = reverse(forceBytes(key, keysize)),
+           by = reverse(forceBytes(block, 16));
+    
+    try {
+      Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
+      SecretKeySpec k = new SecretKeySpec(ky, "AES");
+      c.init(mode, k);
+
+      return fromByteArray(Arrays.copyOfRange(reverse(c.doFinal(by)), 0, 16), LITTLE_ENDIAN);
+    }
+    catch (BadPaddingException e) {
+      e.printStackTrace();
+    } 
+    catch (IllegalBlockSizeException e) {
+      e.printStackTrace();
+    } 
+    catch (InvalidKeyException e) {
+      e.printStackTrace();
+    }
+    catch (NoSuchAlgorithmException e) {
+      e.printStackTrace();
+    }
+    catch (NoSuchPaddingException e) {
+      e.printStackTrace();
+    }
+    throw new Bail();   
+  }
+
+  public static Object aes_ecba_en(Object key, Object block) {
+    return aes_ecb(Cipher.ENCRYPT_MODE, 16, key, block);
+  }
+
+  public static Object aes_ecba_de(Object key, Object block) {
+    return aes_ecb(Cipher.DECRYPT_MODE, 16, key, block);
+  }
+
+  public static Object aes_ecbb_en(Object key, Object block) {
+    return aes_ecb(Cipher.ENCRYPT_MODE, 24, key, block);
+  }
+
+  public static Object aes_ecbb_de(Object key, Object block) {
+    return aes_ecb(Cipher.DECRYPT_MODE, 24, key, block);
+  }
+
+  public static Object aes_ecbc_en(Object key, Object block) {
+    return aes_ecb(Cipher.ENCRYPT_MODE, 32, key, block);
+  }
+
+  public static Object aes_ecbc_de(Object key, Object block) {
+    return aes_ecb(Cipher.DECRYPT_MODE, 32, key, block);
+  }
   
   private static Object aes_cbc(int mode, int keysize, Object key, Object iv, Object msg) {
     int len = met((byte)3, msg),
