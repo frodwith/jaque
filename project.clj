@@ -14,6 +14,7 @@
 ;                "-Dcom.sun.management.jmxremote.ssl=false"
 ;                "-Dcom.sun.management.jmxremote.authenticate=false"
 ;                "-Dcom.sun.management.jmxremote.port=43210"
+                 "-Djava.library.path=ed25519"
                 ]
   :main         jaque.main
   :aot          [jaque.main]
@@ -28,6 +29,7 @@
                  [com.sangupta/murmur "1.0.0"]
                  [com.oracle.truffle/truffle-api "0.22"]
                  [org.clojure/tools.cli "0.3.5"]
+                 [com.github.jnr/jnr-ffi "2.1.6"]
 ;                 [com.oracle.truffle/truffle-dsl-processor "0.22"]
 ;                 [com.oracle.truffle/truffle-tck "0.20"]
 ;                 [primitive-math "0.1.3"]

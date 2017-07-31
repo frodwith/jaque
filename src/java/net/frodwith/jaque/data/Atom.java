@@ -27,6 +27,7 @@ import com.sangupta.murmur.Murmur3;
 
 import gnu.math.MPN;
 import net.frodwith.jaque.Bail;
+import net.frodwith.jaque.Ed25519;
 import net.frodwith.jaque.truffle.TypesGen;
 
 /* Atoms are primitive (unboxed) longs unless they don't fit
@@ -80,6 +81,7 @@ public class Atom {
 
   public static final boolean BIG_ENDIAN = true;
   public static final boolean LITTLE_ENDIAN = false;
+  
 
   public static final long YES = 0L;
   public static final long NO = 1L;
@@ -96,133 +98,34 @@ public class Atom {
                              ROSE = mote("rose"),
                              PALM = mote("palm");
 
-  public static long mote(String s) {
-    return expectUnsignedInt(stringToCord(s));
-  }
-
   private static final NumberFormat dotted = NumberFormat.getNumberInstance(Locale.GERMAN);
-  public final Object value;
-  
- /*
- * Only make an instance if you need .equals and .hashCode() for a map, etc.
- */ 
-  public Atom(Object atom) {
-    assert Noun.isAtom(atom);
-    this.value = atom;
-  }
 
-  private static byte[] forceBytes(Object a, int maxLen) {
-    byte[] src = toByteArray(a, LITTLE_ENDIAN);
-    if ( src.length == maxLen ) {
-      return src;
+  public static Object add(int[] a, int[] b) {
+    Square s   = new Square(a, b);
+    int[] dst  = new int[s.len+1];
+    dst[s.len] = MPN.add_n(dst, s.x, s.y, s.len);
+    return malt(dst);
+  }
+  public static long add(long a, long b) throws ArithmeticException {
+    long c = a + b;
+    if ( Long.compareUnsigned(c, a) < 0 ||
+         Long.compareUnsigned(c, b) < 0 ) {
+      throw new ArithmeticException();
     }
-    if ( src.length > maxLen ) {
-      throw new Bail();
-    }
-    byte[] r = new byte[maxLen];
-    System.arraycopy(src, 0, r, 0, src.length);
-    return r;
+    return c;
   }
   
-  private static Object doAesc(int mode, Object a, Object b) {
-    byte[] ay = forceBytes(a, 32),
-           by = forceBytes(b, 16);
-    
-    try {
-      Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
-      SecretKeySpec k = new SecretKeySpec(ay, "AES");
-      c.init(mode, k);
-
-      return fromByteArray(Arrays.copyOfRange(c.doFinal(by), 0, 16), LITTLE_ENDIAN);
+ public static Object add(Object a, Object b) {
+    if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
+      try {
+        return add(TypesGen.asLong(a), TypesGen.asLong(b));
+      }
+      catch (ArithmeticException e) {
+      }
     }
-    catch (BadPaddingException e) {
-      e.printStackTrace();
-    }
-    catch (IllegalBlockSizeException e) {
-      e.printStackTrace();
-    }
-    catch (InvalidKeyException e) {
-      e.printStackTrace();
-    } 
-    catch (NoSuchAlgorithmException e) {
-      e.printStackTrace();
-    }
-    catch (NoSuchPaddingException e) {
-      e.printStackTrace();
-    }
-    throw new Bail();   
-  }
-  
-  public static Object aescEn(Object key, Object txt) {
-    return doAesc(Cipher.ENCRYPT_MODE, key, txt);
+    return add(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
 
-  public static Object aescDe(Object key, Object txt) {
-    return doAesc(Cipher.DECRYPT_MODE, key, txt);
-  }
-  
-  public static byte[] reverse(byte[] in) {
-    int i, j, m = in.length;
-    byte[] out = new byte[m];
-    for ( i = 0, j = m - 1; i < m; ++i, --j ) {
-      out[i] = in[j];
-    }
-    return out;
-  }
-
-  private static Object aes_ecb(int mode, int keysize, Object key, Object block) {
-    byte[] ky = reverse(forceBytes(key, keysize)),
-           by = reverse(forceBytes(block, 16));
-    
-    try {
-      Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
-      SecretKeySpec k = new SecretKeySpec(ky, "AES");
-      c.init(mode, k);
-
-      return fromByteArray(Arrays.copyOfRange(reverse(c.doFinal(by)), 0, 16), LITTLE_ENDIAN);
-    }
-    catch (BadPaddingException e) {
-      e.printStackTrace();
-    } 
-    catch (IllegalBlockSizeException e) {
-      e.printStackTrace();
-    } 
-    catch (InvalidKeyException e) {
-      e.printStackTrace();
-    }
-    catch (NoSuchAlgorithmException e) {
-      e.printStackTrace();
-    }
-    catch (NoSuchPaddingException e) {
-      e.printStackTrace();
-    }
-    throw new Bail();   
-  }
-
-  public static Object aes_ecba_en(Object key, Object block) {
-    return aes_ecb(Cipher.ENCRYPT_MODE, 16, key, block);
-  }
-
-  public static Object aes_ecba_de(Object key, Object block) {
-    return aes_ecb(Cipher.DECRYPT_MODE, 16, key, block);
-  }
-
-  public static Object aes_ecbb_en(Object key, Object block) {
-    return aes_ecb(Cipher.ENCRYPT_MODE, 24, key, block);
-  }
-
-  public static Object aes_ecbb_de(Object key, Object block) {
-    return aes_ecb(Cipher.DECRYPT_MODE, 24, key, block);
-  }
-
-  public static Object aes_ecbc_en(Object key, Object block) {
-    return aes_ecb(Cipher.ENCRYPT_MODE, 32, key, block);
-  }
-
-  public static Object aes_ecbc_de(Object key, Object block) {
-    return aes_ecb(Cipher.DECRYPT_MODE, 32, key, block);
-  }
-  
   private static Object aes_cbc(int mode, int keysize, Object key, Object iv, Object msg) {
     int len = met((byte)3, msg),
         out = (len % 16 == 0)
@@ -237,7 +140,7 @@ public class Atom {
       SecretKeySpec k = new SecretKeySpec(ky, "AES");
       c.init(mode, k, new IvParameterSpec(iy));
 
-      return fromByteArray(Arrays.copyOfRange(reverse(c.doFinal(my)), 0, out), LITTLE_ENDIAN);
+      return takeBytes(reverse(c.doFinal(my)), out);
     }
     catch (BadPaddingException e) {
       e.printStackTrace();
@@ -260,57 +163,91 @@ public class Atom {
     throw new Bail();   
   }
   
-  public static Object aes_cbca_en(Object key, Object iv, Object msg) {
-    return aes_cbc(Cipher.ENCRYPT_MODE, 16, key, iv, msg);
-  }
-
   public static Object aes_cbca_de(Object key, Object iv, Object msg) {
     return aes_cbc(Cipher.DECRYPT_MODE, 16, key, iv, msg);
   }
-
-  public static Object aes_cbcb_en(Object key, Object iv, Object msg) {
-    return aes_cbc(Cipher.ENCRYPT_MODE, 24, key, iv, msg);
+  
+  public static Object aes_cbca_en(Object key, Object iv, Object msg) {
+    return aes_cbc(Cipher.ENCRYPT_MODE, 16, key, iv, msg);
   }
 
   public static Object aes_cbcb_de(Object key, Object iv, Object msg) {
     return aes_cbc(Cipher.DECRYPT_MODE, 24, key, iv, msg);
   }
-
-  public static Object aes_cbcc_en(Object key, Object iv, Object msg) {
-    return aes_cbc(Cipher.ENCRYPT_MODE, 32, key, iv, msg);
+  
+  public static Object aes_cbcb_en(Object key, Object iv, Object msg) {
+    return aes_cbc(Cipher.ENCRYPT_MODE, 24, key, iv, msg);
   }
 
   public static Object aes_cbcc_de(Object key, Object iv, Object msg) {
     return aes_cbc(Cipher.DECRYPT_MODE, 32, key, iv, msg);
   }
 
-  public static Object add(int[] a, int[] b) {
-    Square s   = new Square(a, b);
-    int[] dst  = new int[s.len+1];
-    dst[s.len] = MPN.add_n(dst, s.x, s.y, s.len);
-    return malt(dst);
+  public static Object aes_cbcc_en(Object key, Object iv, Object msg) {
+    return aes_cbc(Cipher.ENCRYPT_MODE, 32, key, iv, msg);
   }
-  
-  public static long add(long a, long b) throws ArithmeticException {
-    long c = a + b;
-    if ( Long.compareUnsigned(c, a) < 0 ||
-         Long.compareUnsigned(c, b) < 0 ) {
-      throw new ArithmeticException();
+
+  private static Object aes_ecb(int mode, int keysize, Object key, Object block) {
+    byte[] ky = reverse(forceBytes(key, keysize)),
+           by = reverse(forceBytes(block, 16));
+    
+    try {
+      Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
+      SecretKeySpec k = new SecretKeySpec(ky, "AES");
+      c.init(mode, k);
+
+      return takeBytes(reverse(c.doFinal(by)), 16);
     }
-    return c;
-  }
-  
-  public static Object add(Object a, Object b) {
-    if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
-      try {
-        return add(TypesGen.asLong(a), TypesGen.asLong(b));
-      }
-      catch (ArithmeticException e) {
-      }
+    catch (BadPaddingException e) {
+      e.printStackTrace();
+    } 
+    catch (IllegalBlockSizeException e) {
+      e.printStackTrace();
+    } 
+    catch (InvalidKeyException e) {
+      e.printStackTrace();
     }
-    return add(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
+    catch (NoSuchAlgorithmException e) {
+      e.printStackTrace();
+    }
+    catch (NoSuchPaddingException e) {
+      e.printStackTrace();
+    }
+    throw new Bail();   
+  }
+
+  public static Object aes_ecba_de(Object key, Object block) {
+    return aes_ecb(Cipher.DECRYPT_MODE, 16, key, block);
+  }
+
+  public static Object aes_ecba_en(Object key, Object block) {
+    return aes_ecb(Cipher.ENCRYPT_MODE, 16, key, block);
+  }
+
+  public static Object aes_ecbb_de(Object key, Object block) {
+    return aes_ecb(Cipher.DECRYPT_MODE, 24, key, block);
+  }
+
+  public static Object aes_ecbb_en(Object key, Object block) {
+    return aes_ecb(Cipher.ENCRYPT_MODE, 24, key, block);
   }
   
+  public static Object aes_ecbc_de(Object key, Object block) {
+    return aes_ecb(Cipher.DECRYPT_MODE, 32, key, block);
+  }
+  
+  public static Object aes_ecbc_en(Object key, Object block) {
+    return aes_ecb(Cipher.ENCRYPT_MODE, 32, key, block);
+  }
+
+  public static Object aescDe(Object key, Object txt) {
+    return doAesc(Cipher.DECRYPT_MODE, key, txt);
+  }
+
+  public static Object aescEn(Object key, Object txt) {
+    return doAesc(Cipher.ENCRYPT_MODE, key, txt);
+  }
+
   public static Object bex(long a) {
     if (a < 64) {
       return 1L << a;
@@ -324,7 +261,7 @@ public class Atom {
       return words;
     }
   }
-  
+
   public static Object can(byte a, Iterable<Object> b) {
     int tot = 0;
 
@@ -368,7 +305,7 @@ public class Atom {
 
     return malt(sal);
   }
-  
+
   public static int cap(Object atom) {
     int b = met(atom);
     if ( b < 2 ) {
@@ -439,7 +376,7 @@ public class Atom {
   
   public static int compare(int[] a, int[] b) {
     return MPN.cmp(a, a.length, b, b.length);
-  } 
+  }
   
   public static int compare(long a, long b) {
     return Long.compareUnsigned(a, b);
@@ -482,7 +419,7 @@ public class Atom {
   
   public static String cordToString(Object atom) {
     try {
-      return new String(toByteArray(atom, LITTLE_ENDIAN), "UTF-8");
+      return new String(toByteArray(atom), "UTF-8");
     }
     catch (UnsupportedEncodingException e) {
       return null;
@@ -532,7 +469,7 @@ public class Atom {
       }
     }
     return new Cell(p, new Cell(q, 0L));
-  }
+  } 
   
   public static Object cue(Object a) {
     try {
@@ -543,7 +480,7 @@ public class Atom {
       throw new Bail();
     }
   }
-
+  
   public static Object cut(byte a, Object b, Object c, Object d) {
     int ci, bi = expectInt(b);
     try {
@@ -606,7 +543,7 @@ public class Atom {
   public static long dis(long a, long b) {
     return a & b;
   }
-
+  
   public static Object dis(Object a, Object b) {
     byte w   = 5;
     int  lna = met(w, a);
@@ -629,7 +566,7 @@ public class Atom {
       return malt(sal);
     } 
   }
-  
+
   public static Object div(int[] x, int[] y) {
     int cmp = compare(x,y);
     if ( cmp < 0 ) {
@@ -651,7 +588,7 @@ public class Atom {
   public static long div(long a, long b) {
     return Long.divideUnsigned(a, b);
   }
-  
+
   public static Object div(Object a, Object b) {
     if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
       return div(TypesGen.asLong(a), TypesGen.asLong(b));
@@ -693,6 +630,35 @@ public class Atom {
     
     return new Cell(malt(xwords), malt(ywords));
   }
+  
+  private static Object doAesc(int mode, Object a, Object b) {
+    byte[] ay = forceBytes(a, 32),
+           by = forceBytes(b, 16);
+    
+    try {
+      Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
+      SecretKeySpec k = new SecretKeySpec(ay, "AES");
+      c.init(mode, k);
+
+      return takeBytes(c.doFinal(by), 16);
+    }
+    catch (BadPaddingException e) {
+      e.printStackTrace();
+    }
+    catch (IllegalBlockSizeException e) {
+      e.printStackTrace();
+    }
+    catch (InvalidKeyException e) {
+      e.printStackTrace();
+    } 
+    catch (NoSuchAlgorithmException e) {
+      e.printStackTrace();
+    }
+    catch (NoSuchPaddingException e) {
+      e.printStackTrace();
+    }
+    throw new Bail();   
+  }
 
   public static Cell dvr(int[] x, int[] y) {
     int cmp = compare(x,y);
@@ -711,7 +677,7 @@ public class Atom {
       return divmod(x,y);
     }   
   }
-
+  
   public static Cell dvr(long a, long b) {
     return new Cell(a / b, a % b);
   }
@@ -723,6 +689,37 @@ public class Atom {
     return dvr(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
   
+  public static Object edPuck(Object a) {
+    byte[] pub = new byte[32],
+           sec = new byte[64],
+           sed = forceBytes(a, 32);
+    
+    Ed25519.ed.ed25519_create_keypair(pub, sec, sed);
+    return takeBytes(pub, 32);
+  }
+  
+  public static Object edShar(Object pub, Object sek) {
+    byte[] puy = forceBytes(pub, 32),
+           sey = forceBytes(sek, 32),
+           self = new byte[32],
+           exp  = new byte[64],
+           shr =  new byte[32];
+    Ed25519.ed.ed25519_create_keypair(self, exp, sey);
+    Ed25519.ed.ed25519_key_exchange(shr, puy, exp);
+    return takeBytes(shr, 32);
+  }
+  
+  public static Object edSign(Object a, Object b) {
+    byte[] sig = new byte[64],
+           sed = forceBytes(b, 32),
+           pub = new byte[64],
+           sec = new byte[64],
+           mes = toByteArray(a);
+    Ed25519.ed.ed25519_create_keypair(pub, sec, sed);
+    Ed25519.ed.ed25519_sign(sig, mes, mes.length, pub, sec);
+    return takeBytes(sig, 64);
+  }
+
   public static Object end(byte a, Object b, Object c) {
     int bi;
 
@@ -745,15 +742,9 @@ public class Atom {
     chop(a, 0, bi, 0, sal, c);
     return malt(sal);
   }
-  
+
   public static boolean equals(int[] a, int[] b) {
     return Arrays.equals(a,  b);
-  }
-  
-  @Override
-  public boolean equals(Object b) {
-    return (b instanceof Atom)
-        && equals(value, ((Atom) b).value);
   }
   
   public static boolean equals(long a, long b) {
@@ -790,14 +781,6 @@ public class Atom {
     return ai;
   }
   
-  public static int expectUnsignedInt(Object a) {
-    long al  = expectLong(a);
-    if ( al != (al & 0x00000000FFFFFFFFL) ) {
-      throw new Bail();
-    }
-    return (int) al;
-  }
-
   public static long expectLong(Object a) {
     try {
       return TypesGen.expectLong(a);
@@ -807,13 +790,42 @@ public class Atom {
     }
   }
   
+  public static int expectUnsignedInt(Object a) {
+    long al  = expectLong(a);
+    if ( al != (al & 0x00000000FFFFFFFFL) ) {
+      throw new Bail();
+    }
+    return (int) al;
+  }
+  
+  private static Object takeBytes(byte[] src, int len) {
+    return fromByteArray(Arrays.copyOfRange(src, 0, len));
+  }
+  
+  private static byte[] forceBytes(Object a, int maxLen) {
+    byte[] src = toByteArray(a);
+    if ( src.length == maxLen ) {
+      return src;
+    }
+    if ( src.length > maxLen ) {
+      throw new Bail();
+    }
+    byte[] r = new byte[maxLen];
+    System.arraycopy(src, 0, r, 0, src.length);
+    return r;
+  }
+  
+  public static Object fromByteArray(byte[] pill) {
+    return fromByteArray(pill, LITTLE_ENDIAN);
+  }
+  
   public static Object fromByteArray(byte[] pill, boolean endian) {
     int len  = pill.length;
     int trim = len % 4;
 
     if (endian == BIG_ENDIAN) {
       pill = Arrays.copyOf(pill, len);
-      reverseBytes(pill);
+      reverse(pill);
     }
 
     if (trim > 0) {
@@ -858,7 +870,7 @@ public class Atom {
 
     return malt(wor);
 }
-  
+
   public static boolean getNthBit(int[] atom, int n) {
     int pix = n >> 5;
     
@@ -888,10 +900,6 @@ public class Atom {
     }
   }
   
-  public int hashCode() {
-    return mug(value);
-  }
-
   public static int[] increment(int[] atom) {
     int top = atom[atom.length -1];
     try {
@@ -907,11 +915,11 @@ public class Atom {
       return w;
     }
   }
-
+  
   public static long increment(long atom) throws ArithmeticException {
     return Math.incrementExact(atom);
   }
-
+  
   public static Object increment(Object atom) {
     if ( TypesGen.isLong(atom) ) {
       try {
@@ -926,10 +934,30 @@ public class Atom {
     }
   }
   
+  private static boolean isTa(String s) {
+    for ( char c : s.toCharArray() ) {
+      if ( c < 32 || c > 127 ) {
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  private static boolean isTas(String s) {
+    for ( char c : s.toCharArray() ) {
+      if ( !Character.isLowerCase(c)
+          && !Character.isDigit(c)
+          && '-' != c) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   public static boolean isZero(Object atom) {
     return TypesGen.isLong(atom) && 0L == TypesGen.asLong(atom);
   }
-  
+
   public static Object lsh(byte bloq, int count, Object atom) {
     int len = met(bloq, atom),
         big;
@@ -949,7 +977,7 @@ public class Atom {
 
     return malt(sal);
   }
-  
+
   public static Object malt(int[] words) {
     int bad = 0;
 
@@ -1053,7 +1081,7 @@ public class Atom {
   public static long mix(long a, long b) {
     return a ^ b;
   }
-
+  
   public static Object mix(Object a, Object b) {
     byte w   = 5;
     int  lna = met(w, a);
@@ -1076,7 +1104,7 @@ public class Atom {
       return malt(sal);
     } 
   }
-
+  
   public static Object mod(int[] x, int[] y) {
     int cmp = compare(x,y);
     if ( cmp < 0 ) {
@@ -1097,19 +1125,23 @@ public class Atom {
   public static long mod(long a, long b) {
     return Long.remainderUnsigned(a, b);
   }
-  
+
   public static Object mod(Object a, Object b) {
     if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
       return mod(TypesGen.asLong(a), TypesGen.asLong(b));
     }
     return mod(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
+
+  public static long mote(String s) {
+    return expectUnsignedInt(stringToCord(s));
+  }
   
   public static int mug(Object atom) {
     int[] words = TypesGen.asImplicitIntArray(atom);
     return mug_words((int) 2166136261L, words.length, words);
   }
-
+  
   private static int mug_words(int off, int nwd, int[] wod) {
     int has, out; 
 
@@ -1154,6 +1186,12 @@ public class Atom {
     }
     return off;
   }
+
+  public static long muk(int seed, int length, Object atom) {
+    assert Atom.met((byte) 5, seed) <= 1;
+    assert Atom.met(length) <= 31;
+    return Murmur3.hash_x86_32(toByteArray(atom), length, seed);
+  }
   
   public static Object mul(int[] x, int[] y) {
     int xlen = x.length,
@@ -1173,7 +1211,7 @@ public class Atom {
     MPN.mul(dest, x, xlen, y, ylen);
     return malt(dest);
   }
-
+  
   public static long mul(long a, long b) throws ArithmeticException {
     return Math.multiplyExact(a, b);
   }
@@ -1187,12 +1225,6 @@ public class Atom {
       }
     }
     return mul(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
-  }
-  
-  public static long muk(int seed, int length, Object atom) {
-    assert Atom.met((byte) 5, seed) <= 1;
-    assert Atom.met(length) <= 31;
-    return Murmur3.hash_x86_32(toByteArray(atom, LITTLE_ENDIAN), length, seed);
   }
 
   public static Object peg(Object axis, Object to) {
@@ -1211,6 +1243,30 @@ public class Atom {
     }
   }
   
+  public static void pretty(Writer out, int[] cur) throws IOException {
+    if ( 1 == cur.length && Long.compareUnsigned(cur[0], 65536) < 0 ) {
+      out.write(dotted.format(cur[0]));
+    }
+    else {
+      String cord = cordToString(cur);
+      if ( null != cord ) {
+        if ( isTas(cord) ) {
+          out.write('%');
+          out.write(cordToString(cur));
+          return;
+        }
+        else if ( isTa(cord) ) {
+          out.write('\'');
+          out.write(cordToString(cur));
+          out.write('\'');
+          return;
+        }
+      }
+      out.write("0x");
+      raw(out, cur, 16);
+    }
+  }
+
   public static Object rap(byte a, Iterable<Object> b) {
     int tot = 0;
     try {
@@ -1238,6 +1294,28 @@ public class Atom {
     return malt(sal);
   }
   
+  public static void raw(Writer out, int[] cur, int radix) throws IOException {
+    Stack<Integer> digits = new Stack<Integer>();
+
+    int len = cur.length,
+        size = len;
+
+    cur = Arrays.copyOf(cur, len);
+
+    while ( true ) {
+      digits.push(MPN.divmod_1(cur, cur, size, radix));
+      if (cur[len-1] == 0) {
+        if (--len == 0) {
+          break;
+        }
+      }
+    }
+    
+    while ( !digits.empty() ) {
+      out.write(Character.forDigit(digits.pop(), radix));
+    }
+  }
+  
   public static Object rep(byte a, Iterable<Object> b) {
     int tot = 0;
     try {
@@ -1257,6 +1335,18 @@ public class Atom {
       chop(a, 0, 1, pos++, sal, i);
     }
     return malt(sal);
+  }
+  
+  /* IN-PLACE */
+  private static byte[] reverse(byte[] a) {
+    int i, j;
+    byte b;
+    for (i = 0, j = a.length - 1; j > i; ++i, --j) {
+      b = a[i];
+      a[i] = a[j];
+      a[j] = b;
+    }
+    return a;
   }
   
   public static Object rip(byte a, Object b) {
@@ -1301,6 +1391,21 @@ public class Atom {
     return pir;
   }
   
+  public static Object rsh(byte bloq, int count, Object atom) {
+    int len = met(bloq, atom);
+
+    if ( count >= len ) {
+      return 0L;
+    }
+    else {
+      int[] sal = slaq(bloq, len - count);
+
+      chop(bloq, count, len - count, 0, sal, atom);
+
+      return malt(sal);
+    }
+  }
+
   public static Cell rub(Object a, Object b) {
     Object c, d, e, w, x, y, z, p, q, m;
 
@@ -1339,40 +1444,27 @@ public class Atom {
     return new Cell(p, q);
   }
   
-  private static void reverseBytes(byte[] a) {
-    int i, j;
-    byte b;
-    for (i = 0, j = a.length - 1; j > i; ++i, --j) {
-      b = a[i];
-      a[i] = a[j];
-      a[j] = b;
+  private static Object sha_help(Object len, Object atom, String algo) {
+    byte[] bytes, hash;
+    bytes = Atom.toByteArray(cut((byte)3, 0L, len, atom));
+    try {
+      hash = MessageDigest.getInstance(algo).digest(bytes);
+      return Atom.fromByteArray(hash);
     }
+    catch (NoSuchAlgorithmException e) {
+      e.printStackTrace();
+      throw new Bail();
+    }   
   }
   
-  public static Object rsh(byte bloq, int count, Object atom) {
-    int len = met(bloq, atom);
-
-    if ( count >= len ) {
-      return 0L;
-    }
-    else {
-      int[] sal = slaq(bloq, len - count);
-
-      chop(bloq, count, len - count, 0, sal, atom);
-
-      return malt(sal);
-    }
-  }
-
-  public static int[] slaq(byte bloq, int len) {
-    int big = ((len << bloq) + 31) >>> 5;
-    return new int[big];
+  public static Object shal(Object len, Object atom) {
+    return sha_help(len, atom, "SHA-512");
   }
   
   public static Object shan(Object atom) {
     byte[] bytes, hash;
 
-    bytes = Atom.toByteArray(atom, LITTLE_ENDIAN);
+    bytes = Atom.toByteArray(atom);
     try {
       hash = MessageDigest.getInstance("SHA-1").digest(bytes);
       // XX: Why is this backwards?
@@ -1383,31 +1475,19 @@ public class Atom {
       throw new Bail();
     }
   }
-  
-  private static Object sha_help(Object len, Object atom, String algo) {
-    byte[] bytes, hash;
-    bytes = Atom.toByteArray(cut((byte)3, 0L, len, atom), LITTLE_ENDIAN);
-    try {
-      hash = MessageDigest.getInstance(algo).digest(bytes);
-      return Atom.fromByteArray(hash, LITTLE_ENDIAN);
-    }
-    catch (NoSuchAlgorithmException e) {
-      e.printStackTrace();
-      throw new Bail();
-    }   
-  }
-  
+
   public static Object shay(Object len, Object atom) {
     return sha_help(len, atom, "SHA-256");
   }
 
-  public static Object shal(Object len, Object atom) {
-    return sha_help(len, atom, "SHA-512");
+  public static int[] slaq(byte bloq, int len) {
+    int big = ((len << bloq) + 31) >>> 5;
+    return new int[big];
   }
-
+  
   public static Object stringToCord(String s) {
     try {
-      return fromByteArray(s.getBytes("UTF-8"), LITTLE_ENDIAN);
+      return fromByteArray(s.getBytes("UTF-8"));
     }
     catch (UnsupportedEncodingException e) {
       return null;
@@ -1423,7 +1503,7 @@ public class Atom {
     }
     return dst;
   }
-  
+
   public static long sub(long a, long b) {
     if ( -1 == compare(a, b) ) {
       throw new Bail();
@@ -1432,7 +1512,7 @@ public class Atom {
       return a - b;
     }
   }
-
+  
   public static Object sub(Object a, Object b) {
     if ( TypesGen.isLong(a) && TypesGen.isLong(b) ) {
       return sub(TypesGen.asLong(a), TypesGen.asLong(b));
@@ -1442,6 +1522,10 @@ public class Atom {
       int[] ba = TypesGen.asImplicitIntArray(b);
       return malt(sub(aa, ba));
     }
+  }
+
+  public static byte[] toByteArray(Object a) {
+    return toByteArray(a, LITTLE_ENDIAN);
   }
   
   public static byte[] toByteArray(Object atom, boolean endian) {
@@ -1468,13 +1552,9 @@ public class Atom {
       if (b >= bel) break;
     }
     if (endian == BIG_ENDIAN) {
-      reverseBytes(buf);
+      reverse(buf);
     }
     return buf;
-  }
-  
-  public String toString() {
-    return toString(value);
   }
   
   public static String toString(Object atom) {
@@ -1499,69 +1579,37 @@ public class Atom {
     }
   }
 
-  public static void pretty(Writer out, int[] cur) throws IOException {
-    if ( 1 == cur.length && Long.compareUnsigned(cur[0], 65536) < 0 ) {
-      out.write(dotted.format(cur[0]));
-    }
-    else {
-      String cord = cordToString(cur);
-      if ( null != cord ) {
-        if ( isTas(cord) ) {
-          out.write('%');
-          out.write(cordToString(cur));
-          return;
-        }
-        else if ( isTa(cord) ) {
-          out.write('\'');
-          out.write(cordToString(cur));
-          out.write('\'');
-          return;
-        }
-      }
-      out.write("0x");
-      raw(out, cur, 16);
-    }
+  public final Object value;
+
+  /*
+ * Only make an instance if you need .equals and .hashCode() for a map, etc.
+ */ 
+  public Atom(Object atom) {
+    assert Noun.isAtom(atom);
+    this.value = atom;
   }
 
-  private static boolean isTas(String s) {
-    for ( char c : s.toCharArray() ) {
-      if ( !Character.isLowerCase(c)
-          && !Character.isDigit(c)
-          && '-' != c) {
-        return false;
-      }
-    }
-    return true;
+  @Override
+  public boolean equals(Object b) {
+    return (b instanceof Atom)
+        && equals(value, ((Atom) b).value);
   }
 
-  private static boolean isTa(String s) {
-    for ( char c : s.toCharArray() ) {
-      if ( c < 32 || c > 127 ) {
-        return false;
-      }
-    }
-    return true;
+  public int hashCode() {
+    return mug(value);
   }
 
-  public static void raw(Writer out, int[] cur, int radix) throws IOException {
-    Stack<Integer> digits = new Stack<Integer>();
+  public String toString() {
+    return toString(value);
+  }
 
-    int len = cur.length,
-        size = len;
-
-    cur = Arrays.copyOf(cur, len);
-
-    while ( true ) {
-      digits.push(MPN.divmod_1(cur, cur, size, radix));
-      if (cur[len-1] == 0) {
-        if (--len == 0) {
-          break;
-        }
-      }
-    }
+  public static Object edVeri(Object s, Object m, Object pk) {
+    byte[] sig = forceBytes(s, 64),
+           pub = forceBytes(pk, 32),
+           mes = toByteArray(m);
     
-    while ( !digits.empty() ) {
-      out.write(Character.forDigit(digits.pop(), radix));
-    }
+    return ( 1 == Ed25519.ed.ed25519_verify(sig, mes, mes.length, pub) )
+        ? YES
+        : NO;
   }
 }
