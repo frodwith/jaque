@@ -1192,7 +1192,8 @@ public class Atom {
   public static long muk(int seed, int length, Object atom) {
     assert Atom.met((byte) 5, seed) <= 1;
     assert Atom.met(length) <= 31;
-    return Murmur3.hash_x86_32(toByteArray(atom), length, seed);
+    byte[] key = forceBytes(atom, length);
+    return 0x00000000FFFFFFFFL & Murmur3.hash_x86_32(key, length, seed);
   }
   
   public static Object mul(int[] x, int[] y) {

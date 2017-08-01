@@ -53,6 +53,7 @@
          ["k151/mood/hoon/mix" "net.frodwith.jaque.truffle.nodes.jet.MixNodeGen"]
          ["k151/mood/hoon/mod" "net.frodwith.jaque.truffle.nodes.jet.ModNodeGen"]
          ["k151/mood/hoon/mug" "net.frodwith.jaque.truffle.nodes.jet.MugNodeGen"]
+         ["k151/mood/hoon/muk" "net.frodwith.jaque.truffle.nodes.jet.MukNodeGen"]
          ["k151/mood/hoon/mul" "net.frodwith.jaque.truffle.nodes.jet.MulNodeGen"]
          ["k151/mood/hoon/peg" "net.frodwith.jaque.truffle.nodes.jet.PegNodeGen"]
          ["k151/mood/hoon/rap" "net.frodwith.jaque.truffle.nodes.jet.RapNodeGen"]
