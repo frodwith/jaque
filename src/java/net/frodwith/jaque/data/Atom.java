@@ -901,19 +901,21 @@ public class Atom {
   }
   
   public static int[] increment(int[] atom) {
-    int top = atom[atom.length -1];
-    try {
-      int newTop = Math.incrementExact(top);
-      int[] dst = new int[atom.length];
-      System.arraycopy(atom, 0, dst, 0, atom.length - 1);
-      dst[atom.length-1] = newTop;
-      return dst;
-    } 
-    catch (ArithmeticException e) {
-      int[] w = new int[atom.length + 1];
-      w[atom.length] = 1;
-      return w;
+    int[] dst = new int[atom.length];
+    for ( int i = 0; i < atom.length; i++ ) {
+      try {
+        dst[i] = Math.incrementExact(atom[i]);
+        int next = i+1;
+        System.arraycopy(atom, next, dst, next, atom.length - next);
+        return dst;
+      }
+      catch (ArithmeticException e) {
+        dst[i] = 0;
+      }
     }
+    dst = new int[atom.length + 1];
+    dst[atom.length] = 1;
+    return dst;
   }
   
   public static long increment(long atom) throws ArithmeticException {
