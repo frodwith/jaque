@@ -11,8 +11,10 @@
              data.Atom
              data.Cell
              data.Noun
+             data.List
              data.Time
              truffle.Context
+             truffle.Caller
              truffle.nodes.jet.ImplementationNode))
   (:gen-class))
 
@@ -79,13 +81,17 @@
   (wish [m src]
     (slam m (arvo-gate m 20) (Atom/stringToCord src)))
   (nock [m subject formula]
+    (set! (. context caller) 
+          (reify Caller 
+            (kernel [this gate-name sample]
+              (call m gate-name sample))))
     (.nock context subject formula)))
 
 (defn ames-init [m]
   (plan m (noun [[0 :newt (:sen m) 0] :barn 0])))
 
 (defn dill-init [m]
-  (let [pax [0 :term 1 0]
+  (let [pax [0 :term :1 0]
         lan #(plan %1 (noun [pax %2]))]
     (-> m 
         (lan [:boot :sith 0 0 0]) ; only fakezod for now
@@ -139,6 +145,25 @@
     (println "ivory: kernel activated")
     (Noun/println (call m "add" (noun [40 2])) *out*)))
 
+
+(defn apply-effect [m effect]
+  (print "effect: ")
+  (Noun/println effect *out*)
+  m)
+
+(defn apply-poke [m ovo]
+  (let [result  (poke m ovo)
+        effects (.head result)
+        arvo    (.tail result)]
+    (print "poked: ")
+    (Noun/println (.head (.tail ovo)) *out*)
+    (assoc (reduce apply-effect m (List. effects))
+           :arvo arvo)))
+
+(defn work [m]
+  (assoc (reduce apply-poke m (:poke-q m))
+         :poke-q nil))
+
 (defn boot-solid [pill-path jet-path arvo-path]
   (let [jets (read-jets jet-path)
         sys  (read-jam pill-path)
@@ -151,19 +176,8 @@
         m    (-> (boot ctx roc)
                  (ames-init)
                  (dill-init)
-                 (sync-home arvo-path))]
-    (loop [m m
-           q (:poke-q m)]
-      (let [h (first q)]
-        (if (nil? h)
-          m
-          (do
-            (Noun/println h *out*)
-            (let [res (poke m h)]
-              (print "---poke finished: ")
-              (Noun/println (.head res) *out*)
-              (recur (assoc m :kernel (.tail res))
-                     (rest q)))))))
+                 (sync-home arvo-path)
+                 (work))]
     (Noun/println (call m "add" [40 2]) *out*)))
 
 (defn boot-formula [jam-path jet-path]

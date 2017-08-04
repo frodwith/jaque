@@ -17,6 +17,8 @@ import net.frodwith.jaque.data.Axis;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Fragment;
 import net.frodwith.jaque.data.Noun;
+import net.frodwith.jaque.data.Tank;
+import net.frodwith.jaque.data.Tape;
 import net.frodwith.jaque.truffle.driver.Arm;
 import net.frodwith.jaque.truffle.nodes.JaqueRootNode;
 import net.frodwith.jaque.truffle.nodes.TopRootNode;
@@ -51,21 +53,16 @@ public class Context {
   public final Map<Cell, Location> locations;
   public final Map<String, Arm[]> drivers;
   
-  public final Stack<Object> spot;
-  public final Stack<Object> mean;
-  public final Stack<Object> hunk;
-  public final Stack<Object> lose;
-
+  public final Stack<Object> tax;
+  public Caller caller = null;
+  
   public Context(Arm[] arms) {
     this.kicks = new HashMap<KickLabel, CallTarget>();
     this.nocks = new HashMap<Cell, CallTarget>();
     this.locations = new HashMap<Cell, Location>();
     this.drivers = new HashMap<String, Arm[]>();
     
-    this.spot = new Stack<Object>();
-    this.mean = new Stack<Object>();
-    this.hunk = new Stack<Object>();
-    this.lose = new Stack<Object>();
+    this.tax = new Stack<Object>();
 
     Map<String, List<Arm>> temp = new HashMap<String, List<Arm>>();
     if ( null != arms ) {
@@ -207,16 +204,16 @@ public class Context {
               return new SlogHintNode(dynF, next);
             }
             else if ( Atom.SPOT.equals(kind) ) {
-              return new StackHintNode(spot, dynF, next);
+              return new StackHintNode(tax, Atom.SPOT, dynF, next);
             }
             else if ( Atom.MEAN.equals(kind) ) {
-              return new StackHintNode(mean, dynF, next);
+              return new StackHintNode(tax, Atom.MEAN, dynF, next);
             }
             else if ( Atom.LOSE.equals(kind) ) {
-              return new StackHintNode(lose, dynF, next);
+              return new StackHintNode(tax, Atom.LOSE, dynF, next);
             }
             else if ( Atom.HUNK.equals(kind) ) {
-              return new StackHintNode(hunk, dynF, next);
+              return new StackHintNode(tax, Atom.HUNK, dynF, next);
             }
             else {
               System.err.println("unrecognized dynamic hint: " + Atom.toString(kind));
@@ -232,7 +229,7 @@ public class Context {
               this);
         }
         default: {
-          printSpots();
+          printStack();
           throw new IllegalArgumentException();
         }
       }
@@ -247,10 +244,6 @@ public class Context {
     TopRootNode top     = new TopRootNode(inner);
     CallTarget outer    = Truffle.getRuntime().createCallTarget(top);
     
-    spot.clear();
-    mean.clear();
-    lose.clear();
-    hunk.clear();
     try {
       return outer.call(subject);
     }
@@ -261,14 +254,23 @@ public class Context {
         System.err.println(Noun.toString(tone));
       }
       */
-      printSpots();
+      printStack();
       throw e;
     }
   }
   
-  private void printSpots() {
-    while ( !spot.isEmpty() ) {
-      System.err.println(Noun.toString(spot.pop()));
+  private void printStack() {
+    Object tan = 0L;
+    while ( !tax.isEmpty() ) {
+      tan = new Cell(tax.pop(), tan);
+    }
+    Object toon = caller.kernel("mook", new Cell(2L, tan)),
+           tang = Cell.expect(toon).tail;
+    for ( Object tank : new net.frodwith.jaque.data.List(tang) ) {
+      Object wall = Tank.wash(2L, 80L, tank);
+      for ( Object tape : new net.frodwith.jaque.data.List(wall) ) {
+        System.err.println(Tape.toString(tape));
+      }
     }
   }
 

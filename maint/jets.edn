@@ -1,6 +1,6 @@
-{:arms  [["k151/mood/hoon/ut/nest/arms"
-          {:name "dext"}
-          "net.frodwith.jaque.truffle.nodes.jet.ut.NestDextNodeGen"]
+{:arms  [;["k151/mood/hoon/ut/nest/arms"
+         ; {:name "dext"}
+         ; "net.frodwith.jaque.truffle.nodes.jet.ut.NestDextNodeGen"]
          ["k151/mood/hoon/ut"
           {:name "burn"}
           "net.frodwith.jaque.truffle.nodes.jet.ut.BurnNodeGen"]]

@@ -128,7 +128,7 @@ public abstract class KickNode extends FormulaNode {
     }
   }
   
-  private static Set<String> noSeen = new HashSet<String>();
+  //private static Set<String> noSeen = new HashSet<String>();
 
   @TruffleBoundary
   protected ImplementationNode getDriver(Location loc, Object axis, CallTarget fallback) {
@@ -138,6 +138,7 @@ public abstract class KickNode extends FormulaNode {
     }
     Class<? extends ImplementationNode> klass = loc.drivers.get(axis);
     if ( null == klass ) {
+      /*
       if ( axis.equals(2L) ) {
         if ( !noSeen.contains(loc.label) ) {
           noSeen.add(loc.label);
@@ -145,6 +146,7 @@ public abstract class KickNode extends FormulaNode {
         }
 
       }
+      */
       return null;
     }
     try {
@@ -164,6 +166,7 @@ public abstract class KickNode extends FormulaNode {
   }
   
   public void squawk(String dbg, Cell core) {
+    /*
     Location loc = getLocation(core);
     Object axis = getAxis();
     String name = loc == null ? "unregistered" : loc.label;
@@ -173,6 +176,7 @@ public abstract class KickNode extends FormulaNode {
                  : "/" + axis;
       System.err.println(dbg + ": " + arm + " of " + name);
     }
+    */
   }
 
   // Unregistered location, cached target, tail call

@@ -9,7 +9,7 @@ import net.frodwith.jaque.data.List;
 public abstract class RepNode extends PairGateNode {
 
   @Specialization
-  protected Object rep(long a, Cell b) {
+  protected Object rep(long a, Object b) {
     return Atom.rep(Atom.expectBloq(a), new List(b));
   }
 
