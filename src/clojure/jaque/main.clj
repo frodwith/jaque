@@ -3,20 +3,32 @@
   (:require [clojure.string :as string])
   (:require [clojure.edn :as edn])
   (:require [clojure.tools.cli :as cli])
-  (:require [jaque.noun :refer [noun seq->it]])
+  (:require [jaque.noun :refer [noun noun? seq->it]])
+  (:require [clj-http.client :as client])
+  (:require [clojure.data.json :as json])
   (:refer-clojure :exclude [time])
   (:import (java.nio.file Paths)
            (net.frodwith.jaque.truffle.driver Arm NamedArm AxisArm)
            (net.frodwith.jaque
+             Caller
              data.Atom
              data.Cell
              data.Noun
              data.List
              data.Time
              truffle.Context
-             truffle.Caller
              truffle.nodes.jet.ImplementationNode))
-  (:gen-class))
+  (:gen-class
+    :methods [#^{:static true} [lens [String] Object]]))
+
+(defn -lens [hoon]
+  (let [payload  (json/write-str {:source {:dojo hoon}
+                                  :sink   {:stdout nil}})
+        response (client/post "http://localhost:12321"
+                              {:body payload})
+        body     (:body response)
+        unquot   (.substring body 1 (dec (.length body)))]
+    (Noun/parse unquot)))
 
 (defn read-jets [path]
 	(let [jets  (edn/read (java.io.PushbackReader. (io/reader path)))
@@ -50,6 +62,7 @@
 
 (defprotocol Machine
   (time [m da])
+  (install [m new-arvo])
   (numb [m])
   (slam [m gate sample])
   (call [m gate-name sample])
@@ -63,9 +76,17 @@
   Machine
   (time [m da]
     (assoc m :now da :wen (call m "scot" [:da da])))
+  (install [m new-arvo]
+    (let [new-m   (assoc m :arvo new-arvo)
+          new-ctx (:context m)]
+      (set! (. new-ctx caller)
+        (reify Caller 
+          (kernel [this gate-name sample]
+            (call new-m gate-name sample))))
+      new-m))
   (numb [m]
     (let [n (Noun/mug now)]
-      (assoc m :sev sev :sen (call m "scot" [:uv n]))))
+      (assoc m :sev n :sen (call m "scot" [:uv n]))))
   (slam [m gate sample]
     (let [core (noun [(.head gate) sample (.tail (.tail gate))])
           fom  (noun [9 2 0 1])]
@@ -81,10 +102,6 @@
   (wish [m src]
     (slam m (arvo-gate m 20) (Atom/stringToCord src)))
   (nock [m subject formula]
-    (set! (. context caller) 
-          (reify Caller 
-            (kernel [this gate-name sample]
-              (call m gate-name sample))))
     (.nock context subject formula)))
 
 (defn ames-init [m]
@@ -129,8 +146,8 @@
 
 (defn boot [ctx roc]
   (let [m (-> (map->MachineRec {:context ctx 
-                                :arvo    roc
                                 :poke-q  clojure.lang.PersistentQueue/EMPTY})
+              (install roc)
               (time (Time/now))
               (numb))]
     (println "arvo time: " (Atom/cordToString (:wen m)))
@@ -145,7 +162,6 @@
     (println "ivory: kernel activated")
     (Noun/println (call m "add" (noun [40 2])) *out*)))
 
-
 (defn apply-effect [m effect]
   (print "effect: ")
   (Noun/println effect *out*)
@@ -157,8 +173,8 @@
         arvo    (.tail result)]
     (print "poked: ")
     (Noun/println (.head (.tail ovo)) *out*)
-    (assoc (reduce apply-effect m (List. effects))
-           :arvo arvo)))
+    (install (reduce apply-effect m (List. effects))
+             arvo)))
 
 (defn work [m]
   (assoc (reduce apply-poke m (:poke-q m))

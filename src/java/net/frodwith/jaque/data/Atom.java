@@ -98,8 +98,6 @@ public class Atom {
                              ROSE = mote("rose"),
                              PALM = mote("palm");
 
-  private static final NumberFormat dotted = NumberFormat.getNumberInstance(Locale.GERMAN);
-
   public static Object add(int[] a, int[] b) {
     Square s   = new Square(a, b);
     int[] dst  = new int[s.len+1];
@@ -469,7 +467,7 @@ public class Atom {
       }
     }
     return new Cell(p, new Cell(q, 0L));
-  } 
+  }
   
   public static Object cue(Object a) {
     try {
@@ -508,7 +506,7 @@ public class Atom {
       return malt(sal);
     }
   }
-  
+
   public static Object dec(int[] atom) {
     int[] result;
     if ( atom[0] == 0 ) {
@@ -521,7 +519,7 @@ public class Atom {
     }
     return malt(result);
   }
-
+  
   public static long dec(long atom) {
     if ( atom == 0 ) {
       throw new Bail();
@@ -530,7 +528,7 @@ public class Atom {
       return atom - 1;
     }
   }
-  
+
   public static Object dec(Object atom) {
     if ( TypesGen.isLong(atom) ) {
       return dec(TypesGen.asLong(atom));
@@ -539,10 +537,10 @@ public class Atom {
       return dec(TypesGen.asIntArray(atom));
     }
   }
-  
+
   public static long dis(long a, long b) {
     return a & b;
-  }
+  } 
   
   public static Object dis(Object a, Object b) {
     byte w   = 5;
@@ -566,7 +564,7 @@ public class Atom {
       return malt(sal);
     } 
   }
-
+  
   public static Object div(int[] x, int[] y) {
     int cmp = compare(x,y);
     if ( cmp < 0 ) {
@@ -659,7 +657,7 @@ public class Atom {
     }
     throw new Bail();   
   }
-
+  
   public static Cell dvr(int[] x, int[] y) {
     int cmp = compare(x,y);
     if ( cmp < 0 ) {
@@ -677,7 +675,7 @@ public class Atom {
       return divmod(x,y);
     }   
   }
-  
+
   public static Cell dvr(long a, long b) {
     return new Cell(a / b, a % b);
   }
@@ -688,7 +686,7 @@ public class Atom {
     }
     return dvr(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
-  
+
   public static Object edPuck(Object a) {
     byte[] pub = new byte[32],
            sec = new byte[64],
@@ -720,6 +718,16 @@ public class Atom {
     return takeBytes(sig, 64);
   }
 
+  public static Object edVeri(Object s, Object m, Object pk) {
+    byte[] sig = forceBytes(s, 64),
+           pub = forceBytes(pk, 32),
+           mes = toByteArray(m);
+    
+    return ( 1 == Ed25519.ed.ed25519_verify(sig, mes, mes.length, pub) )
+        ? YES
+        : NO;
+  }
+  
   public static Object end(byte a, Object b, Object c) {
     int bi;
 
@@ -742,7 +750,7 @@ public class Atom {
     chop(a, 0, bi, 0, sal, c);
     return malt(sal);
   }
-
+  
   public static boolean equals(int[] a, int[] b) {
     return Arrays.equals(a,  b);
   }
@@ -764,14 +772,14 @@ public class Atom {
     }
     return o;
   }
-  
+
   public static byte expectBloq(long atom) {
     if ( atom >= 32 || atom < 0) {
       throw new Bail();
     }
     return (byte) atom;
   }
-  
+
   public static int expectInt(Object a) {
     long al = expectLong(a);
     int  ai = (int) al;
@@ -796,10 +804,6 @@ public class Atom {
       throw new Bail();
     }
     return (int) al;
-  }
-  
-  private static Object takeBytes(byte[] src, int len) {
-    return fromByteArray(Arrays.copyOfRange(src, 0, len));
   }
   
   private static byte[] forceBytes(Object a, int maxLen) {
@@ -870,7 +874,7 @@ public class Atom {
 
     return malt(wor);
 }
-
+  
   public static boolean getNthBit(int[] atom, int n) {
     int pix = n >> 5;
     
@@ -935,7 +939,7 @@ public class Atom {
       return increment(TypesGen.asIntArray(atom));
     }
   }
-  
+
   private static boolean isTa(String s) {
     for ( char c : s.toCharArray() ) {
       if ( c < 32 || c > 127 ) {
@@ -955,9 +959,76 @@ public class Atom {
     }
     return true;
   }
-
+  
   public static boolean isZero(Object atom) {
     return TypesGen.isLong(atom) && 0L == TypesGen.asLong(atom);
+  }
+  
+  private static Trel jam(Map<Object,Object> m, Object a, Object b, Object l) {
+    Object c = m.get(a);
+    
+    if ( m.containsKey(a) ) {
+      if ( Noun.isAtom(a) && met(a) <= met(c) ) {
+        return jamFlat(m, a, l);
+      }
+      else {
+        return jamPtr(m, c, l);
+      }
+    }
+    else {
+      m.put(a, b);
+      if ( Noun.isAtom(a) ) {
+        return jamFlat(m, a, l);
+      }
+      else {
+        Cell pair = Cell.expect(a);
+        return jamPair(m, pair.head, pair.tail, b, l);
+      }     
+    }
+  }
+  
+  public static Object jam(Object a) {
+    Trel x   = jam(new HashMap<Object,Object>(), a, 0L, 0L);
+    Object q = List.flop(x.q);
+    
+    return can((byte)0, new List(q));
+  }
+  
+  private static Trel jamFlat(Map<Object, Object> m, Object a, Object l) {
+    Cell d     = mat(a);
+    Object x   = increment(d.head),
+           tcc = new Cell(x, lsh((byte) 0, 1, d.tail)),
+           tc  = new Cell(tcc, l);
+    
+    return new Trel(x, tc, 0);
+  }
+  
+  private static Trel jamPair(Map<Object, Object> m, Object ha, Object ta, Object b, Object l) {
+    Object x, y, z;
+    Cell w;
+    Trel d, e;
+
+    w = new Cell(new Cell(2L, 1L), l);
+    x = add(2L, b);
+    d = jam(m, ha, x, w);
+    y = add(x, d.p);
+    e = jam(m, ta, y, d.q);
+    z = add(d.p, e.p);
+    
+    return new Trel(add(2L, z), e.q, 0L);
+  }
+  
+  private static Trel jamPtr(Map<Object, Object> m, Object uc, Object l) {
+    Cell d, ii, in;
+    Object x, y;
+
+    d = mat(uc);
+    x = lsh((byte)0, 2, d.tail);
+    y = add(2L, d.head);
+    ii = new Cell(y, mix(3L, x));
+    in = new Cell(ii, l);
+    
+    return new Trel(y, in, 0L);
   }
 
   public static Object lsh(byte bloq, int count, Object atom) {
@@ -1009,7 +1080,7 @@ public class Atom {
       return ((words[1] & 0xffffffffL) << 32) | (words[0] & 0xffffffffL);
     }
   }
-  
+
   public static Object mas(Object atom) {
     int b = met(atom);
     if ( b < 2 ) {
@@ -1019,6 +1090,32 @@ public class Atom {
            d = bex(b - 2),
            e = sub(atom, c);
     return con(e, d);
+  }
+  
+  private static Cell mat(Object a) {
+    if ( isZero(a) ) {
+      return new Cell(1L, 1L);
+    }
+    int bi, ci, ui;
+    Object b, c, u, v, w, x, y, z, p, q;
+    
+    bi = met(a);
+    b  = (long) bi;
+    ci = met(b);
+    c  = (long) ci;
+
+    u  = dec(c);
+    ui = Atom.expectInt(u);
+    v  = add(c, c);
+    w  = bex(ci);
+    x  = end((byte) 0, u, b);
+    y  = lsh((byte) 0, ui, a);
+    z  = mix(x, y);
+
+    p  = add(v, b);
+    q  = cat((byte) 0, w, z);
+    
+    return new Cell(p, q);
   }
   
   public static int met(byte bloq, Object atom) {
@@ -1248,7 +1345,7 @@ public class Atom {
   
   public static void pretty(Writer out, int[] cur) throws IOException {
     if ( 1 == cur.length && Long.compareUnsigned(cur[0], 65536) < 0 ) {
-      out.write(dotted.format(cur[0]));
+      raw(out, cur, 10, 3);
     }
     else {
       String cord = cordToString(cur);
@@ -1266,7 +1363,7 @@ public class Atom {
         }
       }
       out.write("0x");
-      raw(out, cur, 16);
+      raw(out, cur, 16, 4);
     }
   }
 
@@ -1297,25 +1394,31 @@ public class Atom {
     return malt(sal);
   }
   
-  public static void raw(Writer out, int[] cur, int radix) throws IOException {
-    Stack<Integer> digits = new Stack<Integer>();
+  public static void raw(Writer out, int[] cur, int radix, int dot) throws IOException {
+    Stack<Character> digits = new Stack<Character>();
 
     int len = cur.length,
-        size = len;
+        size = len,
+        doc  = 0;
 
     cur = Arrays.copyOf(cur, len);
 
     while ( true ) {
-      digits.push(MPN.divmod_1(cur, cur, size, radix));
+      char dig = Character.forDigit(MPN.divmod_1(cur, cur, size, radix), radix);
+      digits.push(dig);
       if (cur[len-1] == 0) {
         if (--len == 0) {
           break;
         }
       }
+      if (++doc == dot) {
+        doc = 0;
+        digits.push('.');
+      }
     }
     
     while ( !digits.empty() ) {
-      out.write(Character.forDigit(digits.pop(), radix));
+      out.write(digits.pop());
     }
   }
   
@@ -1527,6 +1630,10 @@ public class Atom {
     }
   }
 
+  private static Object takeBytes(byte[] src, int len) {
+    return fromByteArray(Arrays.copyOfRange(src, 0, len));
+  }
+  
   public static byte[] toByteArray(Object a) {
     return toByteArray(a, LITTLE_ENDIAN);
   }
@@ -1559,7 +1666,7 @@ public class Atom {
     }
     return buf;
   }
-  
+
   public static String toString(Object atom) {
     StringWriter out = new StringWriter();
     try {
@@ -1571,10 +1678,10 @@ public class Atom {
     }
   }
 
-  public static String toString(Object atom, int radix) {
+  public static String toString(Object atom, int radix, int dot) {
     StringWriter out = new StringWriter();
     try {
-      raw(out, TypesGen.asImplicitIntArray(atom), radix);
+      raw(out, TypesGen.asImplicitIntArray(atom), radix, dot);
       return out.toString();
     }
     catch ( IOException e ) {
@@ -1604,15 +1711,5 @@ public class Atom {
 
   public String toString() {
     return toString(value);
-  }
-
-  public static Object edVeri(Object s, Object m, Object pk) {
-    byte[] sig = forceBytes(s, 64),
-           pub = forceBytes(pk, 32),
-           mes = toByteArray(m);
-    
-    return ( 1 == Ed25519.ed.ed25519_verify(sig, mes, mes.length, pub) )
-        ? YES
-        : NO;
   }
 }

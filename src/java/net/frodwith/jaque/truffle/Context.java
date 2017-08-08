@@ -2,7 +2,6 @@ package net.frodwith.jaque.truffle;
 
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
@@ -10,12 +9,14 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 
 import net.frodwith.jaque.Bail;
+import net.frodwith.jaque.Caller;
 import net.frodwith.jaque.KickLabel;
 import net.frodwith.jaque.Location;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Axis;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Fragment;
+import net.frodwith.jaque.data.List;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.data.Tank;
 import net.frodwith.jaque.data.Tape;
@@ -64,10 +65,10 @@ public class Context {
     
     this.tax = new Stack<Object>();
 
-    Map<String, List<Arm>> temp = new HashMap<String, List<Arm>>();
+    Map<String, LinkedList<Arm>> temp = new HashMap<String, LinkedList<Arm>>();
     if ( null != arms ) {
       for ( Arm a : arms ) {
-        List<Arm> push = temp.get(a.label);
+        LinkedList<Arm> push = temp.get(a.label);
         if ( null == push ) {
           push = new LinkedList<Arm>();
           temp.put(a.label, push);
@@ -76,8 +77,8 @@ public class Context {
       }
     }
     
-    for ( Map.Entry<String, List<Arm>> e : temp.entrySet() ) {
-      List<Arm> al = e.getValue();
+    for ( Map.Entry<String, LinkedList<Arm>> e : temp.entrySet() ) {
+      LinkedList<Arm> al = e.getValue();
       Arm[] aa = new Arm[al.size()];
       drivers.put(e.getKey(), al.toArray(aa));
     }
@@ -248,27 +249,34 @@ public class Context {
       return outer.call(subject);
     }
     catch (Bail e) {
-      /*
-      Object tone = mean.pop();
-      if ( null != tone ) {
-        System.err.println(Noun.toString(tone));
-      }
-      */
       printStack();
       throw e;
     }
   }
   
   private void printStack() {
+    if ( null == caller ) {
+      System.err.println("Cannot print stack: no kernel caller");
+      return;
+    }
+    
+    // this all needs cleaning up.
     Object tan = 0L;
     while ( !tax.isEmpty() ) {
       tan = new Cell(tax.pop(), tan);
     }
-    Object toon = caller.kernel("mook", new Cell(2L, tan)),
+
+    // it's in reverse order now (think about it... stacks...)
+    Object ton = 0L;
+    for ( Object o : new List(tan) ) {
+      ton = new Cell(o, ton);
+    }
+    
+    Object toon = caller.kernel("mook", new Cell(2L, ton)),
            tang = Cell.expect(toon).tail;
-    for ( Object tank : new net.frodwith.jaque.data.List(tang) ) {
-      Object wall = Tank.wash(2L, 80L, tank);
-      for ( Object tape : new net.frodwith.jaque.data.List(wall) ) {
+    for ( Object tank : new List(tang) ) {
+      Object wall = Tank.wash(0L, 80L, tank);
+      for ( Object tape : new List(wall) ) {
         System.err.println(Tape.toString(tape));
       }
     }

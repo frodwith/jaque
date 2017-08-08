@@ -5,7 +5,6 @@ import java.util.Stack;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.data.Cell;
-import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 
 public final class StackHintNode extends DynamicHintFormula {

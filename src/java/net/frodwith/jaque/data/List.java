@@ -1,6 +1,7 @@
 package net.frodwith.jaque.data;
 
 import java.util.Iterator;
+import java.util.Stack;
 
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
@@ -69,5 +70,13 @@ public class List implements Iterable<Object> {
       a = Atom.dec(a);
     }
     return b;
+  }
+
+  public static Object flop(Object a) {
+    Object r = 0L;
+    for ( Object i : new List(a) ) {
+      r = new Cell(i, r);
+    }
+    return r;
   }
 }

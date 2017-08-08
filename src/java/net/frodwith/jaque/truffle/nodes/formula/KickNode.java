@@ -128,7 +128,7 @@ public abstract class KickNode extends FormulaNode {
     }
   }
   
-  //private static Set<String> noSeen = new HashSet<String>();
+  private static Set<String> noSeen = new HashSet<String>();
 
   @TruffleBoundary
   protected ImplementationNode getDriver(Location loc, Object axis, CallTarget fallback) {
@@ -138,7 +138,6 @@ public abstract class KickNode extends FormulaNode {
     }
     Class<? extends ImplementationNode> klass = loc.drivers.get(axis);
     if ( null == klass ) {
-      /*
       if ( axis.equals(2L) ) {
         if ( !noSeen.contains(loc.label) ) {
           noSeen.add(loc.label);
@@ -146,7 +145,6 @@ public abstract class KickNode extends FormulaNode {
         }
 
       }
-      */
       return null;
     }
     try {
