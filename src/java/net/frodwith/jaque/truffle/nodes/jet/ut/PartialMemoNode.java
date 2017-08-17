@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.Bail;
@@ -38,18 +39,26 @@ public abstract class PartialMemoNode extends ImplementationNode {
       throw new Bail();
     }
   }
+  
+  @TruffleBoundary
+  private Object recall(Cell key) {
+    return memo.get(key);
+  }
+  
+  @TruffleBoundary
+  private void store(Cell key, Object value) {
+    memo.put(key, value);
+  }
 
   @Override
   public Object doJet(VirtualFrame frame, Object core) {
     Cell key = executeMemoKey(Cell.expect(core));
     //String wat = getClass().getSimpleName().substring(0, 4).toLowerCase();
-    if ( memo.containsKey(key) ) {
-      return memo.get(key);
+    Object mem = recall(key);
+    if ( null == mem ) {
+      mem = dispatch.call(frame, getFallback(), new Object[] { core });
+      store(key, mem);
     }
-    else {
-      Object pro = dispatch.call(frame, getFallback(), new Object[] { core });
-      memo.put(key, pro);
-      return pro;
-    }
+    return mem;
   }
 }

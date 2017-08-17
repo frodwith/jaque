@@ -12,6 +12,8 @@
            (com.googlecode.lanterna
              screen.Screen
              screen.TerminalScreen
+             TerminalPosition
+             terminal.ExtendedTerminal
              terminal.DefaultTerminalFactory
              TextCharacter)
            (net.frodwith.jaque.truffle.driver Arm NamedArm AxisArm)
@@ -74,15 +76,19 @@
     this)
   (line [this text]
     (let [size (.getTerminalSize screen)
-          row  (dec (.getRows size))]
+          row  (dec (.getRows size))
+          len  (.length text)]
       (doseq [[c i] (index-str text)]
         (.setCharacter screen i row (TextCharacter. c)))
-      (doseq [i (range (.length text) (.getColumns size))]
+      (doseq [i (range len (.getColumns size))]
         (.setCharacter screen i row (TextCharacter. \space)))
+      (.setCursorPosition screen (TerminalPosition. len row))
       this))
   (scroll [this]
-    (.scrollLines screen 0 (dec (.getRows (.getTerminalSize screen))) 1)
-    this)
+    (let [bottom (dec (.getRows (.getTerminalSize screen)))]
+      (.scrollLines screen 0 bottom 1)
+      (.setCursorPosition screen (TerminalPosition. 0 bottom))
+      this))
   (save [this path-seq content-bytes]
     (with-open [out (io/output-stream (io/file (string/join File/pathSeparator path-seq)))]
       (.write out content-bytes))
@@ -100,21 +106,32 @@
 
 (defn make-lanterna []
   (let [f (DefaultTerminalFactory.)
-        s (.createScreen f)]
-    (.startScreen s)
-    (map->Lanterna {:screen s
-                    :spinner-state 0})))
+        t (.createTerminal f)]
+    (when (isa? t ExtendedTerminal)
+      (.maximize t))
+    (let [s (TerminalScreen. t)]
+      (.startScreen s)
+      (.doResizeIfNecessary s)
+      (map->Lanterna {:screen s
+                      :spinner-state 0}))))
 
 (def blits 
-  {(noun :bee) #(spinner-tick %1 %2)
-   (noun :bel) #(bell %)
-   (noun :clr) #(clr %)
-   (noun :hop) #(hop %1 (Atom/expectLong %2))
-   (noun :lin) #(line %1 (Tape/toString %2))
-   (noun :mor) #(scroll %)
-   (noun :sav) #(save %1 (List. (.head %2)) (Atom/toByteArray (.tail %2)))
-   (noun :sag) #(save %1 (List. (.head %2)) (Atom/toByteArray (Atom/jam (.tail %2))))
-   (noun :url) #(link %1 %2)})
+  {(noun :bee) (fn [t a] (spinner-tick t a))
+   (noun :bel) (fn [t a] (bell t))
+   (noun :clr) (fn [t a] (clr t))
+   (noun :hop) (fn [t a] (hop t (Atom/expectLong a)))
+   (noun :lin) (fn [t a] (line t (Tape/toString a)))
+   (noun :mor) (fn [t a] (scroll t))
+   (noun :sav) (fn [t a]
+                 (let [pax (List. (.head a))
+                       pad (Atom/toByteArray (.tail a))]
+                   (save t pax pad)))
+   (noun :sag) (fn [t a]
+                 (let [pax (List. (.head a))
+                       pad (Atom/toByteArray (Atom/jam (.tail a)))]
+                   (save t pax pad)))
+   (noun :url) (fn [t a]
+                 (link t a))})
 
 (defn blit [term b]
   (let [k (.head b)

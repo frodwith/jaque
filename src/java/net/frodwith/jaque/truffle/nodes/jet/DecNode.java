@@ -10,7 +10,7 @@ public abstract class DecNode extends GateNode {
   @Specialization
   protected long dec(long atom) {
     if ( atom == 0 ) {
-      System.err.print("decrement underflow");
+      getContext().err("decrement underflow");
       throw new Bail();
     }
     return atom - 1L;
