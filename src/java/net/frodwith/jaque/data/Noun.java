@@ -1,14 +1,13 @@
 package net.frodwith.jaque.data;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.PrintStream;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Stack;
+
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 
 import net.frodwith.jaque.truffle.TypesGen;
 
@@ -200,6 +199,7 @@ public class Noun {
     }
   }
 
+  @TruffleBoundary
   private static void pretty(Writer out, Object noun, boolean tail) throws IOException {
     if ( isCell(noun) ) {
       Cell c = TypesGen.asCell(noun);

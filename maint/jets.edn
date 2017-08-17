@@ -48,6 +48,7 @@
          ["k151/mood/hoon/lsh" "net.frodwith.jaque.truffle.nodes.jet.LshNodeGen"]
          ["k151/mood/hoon/lte" "net.frodwith.jaque.truffle.nodes.jet.LteNodeGen"]
          ["k151/mood/hoon/lth" "net.frodwith.jaque.truffle.nodes.jet.LthNodeGen"]
+         ["k151/mood/hoon/lent" "net.frodwith.jaque.truffle.nodes.jet.LentNodeGen"]
          ["k151/mood/hoon/mas" "net.frodwith.jaque.truffle.nodes.jet.MasNodeGen"]
          ["k151/mood/hoon/met" "net.frodwith.jaque.truffle.nodes.jet.MetNodeGen"]
          ["k151/mood/hoon/mix" "net.frodwith.jaque.truffle.nodes.jet.MixNodeGen"]
@@ -55,6 +56,7 @@
          ["k151/mood/hoon/mug" "net.frodwith.jaque.truffle.nodes.jet.MugNodeGen"]
          ["k151/mood/hoon/muk" "net.frodwith.jaque.truffle.nodes.jet.MukNodeGen"]
          ["k151/mood/hoon/mul" "net.frodwith.jaque.truffle.nodes.jet.MulNodeGen"]
+         ["k151/mood/hoon/mink" "net.frodwith.jaque.truffle.nodes.jet.MinkNodeGen"]
          ["k151/mood/hoon/peg" "net.frodwith.jaque.truffle.nodes.jet.PegNodeGen"]
          ["k151/mood/hoon/rap" "net.frodwith.jaque.truffle.nodes.jet.RapNodeGen"]
          ["k151/mood/hoon/rep" "net.frodwith.jaque.truffle.nodes.jet.RepNodeGen"]
@@ -63,4 +65,9 @@
          ["k151/mood/hoon/shal" "net.frodwith.jaque.truffle.nodes.jet.ShalNodeGen"]
          ["k151/mood/hoon/shan" "net.frodwith.jaque.truffle.nodes.jet.ShanNodeGen"]
          ["k151/mood/hoon/shay" "net.frodwith.jaque.truffle.nodes.jet.ShayNodeGen"]
-         ["k151/mood/hoon/sub" "net.frodwith.jaque.truffle.nodes.jet.SubNodeGen"]]}
+         ["k151/mood/hoon/sub" "net.frodwith.jaque.truffle.nodes.jet.SubNodeGen"]
+         ["k151/mood/hoon/trip" "net.frodwith.jaque.truffle.nodes.jet.TripNodeGen"]
+         ["k151/mood/hoon/vor" "net.frodwith.jaque.truffle.nodes.jet.VorNodeGen"]
+         ["k151/mood/hoon/gor" "net.frodwith.jaque.truffle.nodes.jet.GorNodeGen"]
+         ["k151/mood/hoon/dor" "net.frodwith.jaque.truffle.nodes.jet.DorNodeGen"]
+         ]}

@@ -51,11 +51,10 @@ public final class FastHintNode extends DynamicHintFormula {
       Cell parentBattery = TypesGen.asCell(parentCore.head);
       Location parentLoc = context.locations.get(parentBattery);
       if ( null == parentLoc ) {
-        System.err.println("register: invalid parent");
+        context.err("register: invalid parent");
         return null;
       }
       String label = parentLoc.label + "/" + clue.name;
-      //System.out.println(label);
       return new Location(clue.name, label, clue.parentAxis, clue.hooks, 
           core, parentLoc, context.drivers.get(label));
     }
@@ -67,7 +66,7 @@ public final class FastHintNode extends DynamicHintFormula {
 
     // We're on the slow path either way from here
     CompilerDirectives.transferToInterpreter();
-    Clue clue = Clue.parse(rawClue);
+    Clue clue = Clue.parse(rawClue, context);
     if ( TypesGen.isCell(product) && null != clue ) {
       Cell core = TypesGen.asCell(product);
       context.locations.put(TypesGen.asCell(core.head), register(core, clue));
@@ -201,7 +200,7 @@ public final class FastHintNode extends DynamicHintFormula {
       return map;
     }
     
-    public static Clue parse(Object raw) {
+    public static Clue parse(Object raw, Context context) {
       try {
         Cell trel = TypesGen.asCell(raw);
         Cell pair = TypesGen.asCell(trel.tail);
@@ -211,11 +210,11 @@ public final class FastHintNode extends DynamicHintFormula {
         return new Clue(name, parentAxis, hooks);
       }
       catch (ClassCastException e) {
-        System.err.println("Bad noun shape while parsing clue");
+        context.err("Bad noun shape while parsing clue");
         e.printStackTrace();
       }
       catch (ClueParsingException e) {
-        System.err.println("Invalid clue");
+        context.err("Invalid clue");
         e.printStackTrace();
       }
       return null;

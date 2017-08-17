@@ -44,11 +44,9 @@ public abstract class PartialMemoNode extends ImplementationNode {
     Cell key = executeMemoKey(Cell.expect(core));
     //String wat = getClass().getSimpleName().substring(0, 4).toLowerCase();
     if ( memo.containsKey(key) ) {
-      //System.err.println(wat + " memo: hit " + String.format("%x", Noun.mug(key)));
       return memo.get(key);
     }
     else {
-      //System.err.println(wat + " memo: miss " + String.format("%x", Noun.mug(key)));
       Object pro = dispatch.call(frame, getFallback(), new Object[] { core });
       memo.put(key, pro);
       return pro;

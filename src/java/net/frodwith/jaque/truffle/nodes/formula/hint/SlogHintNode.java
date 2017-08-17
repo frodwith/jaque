@@ -1,5 +1,6 @@
 package net.frodwith.jaque.truffle.nodes.formula.hint;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
@@ -9,13 +10,21 @@ import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.List;
 import net.frodwith.jaque.data.Tank;
 import net.frodwith.jaque.data.Tape;
+import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.TypesGen;
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 
 public final class SlogHintNode extends DynamicHintFormula {
+  private final Context context;
   
-  public SlogHintNode(FormulaNode hint, FormulaNode next) {
+  public SlogHintNode(Context context, FormulaNode hint, FormulaNode next) {
     super(hint, next);
+    this.context = context;
+  }
+  
+  @TruffleBoundary
+  private void doSlog(Object tank) {
+    context.caller.slog(tank);
   }
   
   @Override
@@ -23,18 +32,7 @@ public final class SlogHintNode extends DynamicHintFormula {
     try {
       Cell slog = Cell.expect(hint.executeGeneric(frame));
       Cell tank = Cell.expect(slog.tail);
-      int  pri  = Atom.expectInt(slog.head);
-      
-      if ( pri > 0 ) {
-        for ( int i = 0; i < pri; ++i ) {
-          System.out.print('>');
-        }
-        System.out.print(' ');
-      }
-      
-      for ( Object line : new List(Tank.wash(2L, 80L, tank)) ) {
-        System.out.println(Tape.toString(line));
-      }
+      doSlog(tank);
     }
     catch ( Bail e ) {
     }

@@ -12,7 +12,7 @@ public abstract class SubNode extends PairGateNode {
       return Atom.sub(a, b);
     }
     catch (Bail e) {
-      System.err.println("subtract underflow");
+      getContext().err("subtract underflow");
       throw e;
     }
   }
@@ -23,7 +23,7 @@ public abstract class SubNode extends PairGateNode {
       return Atom.sub(a, b);
     }
     catch (Bail e) {
-      System.err.println("subtract underflow");
+      getContext().err("subtract underflow");
       throw e;
     }
   }

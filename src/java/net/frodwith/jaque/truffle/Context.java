@@ -4,8 +4,12 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Stack;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
+import com.kenai.jffi.Array;
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 
 import net.frodwith.jaque.Bail;
@@ -18,8 +22,10 @@ import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Fragment;
 import net.frodwith.jaque.data.List;
 import net.frodwith.jaque.data.Noun;
+import net.frodwith.jaque.data.Qual;
 import net.frodwith.jaque.data.Tank;
 import net.frodwith.jaque.data.Tape;
+import net.frodwith.jaque.data.Trel;
 import net.frodwith.jaque.truffle.driver.Arm;
 import net.frodwith.jaque.truffle.nodes.JaqueRootNode;
 import net.frodwith.jaque.truffle.nodes.TopRootNode;
@@ -49,22 +55,85 @@ import net.frodwith.jaque.truffle.nodes.formula.hint.StackHintNode;
 
 public class Context {
   
+  private static class Invocation {
+    public String name;
+    public long begin;
+    public long last;
+  }
+  
+  private static class Stats {
+    public long total;
+    public long own;
+  }
+  
   public final Map<KickLabel, CallTarget> kicks;
   public final Map<Cell, CallTarget> nocks;
   public final Map<Cell, Location> locations;
   public final Map<String, Arm[]> drivers;
+
+  public Map<String,Stats> times = null;
+  public Stack<Invocation> calls = new Stack<Invocation>();
+  public final boolean profile;
   
-  public final Stack<Object> tax;
+  public final CallTarget kickTarget;
+  
+  public void come(String name) {
+    Stats st;
+
+    Invocation i = new Invocation();
+    i.name = name;
+
+    long now = i.last = i.begin = System.nanoTime();
+
+    if ( times.containsKey(name) ) {
+      st = times.get(name);
+    }
+    else {
+      st = new Stats();
+      times.put(name, st);
+    }
+    if ( !calls.isEmpty() ) {
+      Invocation up = calls.peek();
+      Stats stu = times.get(up.name);
+      stu.own += now - up.last;
+    }
+    calls.push(i);
+  }
+  
+  // returns string because there's no Thunk in java.util.function...
+  public String flee() {
+    long now = System.nanoTime();
+    Invocation done = calls.pop();
+    Stats st = times.get(done.name);
+    st.total += now - done.begin;
+    st.own   += now - done.last;
+
+    if ( !calls.isEmpty() ) {
+      Invocation up = calls.peek();
+      up.last = now;
+    }
+
+    return null;
+  }
+  
+  public Stack<Road> levels;
   public Caller caller = null;
   
   public Context(Arm[] arms) {
+    this(arms, false);
+  }
+  
+  public Context(Arm[] arms, boolean profile) {
     this.kicks = new HashMap<KickLabel, CallTarget>();
     this.nocks = new HashMap<Cell, CallTarget>();
     this.locations = new HashMap<Cell, Location>();
     this.drivers = new HashMap<String, Arm[]>();
+    this.times = new HashMap<String,Stats>();
+    this.profile = profile;
     
-    this.tax = new Stack<Object>();
-
+    levels = new Stack<Road>();
+    levels.push(new Road(null));
+    
     Map<String, LinkedList<Arm>> temp = new HashMap<String, LinkedList<Arm>>();
     if ( null != arms ) {
       for ( Arm a : arms ) {
@@ -82,6 +151,30 @@ public class Context {
       Arm[] aa = new Arm[al.size()];
       drivers.put(e.getKey(), al.toArray(aa));
     }
+    
+    this.kickTarget = compileTarget(new Qual(9L, 2L, 0L, 1L).toCell());
+  }
+  
+  @TruffleBoundary
+  public void err(String s) {
+    System.err.println(s);
+  }
+
+  @TruffleBoundary
+  public void print(String s) {
+    System.out.println(s);
+  }
+  
+  public Object slam(Cell gate, Object sample) {
+    Cell pay = Cell.expect(gate.tail),
+         yap = new Cell(sample, pay.tail),
+         tag = new Cell(gate.head, yap);
+
+    return kickTarget.call(tag);
+  }
+  
+  public Function<Object, Object> slammer(Cell gate) {
+    return (sam) -> slam(gate, sam);
   }
   
   /* If there was a node for this, we could profile it, but it's a slow path operation
@@ -184,7 +277,7 @@ public class Context {
           Object  head = cell.head;
           if ( Noun.isAtom(head) ) {
             // What do you do with static hints you don't recognize? Nothing...
-            System.err.println("unrecognized static hint: " + Atom.toString(head));
+            err("unrecognized static hint: " + Atom.toString(head));
             return next;
           }
           else {
@@ -202,22 +295,22 @@ public class Context {
               return new FastHintNode(this, dynF, next);
             }
             else if ( Atom.SLOG.equals(kind) ) {
-              return new SlogHintNode(dynF, next);
+              return new SlogHintNode(this, dynF, next);
             }
             else if ( Atom.SPOT.equals(kind) ) {
-              return new StackHintNode(tax, Atom.SPOT, dynF, next);
+              return new StackHintNode(this, Atom.SPOT, dynF, next);
             }
             else if ( Atom.MEAN.equals(kind) ) {
-              return new StackHintNode(tax, Atom.MEAN, dynF, next);
+              return new StackHintNode(this, Atom.MEAN, dynF, next);
             }
             else if ( Atom.LOSE.equals(kind) ) {
-              return new StackHintNode(tax, Atom.LOSE, dynF, next);
+              return new StackHintNode(this, Atom.LOSE, dynF, next);
             }
             else if ( Atom.HUNK.equals(kind) ) {
-              return new StackHintNode(tax, Atom.HUNK, dynF, next);
+              return new StackHintNode(this, Atom.HUNK, dynF, next);
             }
             else {
-              System.err.println("unrecognized dynamic hint: " + Atom.toString(kind));
+              err("unrecognized dynamic hint: " + Atom.toString(kind));
               return new DiscardHintNode(dynF, next);
             }
           }
@@ -230,56 +323,78 @@ public class Context {
               this);
         }
         default: {
-          printStack();
-          throw new IllegalArgumentException();
+          throw new Bail();
         }
       }
     }
   }
-
-  /* Top-level interpeter entry point */
-  public Object nock(Object subject, Cell formula) {
+  
+  private CallTarget compileTarget(Cell formula) {
     FormulaNode program = parseCell(formula, true);
     JaqueRootNode root  = new JaqueRootNode(program);
     CallTarget inner    = Truffle.getRuntime().createCallTarget(root);
     TopRootNode top     = new TopRootNode(inner);
-    CallTarget outer    = Truffle.getRuntime().createCallTarget(top);
+
+    return Truffle.getRuntime().createCallTarget(top);
+  }
+
+  /* Top-level interpeter entry point */
+  public Object nock(Object subject, Cell formula) {
+    CallTarget outer = compileTarget(formula);
     
     try {
       return outer.call(subject);
     }
     catch (Bail e) {
-      printStack();
+      if ( null != caller ) {
+        Cell tone = new Cell(2L, levels.peek().stacks);
+        Cell toon = Cell.expect(caller.kernel("mook", tone));
+        assert(Atom.equals(2L, toon.head));
+        for ( Object tank : new List(toon.tail) ) {
+          Object wall = caller.kernel("wash", new Cell(new Cell(0L, 80L), tank));
+          for ( Object tape : new List(wall) ) {
+            err(Tape.toString(tape));
+          }
+        }
+      }
       throw e;
     }
   }
   
-  private void printStack() {
-    if ( null == caller ) {
-      System.err.println("Cannot print stack: no kernel caller");
-      return;
-    }
-    
-    // this all needs cleaning up.
-    Object tan = 0L;
-    while ( !tax.isEmpty() ) {
-      tan = new Cell(tax.pop(), tan);
-    }
-
-    // it's in reverse order now (think about it... stacks...)
-    Object ton = 0L;
-    for ( Object o : new List(tan) ) {
-      ton = new Cell(o, ton);
-    }
-    
-    Object toon = caller.kernel("mook", new Cell(2L, ton)),
-           tang = Cell.expect(toon).tail;
-    for ( Object tank : new List(tang) ) {
-      Object wall = Tank.wash(0L, 80L, tank);
-      for ( Object tape : new List(wall) ) {
-        System.err.println(Tape.toString(tape));
-      }
+  public void dumpProfile() {
+    for ( Map.Entry<String, Stats> kv : times.entrySet() ) {
+      Stats st = kv.getValue();
+      System.out.format("%s\t%s\t%s\n", kv.getKey(), st.own, st.total);
     }
   }
-
+  
+  public Cell softRun(Object escapeGate, Supplier<Object> fn) {
+    Road r = new Road(escapeGate);
+    levels.push(r);
+    try {
+      return new Cell(0L, fn.get());
+    }
+    // XX: Ctrl-C is not handled yet
+    catch (Bail e) {
+      return new Cell(2L, r.stacks);
+    }
+    catch (StackOverflowError e) {
+      return new Trel(3L, Atom.stringToCord("over"), r.stacks).toCell();
+    }
+    catch (OutOfMemoryError e) {
+      return new Trel(3L, Atom.stringToCord("meme"), r.stacks).toCell();
+    }
+    finally {
+      levels.pop();
+    }
+  }
+  
+  public class Road {
+    public Object escapeGate = null;
+    public Object stacks = 0L;
+    
+    public Road(Object escapeGate) {
+      this.escapeGate = escapeGate;
+    }
+  }
 }

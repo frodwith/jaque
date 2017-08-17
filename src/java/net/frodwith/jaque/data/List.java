@@ -54,11 +54,16 @@ public class List implements Iterable<Object> {
   }
 
   public static Object lent(Object ram) {
-    Object i = 0L;
-    for ( Object x : new List(ram) ) {
-      i = Atom.increment(i);
+    Iterator<Object> i = new List(ram).iterator();
+    Iterator<Object> c = new Atom.Counter();
+    Object r = 0L;
+    
+    while ( i.hasNext() ) {
+      r = c.next();
+      i.next();
     }
-    return i;
+
+    return r;
   }
 
   public static Object slag(Object a, Object b) {

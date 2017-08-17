@@ -11,6 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
@@ -22,6 +23,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.sangupta.murmur.Murmur3;
 
@@ -49,6 +51,52 @@ import net.frodwith.jaque.truffle.TypesGen;
  */
 
 public class Atom {
+  
+  // next() is destructive - use with care!
+  public static class Counter implements Iterator<Object> {
+    long direct = 0;
+    int[] indirect = null;
+    
+    public Counter() {
+      this(0L);
+    }
+    
+    public Counter(Object initial) {
+      if ( TypesGen.isLong(initial) ) {
+        this.direct = (long) initial;
+      }
+      else {
+        this.indirect = (int[]) initial;
+      }
+    }
+    
+    public Counter(long initial) {
+      this.direct = initial;
+    }
+    
+    public Counter(int[] initial) {
+      this.indirect = Arrays.copyOf(initial, initial.length);
+    }
+
+    @Override
+    public boolean hasNext() {
+      return true;
+    }
+
+    @Override
+    public Object next() {
+      if ( null != indirect ) {
+        return incrementInPlace(indirect);
+      }
+      else if ( 0 == ++direct ) {
+        return indirect = new int[] { 0, 0, 1 };
+      }
+      else {
+        return direct;
+      }
+    }
+  }
+  
   // get two equally sized int[]s for mpn functions
   private static class Square {
     int[] x;
@@ -77,7 +125,7 @@ public class Atom {
       }
     }
   }
-  private static final int[] MINIMUM_INDIRECT = new int[] {0, 0, 1};
+  public static final int[] MINIMUM_INDIRECT = new int[] {0, 0, 1};
 
   public static final boolean BIG_ENDIAN = true;
   public static final boolean LITTLE_ENDIAN = false;
@@ -904,26 +952,26 @@ public class Atom {
     }
   }
   
-  public static int[] increment(int[] atom) {
-    int[] dst = new int[atom.length];
-    for ( int i = 0; i < atom.length; i++ ) {
-      try {
-        dst[i] = Math.incrementExact(atom[i]);
-        int next = i+1;
-        System.arraycopy(atom, next, dst, next, atom.length - next);
-        return dst;
-      }
-      catch (ArithmeticException e) {
-        dst[i] = 0;
+  public static int[] incrementInPlace(int[] vol) {
+    for ( int i = 0; i < vol.length; i++ ) {
+      if ( 0 != ++vol[i] ) {
+        return vol;
       }
     }
-    dst = new int[atom.length + 1];
-    dst[atom.length] = 1;
-    return dst;
+    int[] bigger = new int[vol.length + 1];
+    bigger[bigger.length] = 1;
+    return bigger;
+  }
+  
+  public static int[] increment(int[] atom) {
+    return incrementInPlace(Arrays.copyOf(atom, atom.length));
   }
   
   public static long increment(long atom) throws ArithmeticException {
-    return Math.incrementExact(atom);
+    if ( 0L == ++atom ) {
+      throw new ArithmeticException();
+    }
+    return atom;
   }
   
   public static Object increment(Object atom) {
@@ -1591,6 +1639,7 @@ public class Atom {
     return new int[big];
   }
   
+  @TruffleBoundary
   public static Object stringToCord(String s) {
     try {
       return fromByteArray(s.getBytes("UTF-8"));
@@ -1711,5 +1760,58 @@ public class Atom {
 
   public String toString() {
     return toString(value);
+  }
+
+  public static Object trip(Object atom) {
+    Object all = 0L;
+    for ( byte b : toByteArray(atom) ) {
+      all = new Cell((long) b, all);
+    }
+    return List.flop(all);
+  }
+
+  public static long vor(Object a, Object b) {
+    long c = Atom.mug((long)Noun.mug(a));
+    long d = Atom.mug((long)Noun.mug(b));
+    return (c == d)
+        ? dor(a, b)
+        : (compare(c, d) == -1)
+        ? YES
+        : NO;
+  }
+
+  @TruffleBoundary
+  public static long dor(Object a, Object b) {
+    if ( Noun.isAtom(a) ) {
+      if ( Noun.isAtom(b) ) {
+        return (compare(a, b) == -1) ? YES : NO;
+      }
+      else {
+        return YES;
+      }
+    }
+    else if ( Noun.isAtom(b) ) {
+      return NO;
+    }
+    else {
+      Cell ac = TypesGen.asCell(a),
+           bc = TypesGen.asCell(b);
+      return a.equals(b)
+          ? YES
+          : Noun.equals(ac.head, bc.head)
+          ? dor(ac.tail, bc.tail)
+          : dor(ac.head, bc.head);
+    }
+  }
+
+  public static long gor(Object a, Object b) {
+    long c = Noun.mug(a),
+         d = Noun.mug(b);
+    
+    return (c == d)
+        ? dor(a, b)
+        : (compare(c, d) == -1)
+        ? YES
+        : NO;
   }
 }

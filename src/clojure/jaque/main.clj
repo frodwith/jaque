@@ -8,6 +8,12 @@
   (:require [clojure.data.json :as json])
   (:refer-clojure :exclude [time])
   (:import (java.nio.file Paths)
+           (java.io File)
+           (com.googlecode.lanterna
+             screen.Screen
+             screen.TerminalScreen
+             terminal.DefaultTerminalFactory
+             TextCharacter)
            (net.frodwith.jaque.truffle.driver Arm NamedArm AxisArm)
            (net.frodwith.jaque
              Caller
@@ -16,10 +22,110 @@
              data.Noun
              data.List
              data.Time
+             data.Tape
+             data.Tank
              truffle.Context
              truffle.nodes.jet.ImplementationNode))
   (:gen-class
     :methods [#^{:static true} [lens [String] Object]]))
+
+(defprotocol DillTerminal
+  (spinner-tick [this caption])
+  (bell [this])
+  (clr [this])
+  (hop [this to-column])
+  (line [this text])
+  (scroll [this])
+  (save [this path-seq content-bytes])
+  (link [this url])
+  (dimensions [this])
+  (commit [this]))
+
+(defn index-str 
+  ([s with] (map vector s with))
+  ([s] (index-str s (range 0 (.length s)))))
+
+(defrecord Lanterna [screen spinner-state]
+  DillTerminal
+  (spinner-tick [this caption]
+    (let [size (.getTerminalSize screen)
+          row  (dec (.getRows size))
+          cols (.getColumns size)
+          spin-char (case spinner-state
+                      0 \|
+                      1 \/
+                      2 \-
+                      3 \\)
+          full (str spin-char \u00AB caption \u00BB)]
+      (doseq [[c i] (index-str full (range (- cols (.length full)) cols))]
+        (.setCharacter screen i row (TextCharacter. c)))
+      (assoc this :spinner-state (if (< spinner-state 3)
+                                   (inc spinner-state)
+                                   0))))
+  (bell [this]
+    (.setCharacter screen (.getCursorPosition screen) (TextCharacter. \u0007))
+    this)
+  (clr [this]
+    (.clear screen)
+    this)
+  (hop [this to-column]
+    (let [pos (.getCursorPosition screen)]
+      (.setCursorPosition screen (.withColumn pos to-column)))
+    this)
+  (line [this text]
+    (let [size (.getTerminalSize screen)
+          row  (dec (.getRows size))]
+      (doseq [[c i] (index-str text)]
+        (.setCharacter screen i row (TextCharacter. c)))
+      (doseq [i (range (.length text) (.getColumns size))]
+        (.setCharacter screen i row (TextCharacter. \space)))
+      this))
+  (scroll [this]
+    (.scrollLines screen 0 (dec (.getRows (.getTerminalSize screen))) 1)
+    this)
+  (save [this path-seq content-bytes]
+    (with-open [out (io/output-stream (io/file (string/join File/pathSeparator path-seq)))]
+      (.write out content-bytes))
+    this)
+  (link [this url]
+    (-> this
+        (line url)
+        (scroll)))
+  (dimensions [this]
+    (let [s (.getTerminalSize screen)]
+      [(.getColumns s) (.getRows s)]))
+  (commit [this]
+    (.refresh screen)
+    this))
+
+(defn make-lanterna []
+  (let [f (DefaultTerminalFactory.)
+        s (.createScreen f)]
+    (.startScreen s)
+    (map->Lanterna {:screen s
+                    :spinner-state 0})))
+
+(def blits 
+  {(noun :bee) #(spinner-tick %1 %2)
+   (noun :bel) #(bell %)
+   (noun :clr) #(clr %)
+   (noun :hop) #(hop %1 (Atom/expectLong %2))
+   (noun :lin) #(line %1 (Tape/toString %2))
+   (noun :mor) #(scroll %)
+   (noun :sav) #(save %1 (List. (.head %2)) (Atom/toByteArray (.tail %2)))
+   (noun :sag) #(save %1 (List. (.head %2)) (Atom/toByteArray (Atom/jam (.tail %2))))
+   (noun :url) #(link %1 %2)})
+
+(defn blit [term b]
+  (let [k (.head b)
+        h (blits k)]
+    (if (nil? h)
+      (binding [*out* *err*]
+        (println "bad-blit: " (Noun/toString b))
+        term)
+      (-> term
+          (h (.tail b))
+          (commit)))))
 
 (defn -lens [hoon]
   (let [payload  (json/write-str {:source {:dojo hoon}
@@ -72,7 +178,7 @@
   (wish [m src])
   (nock [m subject formula]))
 
-(defrecord MachineRec [context arvo poke-q now wen sev sen]
+(defrecord MachineRec [context arvo poke-q term now wen sev sen]
   Machine
   (time [m da]
     (assoc m :now da :wen (call m "scot" [:da da])))
@@ -81,6 +187,16 @@
           new-ctx (:context m)]
       (set! (. new-ctx caller)
         (reify Caller 
+          (slog [this tank]
+            (let [t (:term m)
+                  [cols rows] (dimensions t)
+                  wall (Tank/wash 0 (long cols) tank)
+                  lines (map #(Tape/toString %) (List. wall))]
+              (commit
+                (reduce #(doto %1
+                           (line %2)
+                           (scroll))
+                        t lines))))
           (kernel [this gate-name sample]
             (call new-m gate-name sample))))
       new-m))
@@ -109,10 +225,11 @@
 
 (defn dill-init [m]
   (let [pax [0 :term :1 0]
+        [cols rows] (dimensions (:term m))
         lan #(plan %1 (noun [pax %2]))]
     (-> m 
         (lan [:boot :sith 0 0 0]) ; only fakezod for now
-        (lan [:blew 80 24])       ; only real terminals
+        (lan [:blew cols rows])
         (lan [:hail 0]))))
 
 (defn path-to-noun [base path]
@@ -146,6 +263,7 @@
 
 (defn boot [ctx roc]
   (let [m (-> (map->MachineRec {:context ctx 
+                                :term    (make-lanterna)
                                 :poke-q  clojure.lang.PersistentQueue/EMPTY})
               (install roc)
               (time (Time/now))
@@ -163,6 +281,13 @@
     (Noun/println (call m "add" (noun [40 2])) *out*)))
 
 (defn apply-effect [m effect]
+  (if (Noun/equals (.head effect) (noun [0 :term 49 0]))
+    (let [ect (.tail effect)]
+      (if (Noun/equals (.head ect) (noun :blit))
+        (assoc m :term (reduce blit (:term m) (List. (.tail ect))))
+        (binding [*out* *err*]
+          (println "bad-term: " (Noun/toString ect))))
+      m))
   (print "effect: ")
   (Noun/println effect *out*)
   m)
@@ -192,8 +317,10 @@
         m    (-> (boot ctx roc)
                  (ames-init)
                  (dill-init)
+                 (plan (noun [0 :verb 0]))
                  (sync-home arvo-path)
                  (work))]
+    (.dumpProfile ctx)
     (Noun/println (call m "add" [40 2]) *out*)))
 
 (defn boot-formula [jam-path jet-path]

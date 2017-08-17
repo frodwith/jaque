@@ -1,13 +1,15 @@
 package net.frodwith.jaque.truffle.nodes.jet;
 
+import com.oracle.truffle.api.frame.VirtualFrame;
+
 import net.frodwith.jaque.data.Cell;
 
 public abstract class PairGateNode extends SampleNode {
-  protected abstract Object executePair(Object a, Object b);
+  protected abstract Object executePair(VirtualFrame frame, Object a, Object b);
   
   @Override
-  public Object doSample(Object sample) {
+  public Object doSample(VirtualFrame frame, Object sample) {
     Cell c = Cell.expect(sample);
-    return executePair(c.head, c.tail);
+    return executePair(frame, c.head, c.tail);
   }
 }

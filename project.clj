@@ -31,9 +31,11 @@
                  [org.clojure/tools.cli "0.3.5"]
                  [org.clojure/data.json "0.2.6"]
                  [com.github.jnr/jnr-ffi "2.1.6"]
-                 [clj-http "3.6.1"]
+                 [com.googlecode.lanterna/lanterna "3.0.0"]
 ;                 [com.oracle.truffle/truffle-dsl-processor "0.22"]
 ;                 [com.oracle.truffle/truffle-tck "0.20"]
 ;                 [primitive-math "0.1.3"]
 ;                 [criterium "0.4.4"]
+;                 [clojure-lanterna "0.9.7"]
+                 [clj-http "3.6.1"]
                  [slingshot "0.12.2"]])

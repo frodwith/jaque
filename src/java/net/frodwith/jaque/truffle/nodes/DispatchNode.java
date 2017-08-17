@@ -1,5 +1,8 @@
 package net.frodwith.jaque.truffle.nodes;
 
+import java.util.Stack;
+import java.util.function.Supplier;
+
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -7,6 +10,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 
+import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.TailException;
 
 public abstract class DispatchNode extends JaqueNode {
@@ -29,13 +33,22 @@ public abstract class DispatchNode extends JaqueNode {
   }
   
   public Object call(VirtualFrame frame, CallTarget target, Object[] arguments) {
+    Stack<Supplier<String>> finish = new Stack<Supplier<String>>();
     while ( true ) {
       try {
-        return executeDispatch(frame, target, arguments);
+        Object r = executeDispatch(frame, target, arguments);
+        while ( !finish.isEmpty() ) {
+          Supplier<String> doer = finish.pop();
+          doer.get();
+        }
+        return r;
       }
       catch ( TailException e ) {
         target = e.target;
         arguments = e.arguments;
+        if ( null != e.doer ) {
+          finish.push(e.doer);
+        }
       }
     }
   }

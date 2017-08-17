@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import java.util.function.Supplier;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerAsserts;
@@ -62,8 +63,12 @@ public abstract class KickNode extends FormulaNode {
       @Cached("getFragmentationNode()") FragmentationNode fragment,
       @Cached("getTarget(label, core, fragment)") CallTarget target,
       @Cached("getDriver(loc, axis, target)") ImplementationNode driver) {
-    squawk("jet", core);
-    return driver.doJet(frame, core);
+    if ( getContext().profile ) {
+      return squall(core, () -> driver.doJet(frame, core));
+    }
+    else {
+      return driver.doJet(frame, core);
+    }
   }
   
   protected Object[] makeConstants(Location loc) {
@@ -141,7 +146,7 @@ public abstract class KickNode extends FormulaNode {
       if ( axis.equals(2L) ) {
         if ( !noSeen.contains(loc.label) ) {
           noSeen.add(loc.label);
-          System.err.println("Unjetted gate: " + loc.label);
+          getContext().err("Unjetted gate: " + loc.label);
         }
 
       }
@@ -163,18 +168,29 @@ public abstract class KickNode extends FormulaNode {
     return null;
   }
   
-  public void squawk(String dbg, Cell core) {
-    /*
+  public Supplier<String> squawk(Cell core) {
     Location loc = getLocation(core);
     Object axis = getAxis();
     String name = loc == null ? "unregistered" : loc.label;
-    if ( null != loc ) {
-      String arm = loc.axisToName.containsKey(axis) 
-                 ? loc.axisToName.get(axis)
-                 : "/" + axis;
-      System.err.println(dbg + ": " + arm + " of " + name);
+    if ( null == loc ) {
+      return null;
     }
-    */
+    String arm = loc.axisToName.containsKey(axis) 
+               ? loc.axisToName.get(axis)
+               : "/" + axis;
+    Context c = getContext();
+    String id = String.format("%s:%s", name, arm);
+    c.come(id);
+    return () -> c.flee(); 
+ }
+  
+  public Object squall(Cell core, Supplier<Object> doIt) {
+    Supplier<String> flee = squawk(core);
+    Object r = doIt.get();
+    if ( null != flee ) {
+      flee.get();
+    }
+    return r;
   }
 
   // Unregistered location, cached target, tail call
@@ -187,8 +203,12 @@ public abstract class KickNode extends FormulaNode {
       @Cached("getLabel(core)") KickLabel label,
       @Cached("getFragmentationNode()") FragmentationNode fragment,
       @Cached("getTarget(label, core, fragment)") CallTarget target) {
-    squawk("cached tail", core);
-    throw new TailException(target, new Object[] { core });
+    if ( getContext().profile ) {
+      throw new TailException(target, new Object[] { core }, squawk(core));
+    }
+    else {
+      throw new TailException(target, new Object[] { core });
+    }
   }
 
   protected static Cell batteryCache(Cell core) {
@@ -263,8 +283,12 @@ public abstract class KickNode extends FormulaNode {
       @Cached("getFragmentationNode()") FragmentationNode fragment,
       @Cached("getTarget(label, core, fragment)") CallTarget target,
       @Cached("getDispatch()") DispatchNode dispatch) {
-    squawk("cached call", core);
-    return dispatch.call(frame, target, new Object[] { core });
+    if ( getContext().profile ) {
+      return squall(core, () -> dispatch.call(frame,  target, new Object[] { core }));
+    }
+    else {
+      return dispatch.call(frame, target, new Object[] { core });
+    }
   }
 
   protected DispatchNode getDispatch() {
@@ -277,9 +301,14 @@ public abstract class KickNode extends FormulaNode {
                "getIsTail()" })
   protected Object doSlowTail(Cell core,
       @Cached("getFragmentationNode()") FragmentationNode fragment) {
-    squawk("uncached tail", core);
     KickLabel label = getLabel(core);
-    throw new TailException(getTarget(label, core, fragment), new Object[] { core });
+    CallTarget target = getTarget(label, core, fragment);
+    if ( getContext().profile ) {
+      throw new TailException(target, new Object[] { core }, squawk(core));
+    }
+    else {
+      throw new TailException(target, new Object[] { core });
+    }
   }
 
   // Unregistered location, varying target, direct call
@@ -289,7 +318,9 @@ public abstract class KickNode extends FormulaNode {
       @Cached("getFragmentationNode()") FragmentationNode fragment,
       @Cached("getDispatch()") DispatchNode dispatch) {
     KickLabel label = getLabel(core);
-    squawk("uncached call", core);
+    if ( getContext().profile ) {
+      return squall(core, () -> dispatch.call(frame, getTarget(label, core, fragment), new Object[] { core }));
+    }
     return dispatch.call(frame, getTarget(label, core, fragment), new Object[] { core });
   }
   
@@ -308,8 +339,12 @@ public abstract class KickNode extends FormulaNode {
     catch ( FragmentationException e ) {
       throw new Bail();
     }
-    squawk("nock", core);
-    return dispatch.executeNock(frame, core, formula);
+    if ( getContext().profile ) {
+      return squall(core, () -> dispatch.executeNock(frame, core, formula));
+    }
+    else {
+      return dispatch.executeNock(frame, core, formula);
+    }
   }
   
   protected NockDispatchNode getNockDispatch() {
