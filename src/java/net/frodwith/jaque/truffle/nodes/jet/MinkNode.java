@@ -4,10 +4,11 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.data.Cell;
+import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.nodes.NockDispatchNode;
 import net.frodwith.jaque.truffle.nodes.NockDispatchNodeGen;
 
-public abstract class MinkNode extends TrelGateNode {
+public abstract class MinkNode extends PairGateNode {
   @Child private NockDispatchNode dispatch = null;
   
   @Specialization

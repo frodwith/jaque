@@ -15,6 +15,7 @@
 ;                "-Dcom.sun.management.jmxremote.authenticate=false"
 ;                "-Dcom.sun.management.jmxremote.port=43210"
                  "-Djava.library.path=ed25519"
+                 "-Djava.awt.headless=true"
                 ]
   :main         jaque.main
   :aot          [jaque.main]

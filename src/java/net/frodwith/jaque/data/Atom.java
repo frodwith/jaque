@@ -1598,17 +1598,21 @@ public class Atom {
     return new Cell(p, q);
   }
   
-  private static Object sha_help(Object len, Object atom, String algo) {
-    byte[] bytes, hash;
-    bytes = Atom.toByteArray(cut((byte)3, 0L, len, atom));
+  @TruffleBoundary
+  private static byte[] doSha(String algo, byte[] bytes) {
     try {
-      hash = MessageDigest.getInstance(algo).digest(bytes);
-      return Atom.fromByteArray(hash);
+      return MessageDigest.getInstance(algo).digest(bytes);
     }
     catch (NoSuchAlgorithmException e) {
       e.printStackTrace();
       throw new Bail();
-    }   
+    }
+  }
+  
+  private static Object sha_help(Object len, Object atom, String algo) {
+    byte[] in  = Atom.toByteArray(cut((byte)3, 0L, len, atom)),
+           out = doSha(algo, in);
+    return Atom.fromByteArray(out);
   }
   
   public static Object shal(Object len, Object atom) {
@@ -1763,11 +1767,7 @@ public class Atom {
   }
 
   public static Object trip(Object atom) {
-    Object all = 0L;
-    for ( byte b : toByteArray(atom) ) {
-      all = new Cell((long) b, all);
-    }
-    return List.flop(all);
+    return rip((byte)3, atom);
   }
 
   public static long vor(Object a, Object b) {

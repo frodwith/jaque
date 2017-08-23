@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 
 import net.frodwith.jaque.Bail;
+import net.frodwith.jaque.BlockException;
 import net.frodwith.jaque.Caller;
 import net.frodwith.jaque.KickLabel;
 import net.frodwith.jaque.Location;
@@ -46,7 +47,6 @@ import net.frodwith.jaque.truffle.nodes.formula.LiteralLongNode;
 import net.frodwith.jaque.truffle.nodes.formula.NockNode;
 import net.frodwith.jaque.truffle.nodes.formula.PushNode;
 import net.frodwith.jaque.truffle.nodes.formula.SameNodeGen;
-import net.frodwith.jaque.truffle.nodes.formula.hint.BawkHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.DiscardHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.FastHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.MemoHintNode;
@@ -288,9 +288,6 @@ public class Context {
             if ( Atom.MEMO.equals(kind) ) {
               return new MemoHintNode(next);
             }
-            else if ( kind.equals(Atom.mote("bawk")) ) {
-              return new BawkHintNode(dynF, next);
-            }
             else if ( Atom.FAST.equals(kind) ) {
               return new FastHintNode(this, dynF, next);
             }
@@ -368,32 +365,56 @@ public class Context {
     }
   }
   
-  public Cell softRun(Object escapeGate, Supplier<Object> fn) {
-    Road r = new Road(escapeGate);
+  public Object softEscape(Object ref, Object gof) {
+    Road r = new Road(levels.peek().escapeGate);
     levels.push(r);
     try {
-      return new Cell(0L, fn.get());
-    }
-    // XX: Ctrl-C is not handled yet
-    catch (Bail e) {
-      return new Cell(2L, r.stacks);
-    }
-    catch (StackOverflowError e) {
-      return new Trel(3L, Atom.stringToCord("over"), r.stacks).toCell();
-    }
-    catch (OutOfMemoryError e) {
-      return new Trel(3L, Atom.stringToCord("meme"), r.stacks).toCell();
+      return slam(r.escapeGate, new Cell(ref, gof));
     }
     finally {
       levels.pop();
     }
   }
   
+  public Cell softRun(Cell escapeGate, Supplier<Object> fn) {
+    Road r = new Road(escapeGate);
+    levels.push(r);
+    try {
+      return new Cell(0L, fn.get());
+    }
+    // XX: Ctrl-C is not handled yet
+    catch (BlockException e) {
+      return new Trel(1L, e.gof, 0L).toCell();
+    }
+    catch (Bail e) {
+      return new Cell(2L, r.stacks);
+    }
+    catch (StackOverflowError e) {
+      return new Trel(3L, Atom.mote("over"), r.stacks).toCell();
+    }
+    catch (OutOfMemoryError e) {
+      return new Trel(3L, Atom.mote("meme"), r.stacks).toCell();
+    }
+    finally {
+      levels.pop();
+    }
+  }
+  
+  public void stackPush(Cell item) {
+    Road r = levels.peek();
+    r.stacks = new Cell(item, r.stacks);
+  }
+  
+  public void stackPop() {
+    Road r = levels.peek();
+    r.stacks = Cell.expect(r.stacks).tail;
+  }
+  
   public class Road {
-    public Object escapeGate = null;
+    public Cell escapeGate = null;
     public Object stacks = 0L;
     
-    public Road(Object escapeGate) {
+    public Road(Cell escapeGate) {
       this.escapeGate = escapeGate;
     }
   }

@@ -22,11 +22,9 @@ public final class StackHintNode extends DynamicHintFormula {
   @Override
   public Object executeGeneric(VirtualFrame frame) {
     Cell item = new Cell(zep, hint.executeGeneric(frame));
-    Road r = context.levels.peek();
-    Object old = r.stacks;
-    r.stacks = new Cell(item, old);
+    context.stackPush(item);
     Object product = next.executeGeneric(frame);
-    r.stacks = old;
+    context.stackPop();
     return product;
   }
 }

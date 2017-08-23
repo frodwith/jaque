@@ -47,6 +47,13 @@
   ([s with] (map vector s with))
   ([s] (index-str s (range 0 (.length s)))))
 
+(defn scrub-control-chars [s]
+  (letfn [(scrub-one [c]
+            (if (or (< (int c) 32) (= (int c) 127))
+              \?
+              c))]
+    (apply str (map scrub-one s))))
+
 (defrecord Lanterna [screen spinner-state]
   DillTerminal
   (spinner-tick [this caption]
@@ -78,7 +85,7 @@
     (let [size (.getTerminalSize screen)
           row  (dec (.getRows size))
           len  (.length text)]
-      (doseq [[c i] (index-str text)]
+      (doseq [[c i] (index-str (scrub-control-chars text))]
         (.setCharacter screen i row (TextCharacter. c)))
       (doseq [i (range len (.getColumns size))]
         (.setCharacter screen i row (TextCharacter. \space)))
@@ -304,10 +311,11 @@
         (assoc m :term (reduce blit (:term m) (List. (.tail ect))))
         (binding [*out* *err*]
           (println "bad-term: " (Noun/toString ect))))
-      m))
-  (print "effect: ")
-  (Noun/println effect *out*)
-  m)
+      m)
+    (do
+      (print "effect: ")
+      (Noun/println effect *out*)
+      m)))
 
 (defn apply-poke [m ovo]
   (let [result  (poke m ovo)
@@ -337,8 +345,8 @@
                  (plan (noun [0 :verb 0]))
                  (sync-home arvo-path)
                  (work))]
-    (.dumpProfile ctx)
-    (Noun/println (call m "add" [40 2]) *out*)))
+    (Thread/sleep 60000)
+    (.dumpProfile ctx)))
 
 (defn boot-formula [jam-path jet-path]
   (let [formula (read-jam jam-path)
