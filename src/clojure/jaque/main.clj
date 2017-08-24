@@ -12,6 +12,7 @@
            (com.googlecode.lanterna
              screen.Screen
              screen.TerminalScreen
+             input.KeyType
              TerminalPosition
              terminal.ExtendedTerminal
              terminal.DefaultTerminalFactory
@@ -33,6 +34,7 @@
 
 (defprotocol DillTerminal
   (spinner-tick [this caption])
+  (read-belt [this])
   (bell [this])
   (clr [this])
   (hop [this to-column])
@@ -71,7 +73,27 @@
       (assoc this :spinner-state (if (< spinner-state 3)
                                    (inc spinner-state)
                                    0))))
+  (read-belt [this]
+    (let [stroke (.readInput screen)
+          stype  (.getKeyType stroke)
+          belt   (cond (= stype KeyType/ArrowDown)  [:aro :d]
+                       (= stype KeyType/ArrowLeft)  [:aro :l]
+                       (= stype KeyType/ArrowRight) [:aro :r]
+                       (= stype KeyType/ArrowUp)    [:aro :u]
+                       (= stype KeyType/Backspace)  [:bac 0]
+                       (= stype KeyType/Delete)     [:del 0]
+                       (= stype KeyType/Enter)      [:ret 0]
+                       (= stype KeyType/Character) 
+                         (let [c (long (.getCharacter stroke))]
+                           (cond (.isCtrlDown stroke) [:ctl c]
+                                 (.isAltDown stroke)  [:met c]
+                                 :else                [:txt c 0]))
+                       :else ;beep?
+                         (read-belt this))]
+      (noun [:belt belt])))
+
   (bell [this]
+    ;this doesn't work
     (.setCharacter screen (.getCursorPosition screen) (TextCharacter. \u0007))
     this)
   (clr [this]
@@ -330,6 +352,15 @@
   (assoc (reduce apply-poke m (:poke-q m))
          :poke-q nil))
 
+(defn input-loop [m]
+  (let [belt (read-belt (:term m))
+        pax  [0 :term :1 0]
+        ovo  (noun [pax belt])]
+    (-> m
+        (plan ovo)
+        (work)
+        (input-loop))))
+
 (defn boot-solid [pill-path jet-path arvo-path]
   (let [jets (read-jets jet-path)
         sys  (read-jam pill-path)
@@ -344,8 +375,8 @@
                  (dill-init)
                  (plan (noun [0 :verb 0]))
                  (sync-home arvo-path)
-                 (work))]
-    (Thread/sleep 60000)
+                 (work)
+                 (input-loop))]
     (.dumpProfile ctx)))
 
 (defn boot-formula [jam-path jet-path]
