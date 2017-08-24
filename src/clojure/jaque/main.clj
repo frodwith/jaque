@@ -103,7 +103,6 @@
                        :else ;beep?
                          (read-belt this))]
       (noun [:belt belt])))
-
   (bell [this]
     (send beeper do-beep)
     this)
@@ -399,11 +398,10 @@
     a))
 
 (def cli-options
-  [["-M" "--formula PATH" "Path to jammed nock formula (nock with 0 subject, print result)"]
-   ["-I" "--ivory PATH" "Path to ivory pill"]
-   ["-B" "--solid PATH" "Path to solid pill"]
+  [["-B" "--solid PATH" "Path to solid pill"]
    ["-J" "--jets PATH" "Path to EDN jet config"]
    ["-A" "--arvo PATH" "Path to initial sync directory"]
+   ["-P" "--pier PATH" "Path to pier directory"]
    ["-h" "--help"]])
 
 (defn -main [& args]
@@ -412,11 +410,5 @@
         (println summary)
 			errors
         (println errors)
-      (not= 1 (count (filter #(contains? options %) [:ivory :solid :formula])))
-        (println "Pick one of [formula,solid,ivory]")
-      (:ivory options)
-        (boot-ivory (:ivory options) (:jets options))
       (:solid options)
-        (boot-solid (:solid options) (:jets options) (:arvo options))
-      (:formula options)
-        (boot-formula (:formula options) (:jets options)))))
+        (start-pier options))))
