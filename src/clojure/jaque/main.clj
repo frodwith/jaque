@@ -4,8 +4,6 @@
   (:require [clojure.edn :as edn])
   (:require [clojure.tools.cli :as cli])
   (:require [jaque.noun :refer [noun noun? seq->it]])
-  (:require [clj-http.client :as client])
-  (:require [clojure.data.json :as json])
   (:refer-clojure :exclude [time])
   (:import (java.nio.file Paths)
            (javax.sound.midi MidiSystem Synthesizer)
@@ -157,44 +155,6 @@
       (map->Lanterna {:screen s
                       :spinner-state 0}))))
 
-(def blits 
-  {(noun :bee) (fn [t a] (spinner-tick t a))
-   (noun :bel) (fn [t a] (bell t))
-   (noun :clr) (fn [t a] (clr t))
-   (noun :hop) (fn [t a] (hop t (Atom/expectLong a)))
-   (noun :lin) (fn [t a] (line t (Tape/toString a)))
-   (noun :mor) (fn [t a] (scroll t))
-   (noun :sav) (fn [t a]
-                 (let [pax (List. (.head a))
-                       pad (Atom/toByteArray (.tail a))]
-                   (save t pax pad)))
-   (noun :sag) (fn [t a]
-                 (let [pax (List. (.head a))
-                       pad (Atom/toByteArray (Atom/jam (.tail a)))]
-                   (save t pax pad)))
-   (noun :url) (fn [t a]
-                 (link t a))})
-
-(defn blit [term b]
-  (let [k (.head b)
-        h (blits k)]
-    (if (nil? h)
-      (binding [*out* *err*]
-        (println "bad-blit: " (Noun/toString b))
-        term)
-      (-> term
-          (h (.tail b))
-          (commit)))))
-
-(defn -lens [hoon]
-  (let [payload  (json/write-str {:source {:dojo hoon}
-                                  :sink   {:stdout nil}})
-        response (client/post "http://localhost:12321"
-                              {:body payload})
-        body     (:body response)
-        unquot   (.substring body 1 (dec (.length body)))]
-    (Noun/parse unquot)))
-
 (defn read-jets [path]
 	(let [jets  (edn/read (java.io.PushbackReader. (io/reader path)))
         klass (fn [class-name]
@@ -225,72 +185,6 @@
 (defn read-jam [path]
   (Atom/cue (atom-from-file (io/as-file path))))
 
-(defprotocol Machine
-  (time [m da])
-  (install [m new-arvo])
-  (numb [m])
-  (slam [m gate sample])
-  (call [m gate-name sample])
-  (arvo-gate [m axis])
-  (poke [m ovo])
-  (plan [m ovo])
-  (wish [m src])
-  (nock [m subject formula]))
-
-(defrecord MachineRec [context arvo poke-q term now wen sev sen]
-  Machine
-  (time [m da]
-    (assoc m :now da :wen (call m "scot" [:da da])))
-  (install [m new-arvo]
-    (let [new-m   (assoc m :arvo new-arvo)
-          new-ctx (:context m)]
-      (set! (. new-ctx caller)
-        (reify Caller 
-          (slog [this tank]
-            (let [t (:term m)
-                  [cols rows] (dimensions t)
-                  wall (Tank/wash 0 (long cols) tank)
-                  lines (map #(Tape/toString %) (List. wall))]
-              (commit
-                (reduce #(doto %1
-                           (line %2)
-                           (scroll))
-                        t lines))))
-          (kernel [this gate-name sample]
-            (call new-m gate-name sample))))
-      new-m))
-  (numb [m]
-    (let [n (Noun/mug now)]
-      (assoc m :sev n :sen (call m "scot" [:uv n]))))
-  (slam [m gate sample]
-    (let [core (noun [(.head gate) sample (.tail (.tail gate))])
-          fom  (noun [9 2 0 1])]
-      (nock m core fom)))
-  (call [m gate-name sample]
-    (slam m (wish m gate-name) sample))
-  (arvo-gate [m axis]
-    (nock m arvo (noun [9 axis 0 1])))
-  (plan [m ovo]
-    (assoc m :poke-q (conj poke-q ovo)))
-  (poke [m ovo]
-    (slam m (arvo-gate m 42) (noun [now ovo])))
-  (wish [m src]
-    (slam m (arvo-gate m 20) (Atom/stringToCord src)))
-  (nock [m subject formula]
-    (.nock context subject formula)))
-
-(defn ames-init [m]
-  (plan m (noun [[0 :newt (:sen m) 0] :barn 0])))
-
-(defn dill-init [m]
-  (let [pax [0 :term :1 0]
-        [cols rows] (dimensions (:term m))
-        lan #(plan %1 (noun [pax %2]))]
-    (-> m 
-        (lan [:boot :sith 0 0 0]) ; only fakezod for now
-        (lan [:blew cols rows])
-        (lan [:hail 0]))))
-
 (defn path-to-noun [base path]
   (let [nested   (map (fn [p]
                         (let [s (.toString p)]
@@ -305,66 +199,6 @@
         dat      [mim size contents]]
     (noun [pax 0 dat])))
 
-(defn sync-home [m dirpath]
-  (let [f    (io/file dirpath)
-        base (Paths/get (.toURI f))]
-    (if (or (nil? f)
-            (not (.isDirectory f)))
-      (do (println "bad initial sync directory")
-          m)
-      (let [files (filter #(.isFile %) (file-seq f))
-            rels  (map #(.relativize base (Paths/get (.toURI %))) files)
-            vis   (filter (fn [path] (not-any? #(.startsWith (.toString %) ".") path)) rels)
-            can   (seq->it (map (partial path-to-noun base) vis))
-            pax   [0 :sync (:sen m) 0]
-            fav   [:into 0 0 can]]
-        (plan m (noun [pax fav]))))))
-
-(defn boot [ctx roc]
-  (let [m (-> (map->MachineRec {:context ctx 
-                                :term    (make-lanterna)
-                                :poke-q  clojure.lang.PersistentQueue/EMPTY})
-              (install roc)
-              (time (Time/now))
-              (numb))]
-    (println "arvo time: " (Atom/cordToString (:wen m)))
-    m))
-
-(defn boot-ivory [pill-path jet-path]
-  (let [jets (read-jets jet-path)
-        ken  (read-jam pill-path)
-        ctx  (Context. jets)
-        roc  (.tail (.tail (.nock ctx 0 ken)))
-        m    (boot ctx roc)]
-    (println "ivory: kernel activated")
-    (Noun/println (call m "add" (noun [40 2])) *out*)))
-
-(defn apply-effect [m effect]
-  (if (Noun/equals (.head effect) (noun [0 :term 49 0]))
-    (let [ect (.tail effect)]
-      (if (Noun/equals (.head ect) (noun :blit))
-        (assoc m :term (reduce blit (:term m) (List. (.tail ect))))
-        (binding [*out* *err*]
-          (println "bad-term: " (Noun/toString ect))))
-      m)
-    (do
-      (print "effect: ")
-      (Noun/println effect *out*)
-      m)))
-
-(defn apply-poke [m ovo]
-  (let [result  (poke m ovo)
-        effects (.head result)
-        arvo    (.tail result)]
-    (print "poked: ")
-    (Noun/println (.head (.tail ovo)) *out*)
-    (install (reduce apply-effect m (List. effects))
-             arvo)))
-
-(defn work [m]
-  (assoc (reduce apply-poke m (:poke-q m))
-         :poke-q nil))
-
 (defn input-loop [m]
   (let [belt (read-belt (:term m))
         pax  [0 :term :1 0]
@@ -374,28 +208,195 @@
         (work)
         (input-loop))))
 
-(defn boot-solid [pill-path jet-path arvo-path]
-  (let [jets (read-jets jet-path)
-        sys  (read-jam pill-path)
-        ctx  (Context. jets)
-        ken  (.head sys)
-        roc  (.tail sys)
-        cor  (let [c (.nock ctx 0 ken)] ; "to bind jets"
-               (println "solid: kernel activated")
-               c)
-        m    (-> (boot ctx roc)
-                 (ames-init)
-                 (dill-init)
-                 (plan (noun [0 :verb 0]))
-                 (sync-home arvo-path)
-                 (work)
-                 (input-loop))]
-    (.dumpProfile ctx)))
+;; effect handling
+(defn effect-handler []
+  (let [synth    (doto (MidiSystem/getSynthesizer) .open)
+        channel  (aget (.getChannels synth) 0)
+        state    {:channel  channel}]
+    (agent state)))
 
-(defn boot-formula [jam-path jet-path]
-  (let [formula (read-jam jam-path)
-        jets    (read-jets jet-path)]
-    (Noun/println (.nock (Context. jets) 0 formula) *out*)))
+(defn remember-event-agent [state a]
+  (assoc state :event-agent a))
+
+(defn errln [& strings]
+  (binding [*out* *err*]
+    (apply println strings)))
+
+(defn unhandled-wire [state wire]
+  (errln "unhandled wire: " (Noun/toString wire))
+  state)
+
+(let [handler-map {(noun :bee) (fn [t a] (spinner-tick t a))
+                   (noun :bel) (fn [t a] (bell t))
+                   (noun :clr) (fn [t a] (clr t))
+                   (noun :hop) (fn [t a] (hop t (Atom/expectLong a)))
+                   (noun :lin) (fn [t a] (line t (Tape/toString a)))
+                   (noun :mor) (fn [t a] (scroll t))
+                   (noun :sav) (fn [t a]
+                                 (let [pax (List. (.head a))
+                                       pad (Atom/toByteArray (.tail a))]
+                                   (save t pax pad)))
+                   (noun :sag) (fn [t a]
+                                 (let [pax (List. (.head a))
+                                       pad (Atom/toByteArray (Atom/jam (.tail a)))]
+                                   (save t pax pad)))
+                   (noun :url) (fn [t a]
+                                 (link t a))}]
+  (defn terminal-blit [term blit]
+    (let [handler-key (.head blit)
+          handler     (handler-map handler-key)]
+      (if (nil? h)
+        (errln "unhandled terminal blit: " (Noun/toString blit))
+        (-> term
+            (handler (.tail blit))
+            (commit))))))
+
+(defn handle-terminal-effect [state id ovum]
+  (let [effect-type (.head ovum)]
+    (cond (Noun/equals effect-type (noun :init))
+            (let [term (make-lanterna)]
+              (send (:event-agent state)
+                    (fn [p]
+                      (let [pax  [0 :term id]
+                            [cols rows] (dimensions term)]
+                        (handle! p [:ovum (noun [pax :blew cols rows])])
+                        (handle! p [:ovum (noun [pax :hail 0])])
+                        p)))
+              (assoc-in state [:terminals id] term))
+          (Noun/equals effect-type (noun :blit))
+            (if (contains? (:terminals state) id)
+              (update-in state [:terminals id] #(reduce terminal-blit % (List. (.tail ovum))))
+              (errln "bad terminal id: " (Atom/cordToString id)))
+          :else
+            (errln "unhandled terminal effect: " (Noun/toString effect-type)))))
+
+(defn slog-effect [state tank]
+  (let [t (get-in state [:terminals (noun :1)])
+        [cols rows] (if (nil? t) [74 24] (dimensions t))
+        wall (Tank/wash 0 (long cols) tank)
+        lines (map #(Tape/toString %) (List. wall))]
+    (if (nil? t)
+      (doseq [l lines]
+        (errln "slog: " l))
+      (commit
+        (reduce #(doto %1
+                   (line %2)
+                   (scroll))
+                t lines)))))
+
+(defn handle-effects [state ova]
+  (doseq [ovum (List. ova)]
+    (let [wire (.head ovum)
+          curd (.tail ovum)]
+      (if (Atom/isZero (.head wire))
+        (if (Atom/equals (noun :term) (.head (.tail wire)))
+          (handle-terminal-effect state (.head (.tail (.tail wire))) ovum)
+          (unhandled-wire state wire))
+        (unhandled-wire state wire)))))
+
+;; machine operations
+
+(defn kernel-axis [m axis]
+  (.nock (:context m)
+         (get-in m [:persistent :arvo])
+         (noun [9 axis 0 1])))
+
+(defn slam [m gate sample]
+  (.slam (:context m) gate (noun sample)))
+
+(defn wish [m s]
+  (slam m (kernel-axis 20) (Atom/stringToCord s)))
+
+(defn kernel-call [m n s]
+  (slam (wish m n) s))
+
+(defn poke [m e o]
+  (let [res  (slam (kernel-axis m 42) o)
+        eff  (.head res)
+        arv  (.tail res)
+        newm (assoc-in m [:persistent :arvo] arv)]
+    (send e handle-effects eff)
+    (set! (. (:context m) caller)
+             (reify Caller 
+               (slog [this tank]
+                 (send e slog-effect tank))
+               (kernel [this gate-name sample]
+                 (kernel-call new-m gate-name sample))))
+    (assoc-in m [:persistent :arvo] arv)))
+
+; boot sequence
+
+(defn set-time [m da]
+  (update m :persistent
+          #(assoc % :now da :wen (kernel-call m "scot" [:da da]))))
+
+(defn number [m]
+  (let [n (Noun/mug (get-in m [:persistent :now]))]
+    (update m :persistent
+            #(assoc % :sev n :sen (kernel-call m "scot" [:uv n])))))
+
+(defn verbose-on [m e]
+  (poke m e [0 :verb 0]))
+
+(defn ames-init [m e]
+  (poke m e [[0 :newt (:sen m) 0] :barn 0]))
+
+(defn dill-init [m e]
+  (poke m e [[0 :term :1 0] :boot :sith 0 0 0]))
+
+(defn sync-home [m dirpath e]
+  (let [f    (io/file dirpath)
+        base (Paths/get (.toURI f))]
+    (if (or (nil? f)
+            (not (.isDirectory f)))
+      (do (errln "bad initial sync directory")
+          m)
+      (let [files (filter #(.isFile %) (file-seq f))
+            rels  (map #(.relativize base (Paths/get (.toURI %))) files)
+            vis   (filter (fn [path] (not-any? #(.startsWith (.toString %) ".") path)) rels)
+            can   (seq->it (map (partial path-to-noun base) vis))
+            pax   [0 :sync (:sen m) 0]
+            fav   [:into 0 0 can]]
+        (poke m e [pax fav])))))
+
+; event handling
+
+(defn add-locations [m context]
+  (assoc-in m [:persistent :dashboard] (into {} (.locations context))))
+
+(defn pier-handler [options e]
+  (let [jets (read-jets (:jets options))
+        ctx  (Context. jets (:profile options))]
+    (fn [state [tag data]]
+      (:persistent
+        (case tag
+          :boot (let [sys (read-jam (:solid options))
+                      ken (.head sys)
+                      roc (.tail sys)
+                      cor (.nock ctx 0 ken)] ; "to bind jets"
+                  (-> {:persistent {:arvo roc} :context ctx}
+                      (set-time)
+                      (number)
+                      (verbose-on e)
+                      (ames-init e)
+                      (dill-init e)
+                      (sync-home e)
+                      (add-locations ctx))))
+          :ovum (let [m {:persistent state :context ctx}]
+                  (add-locations (poke m e data)))))))
+
+; prevayler
+(def initial-pier {})
+
+(defn start-pier [options]
+  (let [f (.toFile (Paths/get {:pier options} ".prevayler"))
+        e (effect-handler)
+        p (prevayler! (pier-handler options e) initial-pier f)
+        a (agent p)]
+    (send e remember-event-agent a)
+    (when (= @p initial-pier)
+      (handle! p [:boot nil]))
+    a))
 
 (def cli-options
   [["-M" "--formula PATH" "Path to jammed nock formula (nock with 0 subject, print result)"]

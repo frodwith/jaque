@@ -38,5 +38,6 @@
 ;                 [primitive-math "0.1.3"]
 ;                 [criterium "0.4.4"]
 ;                 [clojure-lanterna "0.9.7"]
+                 [prevayler-clj "2.0.0"]
                  [clj-http "3.6.1"]
                  [slingshot "0.12.2"]])
