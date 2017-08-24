@@ -8,6 +8,7 @@
   (:require [clojure.data.json :as json])
   (:refer-clojure :exclude [time])
   (:import (java.nio.file Paths)
+           (javax.sound.midi MidiSystem Synthesizer)
            (java.io File)
            (com.googlecode.lanterna
              screen.Screen
@@ -31,6 +32,19 @@
              truffle.nodes.jet.ImplementationNode))
   (:gen-class
     :methods [#^{:static true} [lens [String] Object]]))
+
+(def beeper
+  (let [synth   (doto (MidiSystem/getSynthesizer) .open)
+        channel (aget (.getChannels synth) 0)
+        state   {:synth synth :channel channel}]
+    (agent state)))
+
+(defn do-beep [state]
+  (let [channel (:channel state)]
+    (.noteOn channel 67 200)
+    (Thread/sleep 100)
+    (.noteOff channel 67)
+    state))
 
 (defprotocol DillTerminal
   (spinner-tick [this caption])
@@ -93,8 +107,7 @@
       (noun [:belt belt])))
 
   (bell [this]
-    ;this doesn't work
-    (.setCharacter screen (.getCursorPosition screen) (TextCharacter. \u0007))
+    (send beeper do-beep)
     this)
   (clr [this]
     (.clear screen)
