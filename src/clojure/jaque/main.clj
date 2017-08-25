@@ -1,10 +1,10 @@
 (ns jaque.main
   (:require [clojure.java.io :as io])
+  (:require [core.async :as a])
   (:require [clojure.string :as string])
   (:require [clojure.edn :as edn])
   (:require [clojure.tools.cli :as cli])
   (:require [jaque.noun :refer [noun noun? seq->it]])
-  (:refer-clojure :exclude [time])
   (:import (java.nio.file Paths)
            (javax.sound.midi MidiSystem Synthesizer)
            (java.io File)

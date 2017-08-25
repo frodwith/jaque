@@ -15,10 +15,11 @@
 ;                "-Dcom.sun.management.jmxremote.authenticate=false"
 ;                "-Dcom.sun.management.jmxremote.port=43210"
                  "-Djava.library.path=ed25519"
-                 "-Djava.awt.headless=true"
+;                 "-Djava.awt.headless=true"
                 ]
-  :main         jaque.main
-  :aot          [jaque.main]
+  ;:main         jaque.main
+  ;:aot          [jaque.main]
+  :main jaque.terminal
 
   ;; leinigen's invocation of javac causes some problems for truffle's
   ;; compiler detection. To mitigate this, please run an annotation processor
@@ -31,8 +32,10 @@
                  [com.oracle.truffle/truffle-api "0.22"]
                  [org.clojure/tools.cli "0.3.5"]
                  [org.clojure/data.json "0.2.6"]
+                 [org.clojure/tools.logging "0.4.0"]
                  [com.github.jnr/jnr-ffi "2.1.6"]
                  [com.googlecode.lanterna/lanterna "3.0.0"]
+                 [org.clojure/core.async "0.3.443"]
 ;                 [com.oracle.truffle/truffle-dsl-processor "0.22"]
 ;                 [com.oracle.truffle/truffle-tck "0.20"]
 ;                 [primitive-math "0.1.3"]
