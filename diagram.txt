@@ -1,0 +1,12 @@
+;   boot     |------------------|   
+;   |        v                  |   
+;   | terminal--->beeper        |   
+;   |    |                      |   
+;   v    v                      |   
+;   events --|   arvo   -->  effects 
+;   ^        v   ^  v  /        |
+;   |        prevayler          |
+;   |                           |
+;   |                           |
+;   network<--------------------|
+;
