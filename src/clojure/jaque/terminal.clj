@@ -21,14 +21,14 @@
              TerminalPosition
              TextCharacter)))
 
-(defn scrub-control-chars [s]
+(defn- scrub-control-chars [s]
   (letfn [(scrub-one [c]
             (if (or (< (int c) 32) (= (int c) 127))
               \?
               c))]
     (apply str (map scrub-one s))))
 
-(defn index-str 
+(defn- index-str 
   ([s with] (map vector s with))
   ([s] (index-str s (range 0 (.length s)))))
 
@@ -112,7 +112,7 @@
     (.refresh screen)
     this))
 
-(defn beeper []
+(defn- beeper []
   (let [ch    (a/chan)
         synth (doto (MidiSystem/getSynthesizer) .open)
         mch   (aget (.getChannels synth) 0)]
@@ -124,7 +124,7 @@
       (recur))
     ch))
 
-(defn spinner [term spin]
+(defn- spinner [term spin]
   (a/go-loop [[cap i] [0 0]]
     (recur
       (if (Atom/isZero cap)
@@ -134,7 +134,7 @@
                                   (commit (spinner-tick term (Atom/cordToString cap) i))
                                   [cap ni]))))))
 
-(defn make-lanterna []
+(defn- make-lanterna []
   (let [f (DefaultTerminalFactory.)
         t (.createTerminal f)]
     (when (isa? t ExtendedTerminal)
@@ -144,7 +144,7 @@
       (.doResizeIfNecessary s)
       (map->Lanterna {:screen s}))))
 
-(defn egger [init beep spin curd]
+(defn- egger [init beep spin curd]
   (a/go-loop [term nil]
     (recur
       (let [egg (a/<! curd)
@@ -180,18 +180,18 @@
           (do (log/warnf "unhandled terminal effect: %s" tag)
               term))))))
 
-(defn listen [term poke]
+(defn- listen [term poke]
   (.start (Thread. #(loop []
                       (a/>!! poke (noun [[0 :term :1 0] (read-belt term)]))
                       (recur)))))
 
-(defn wall-seq [wall]
+(defn- wall-seq [wall]
   (map #(Tape/toString %) (List. wall)))
 
-(defn tank-seq [width tank]
+(defn- tank-seq [width tank]
   (wall-seq (Tank/wash 0 width tank)))
 
-(defn dump-tank [term tank]
+(defn- dump-tank [term tank]
   (when (log/enabled? :info)
     (doseq [string (tank-seq 74 tank)]
       (log/infof "slog: %s" string)))
@@ -200,14 +200,14 @@
       (doseq [string (tank-seq (long cols) tank)]
         (line term string)))))
 
-; on tank, we read tanks (probably from slog hints)
-; on curd, we read arvo curds for the wire [0 :term :1] (wire not included)
-; on belt, we write arvo belt events for keypresses
-(defn build [tank curd poke]
+; we read tanks from tank (probably from slog hints)
+; we read arvo curds from curd (for wire [0 :term :1 0] ONLY)
+; we send pokes to arvo on poke 
+(defn start [tank curd poke]
   (let [beep (beeper)
         init (a/chan)
-        spin (a/chan)
-        egg  (egger init beep spin curd)]
+        spin (a/chan)]
+    (egger init beep spin curd)
     (a/go-loop [term nil]
       (recur
         (a/alt! init  ([term]
