@@ -1,9 +1,9 @@
 (ns jaque.terminal
   (:use jaque.noun)
-  (:require [clojure.java.io :as io])
-  (:require [clojure.core.async :as a])
-  (:require [clojure.string :as string])
-  (:require [clojure.tools.logging :as log])
+  (:require [clojure.java.io :as io]
+            [clojure.core.async :refer [>! >!! <! go go-loop chan timeout alt!]]
+            [clojure.string :as string]
+            [clojure.tools.logging :as log])
   (:import (java.io File)
            (net.frodwith.jaque.data
              Atom
@@ -20,6 +20,10 @@
              terminal.DefaultTerminalFactory
              TerminalPosition
              TextCharacter)))
+
+;; FIXME there is a superious record with just a lanterna object in it, that i
+;; don't pass around correctly - i just use it for side effects and hang
+;; updating references.
 
 (defn- scrub-control-chars [s]
   (letfn [(scrub-one [c]
@@ -113,26 +117,26 @@
     this))
 
 (defn- beeper []
-  (let [ch    (a/chan)
+  (let [ch    (chan)
         synth (doto (MidiSystem/getSynthesizer) .open)
         mch   (aget (.getChannels synth) 0)]
-    (a/go-loop []
-      (a/<! ch)
+    (go-loop []
+      (<! ch)
       (.noteOn mch 67 200)
-      (a/<! (a/timeout 100))
+      (<! (timeout 100))
       (.noteOff mch 67)
       (recur))
     ch))
 
 (defn- spinner [term spin]
-  (a/go-loop [[cap i] [0 0]]
+  (go-loop [[cap i] [0 0]]
     (recur
       (if (Atom/isZero cap)
-        [(a/<! spin) i]
-        (a/alt! spin            ([cap] [cap i])
-                (a/timeout 500) (let [ni (if (< i 3) (inc i) 0)]
-                                  (commit (spinner-tick term (Atom/cordToString cap) i))
-                                  [cap ni]))))))
+        [(<! spin) i]
+        (alt! spin            ([cap] [cap i])
+              (timeout 500) (let [ni (if (< i 3) (inc i) 0)]
+                                (commit (spinner-tick term (Atom/cordToString cap) i))
+                                [cap ni]))))))
 
 (defn- make-lanterna []
   (let [f (DefaultTerminalFactory.)
@@ -145,44 +149,48 @@
       (map->Lanterna {:screen s}))))
 
 (defn- egger [init beep spin curd]
-  (a/go-loop [term nil]
+  (go-loop [term nil]
     (recur
-      (let [egg (a/<! curd)
+      (let [egg (<! curd)
             tag (Atom/cordToString (.head egg))]
         (case tag
           "init"  (let [term (make-lanterna)]
-                    (a/>! init term)
+                    (>! init term)
                     term)
           "blit"  (if (nil? term)
                     (do (log/error "blit to uninitialized terminal")
                         nil)
-                    (let [data (.tail egg)
-                          tag  (Atom/cordToString (.head data))]
-                      (commit
-                        (case tag
-                          "bee" (do (a/>! spin (.tail data))
-                                    term)
-                          "bel" (do (a/>! beep :beep)
-                                    term)
-                          "clr" (clr term)
-                          "hop" (hop term (Atom/expectLong data))
-                          "lin" (line term (Tape/toString data))
-                          "mor" (scroll term)
-                          "sav" (let [pax (List. (.head data))
-                                      pad (Atom/toByteArray (.tail data))]
-                                  (save term pax pad))
-                          "sag" (let [pax (List. (.head data))
-                                      pad (Atom/toByteArray (Atom/jam (.tail data)))]
-                                  (save term pax pad))
-                          "url" (link term data)
-                          (do (log/warnf "unhandled blit: %s" tag)
-                              term)))))
+                    (commit
+                      (reduce 
+                        (fn [term ovum]
+                          (let [tag (Atom/cordToString (.head ovum))
+                                data (.tail ovum)]
+                            (log/debugf "blit: %s" (Noun/toString ovum))
+                            (case tag
+                              "bee" (do (go (>! spin data))
+                                        term)
+                              "bel" (do (go (>! beep :beep))
+                                        term)
+                              "clr" (clr term)
+                              "hop" (hop term (Atom/expectLong data))
+                              "lin" (line term (Tape/toString data))
+                              "mor" (scroll term)
+                              "sav" (let [pax (List. (.head data))
+                                          pad (Atom/toByteArray (.tail data))]
+                                      (save term pax pad))
+                              "sag" (let [pax (List. (.head data))
+                                          pad (Atom/toByteArray (Atom/jam (.tail data)))]
+                                      (save term pax pad))
+                              "url" (link term data)
+                              (do (log/warnf "unhandled blit: %s" tag)
+                                  term))))
+                        term (List. (.tail egg)))))
           (do (log/warnf "unhandled terminal effect: %s" tag)
               term))))))
 
 (defn- listen [term poke]
   (.start (Thread. #(loop []
-                      (a/>!! poke (noun [[0 :term :1 0] (read-belt term)]))
+                      (>!! poke (noun [[0 :term :1 0] (read-belt term)]))
                       (recur)))))
 
 (defn- wall-seq [wall]
@@ -192,32 +200,29 @@
   (wall-seq (Tank/wash 0 width tank)))
 
 (defn- dump-tank [term tank]
-  (when (log/enabled? :info)
-    (doseq [string (tank-seq 74 tank)]
-      (log/infof "slog: %s" string)))
+  (log/debug (string/join \newline (tank-seq 80 tank)))
   (when-not (nil? term)
-    (let [[_ cols] (dimensions term)]
+    (let [[cols _] (dimensions term)]
       (doseq [string (tank-seq (long cols) tank)]
-        (line term string)))))
+        (commit (scroll (line term string)))))))
 
 ; we read tanks from tank (probably from slog hints)
 ; we read arvo curds from curd (for wire [0 :term :1 0] ONLY)
 ; we send pokes to arvo on poke 
 (defn start [tank curd poke]
   (let [beep (beeper)
-        init (a/chan)
-        spin (a/chan)]
+        init (chan)
+        spin (chan)]
     (egger init beep spin curd)
-    (a/go-loop [term nil]
+    (go-loop [term nil]
       (recur
-        (a/alt! init  ([term]
+        (alt! init  ([term]
+                     (let [[rows cols] (dimensions term)
+                           pok #(noun [[0 :term :1 0] %])]
                        (listen term poke)
                        (spinner term spin)
-                       (let [[rows cols] (dimensions term)
-                             pok #(noun [[0 :term :1 0] %])]
-                         (a/>! poke (pok [:blew rows cols]))
-                         (a/>! poke (pok [:hail 0]))
-                         term))
-                tank  ([t]
-                       (dump-tank term t)
-                       term))))))
+                       (go (>! poke (pok [:blew rows cols]))
+                           (>! poke (pok [:hail 0])))
+                       term))
+              tank  ([t] (do (dump-tank term t)
+                             term)))))))

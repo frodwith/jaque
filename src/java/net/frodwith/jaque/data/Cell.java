@@ -1,5 +1,7 @@
 package net.frodwith.jaque.data;
 
+import java.io.Serializable;
+
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
@@ -13,7 +15,7 @@ import net.frodwith.jaque.truffle.TypesGen;
  * this. No real checking is done at runtime.
  */
 
-public class Cell {
+public class Cell implements Serializable {
   public final Object head;
   public final Object tail;
   public int mug;

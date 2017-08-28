@@ -3,6 +3,7 @@ package net.frodwith.jaque.truffle.nodes.formula.hint;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
@@ -15,17 +16,25 @@ public final class MemoHintNode extends FormulaNode {
     this.next = next;
     this.cache = new HashMap<Object, Object>();
   }
+  
+  @TruffleBoundary
+  private Object getCached(Object key) {
+    return cache.get(key);
+  }
+  
+  @TruffleBoundary
+  private void setCached(Object key, Object value) {
+    cache.put(key, value);
+  }
 
   @Override
   public Object executeGeneric(VirtualFrame frame) {
-    Object subject = getSubject(frame);
-    if ( cache.containsKey(subject) ) {
-      return cache.get(subject);
+    Object subject = getSubject(frame),
+           pro = getCached(subject);
+    if ( null == pro ) {
+      pro = next.executeGeneric(frame);
+      setCached(subject, pro);
     }
-    else {
-      Object product = next.executeGeneric(frame);
-      cache.put(subject, product);
-      return product;
-    }
+    return pro;
   }
 }

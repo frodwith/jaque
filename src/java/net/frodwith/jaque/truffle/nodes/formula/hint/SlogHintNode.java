@@ -24,7 +24,7 @@ public final class SlogHintNode extends DynamicHintFormula {
   
   @TruffleBoundary
   private void doSlog(Object tank) {
-    context.caller.slog(tank);
+    context.slog(tank);
   }
   
   @Override

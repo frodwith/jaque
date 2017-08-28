@@ -1048,7 +1048,7 @@ public class Atom {
            tcc = new Cell(x, lsh((byte) 0, 1, d.tail)),
            tc  = new Cell(tcc, l);
     
-    return new Trel(x, tc, 0);
+    return new Trel(x, tc, 0L);
   }
   
   private static Trel jamPair(Map<Object, Object> m, Object ha, Object ta, Object b, Object l) {

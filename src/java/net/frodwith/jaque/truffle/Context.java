@@ -165,12 +165,18 @@ public class Context {
     System.out.println(s);
   }
   
-  public Object slam(Cell gate, Object sample) {
+  private Object mutateGate(Cell gate, Object sample) {
     Cell pay = Cell.expect(gate.tail),
-         yap = new Cell(sample, pay.tail),
-         tag = new Cell(gate.head, yap);
-
-    return kickTarget.call(tag);
+         yap = new Cell(sample, pay.tail);
+    return  new Cell(gate.head, yap);
+  }
+  
+  public Object slam(Cell gate, Object sample) {
+    return kickTarget.call(mutateGate(gate, sample));
+  }
+  
+  public Object wrapSlam(Cell gate, Object sample) {
+    return wrapCall(kickTarget, mutateGate(gate, sample));
   }
   
   public Function<Object, Object> slammer(Cell gate) {
@@ -334,13 +340,10 @@ public class Context {
 
     return Truffle.getRuntime().createCallTarget(top);
   }
-
-  /* Top-level interpeter entry point */
-  public Object nock(Object subject, Cell formula) {
-    CallTarget outer = compileTarget(formula);
-    
+  
+  private Object wrapCall(CallTarget tgt, Object subject) {
     try {
-      return outer.call(subject);
+      return tgt.call(subject);
     }
     catch (Bail e) {
       if ( null != caller ) {
@@ -348,14 +351,19 @@ public class Context {
         Cell toon = Cell.expect(caller.kernel("mook", tone));
         assert(Atom.equals(2L, toon.head));
         for ( Object tank : new List(toon.tail) ) {
-          Object wall = caller.kernel("wash", new Cell(new Cell(0L, 80L), tank));
+          Object wall = Tank.wash(0L, 80L, tank);
           for ( Object tape : new List(wall) ) {
             err(Tape.toString(tape));
           }
         }
       }
-      throw e;
+      throw e;     
     }
+  }
+
+  /* Top-level interpeter entry point */
+  public Object nock(Object subject, Cell formula) {
+    return wrapCall(compileTarget(formula), subject);
   }
   
   public void dumpProfile() {
@@ -417,5 +425,15 @@ public class Context {
     public Road(Cell escapeGate) {
       this.escapeGate = escapeGate;
     }
+  }
+
+  @TruffleBoundary
+  public Object kernel(String name, Object sample) {
+    return caller.kernel(name, sample);
+  }
+  
+  @TruffleBoundary
+  public void slog(Object tank) {
+    caller.slog(tank);
   }
 }

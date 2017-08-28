@@ -28,7 +28,7 @@ public abstract class EscapeNode extends BinaryFormulaNode {
     else {
       Cell cro = TypesGen.asCell(pro);
       if ( !Noun.isCell(cro.tail) ) {
-        Cell item = new Cell(Atom.mote("hunk"), c.caller.kernel("mush", gof));
+        Cell item = new Cell(Atom.mote("hunk"), c.kernel("mush", gof));
         c.stackPush(item);
         throw new Bail();
       }

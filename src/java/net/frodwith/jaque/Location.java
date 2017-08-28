@@ -14,21 +14,21 @@ import net.frodwith.jaque.truffle.driver.AxisArm;
 import net.frodwith.jaque.truffle.driver.NamedArm;
 import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
 
-public final class Location {
+public final class Location implements Serializiable {
   public final boolean isStatic;
   public final String name;
   public final String label;
   public final Object noun;
   public final Location parent;
   public final Object axisToParent;
-  public final Map<String, Object> nameToAxis;
-  public final Map<Object, String> axisToName;
-  public final Map<Object,Class<? extends ImplementationNode>> drivers;
+  public final HashMap<String, Object> nameToAxis;
+  public final HashMap<Object, String> axisToName;
+  public final HashMap<Object,Class<? extends ImplementationNode>> drivers;
   
   public Location(String name, 
       String label,
       Object axisToParent,
-      Map<String, Object> hooks, 
+      HashMap<String, Object> hooks, 
       Object noun, 
       Location parent,
       Arm[] arms) {
