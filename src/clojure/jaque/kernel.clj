@@ -137,7 +137,12 @@
                   (boot-poke eff [[0 :term :1 0] :boot :sith 0 0 0])
                   (boot-poke eff [0 :verb 0])
                   (boot-poke eff (home-sync k sync-dir)))]
-        (.execute pre (Boot. (:arvo k) (:now k) (:wen k) (:sen k) (:sev k)))))
+        (.execute pre (Boot. (.locations ctx)
+                             (:arvo k)
+                             (:now k)
+                             (:wen k)
+                             (:sen k)
+                             (:sev k)))))
     (go-loop []
       (.execute pre (Poke. (<! poke)))
       (recur))))

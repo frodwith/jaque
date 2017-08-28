@@ -141,7 +141,8 @@ public abstract class KickNode extends FormulaNode {
     if ( null == loc ) {
       return null;
     }
-    Class<? extends ImplementationNode> klass = loc.drivers.get(axis);
+    Context context = getContext();
+    Class<? extends ImplementationNode> klass = context.getDriver(loc, axis);
     if ( null == klass ) {
       /*
       if ( axis.equals(2L) ) {
@@ -156,7 +157,7 @@ public abstract class KickNode extends FormulaNode {
     }
     try {
       Method cons = klass.getMethod("create", Context.class, CallTarget.class);
-      return (ImplementationNode) cons.invoke(null, getContext(), fallback);
+      return (ImplementationNode) cons.invoke(null, context, fallback);
     }
     catch (NoSuchMethodException e) {
       e.printStackTrace();

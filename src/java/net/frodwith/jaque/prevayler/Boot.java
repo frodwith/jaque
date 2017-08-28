@@ -33,6 +33,7 @@ public class Boot implements Transaction<PrevalentSystem> {
 
   @Override
   public void executeOn(PrevalentSystem s, Date now) {
+    s.restoreLocations(this.locations);
     s.arvo = this.arvo;
     s.now = this.now;
     s.wen = this.wen;

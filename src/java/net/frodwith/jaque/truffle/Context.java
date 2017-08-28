@@ -52,6 +52,7 @@ import net.frodwith.jaque.truffle.nodes.formula.hint.FastHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.MemoHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.SlogHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.StackHintNode;
+import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
 
 public class Context {
   
@@ -68,8 +69,8 @@ public class Context {
   
   public final Map<KickLabel, CallTarget> kicks;
   public final Map<Cell, CallTarget> nocks;
-  public final Map<Cell, Location> locations;
   public final Map<String, Arm[]> drivers;
+  public final HashMap<Cell, Location> locations;
 
   public Map<String,Stats> times = null;
   public Stack<Invocation> calls = new Stack<Invocation>();
@@ -435,5 +436,21 @@ public class Context {
   @TruffleBoundary
   public void slog(Object tank) {
     caller.slog(tank);
+  }
+
+  @TruffleBoundary
+  public Class<? extends ImplementationNode> getDriver(Location loc, Object axis) {
+    String k = loc.label;
+    if ( !drivers.containsKey(k) ) {
+      return null;
+    }
+
+    for ( Arm a : drivers.get(k) ) {
+      if ( a.matches(loc, axis) ) {
+        return a.driver;
+      }
+    }
+
+    return null;
   }
 }

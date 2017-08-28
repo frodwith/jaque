@@ -32,8 +32,7 @@ public final class FastHintNode extends DynamicHintFormula {
   
   private Location register(Cell core, Clue clue) {
     if ( Atom.isZero(clue.parentAxis) ) {
-      return new Location(clue.name, clue.name, 0L, clue.hooks,
-          core, null, context.drivers.get(clue.name));
+      return new Location(clue.name, clue.name, 0L, clue.hooks, core, null);
     }
     else {
       CompilerAsserts.neverPartOfCompilation();
@@ -55,8 +54,7 @@ public final class FastHintNode extends DynamicHintFormula {
         return null;
       }
       String label = parentLoc.label + "/" + clue.name;
-      return new Location(clue.name, label, clue.parentAxis, clue.hooks, 
-          core, parentLoc, context.drivers.get(label));
+      return new Location(clue.name, label, clue.parentAxis, clue.hooks, core, parentLoc);
     }
   }
 
@@ -86,11 +84,11 @@ public final class FastHintNode extends DynamicHintFormula {
   private static final class Clue {
     public final String name;
     public final Object parentAxis;
-    public final Map<String, Object> hooks;
+    public final HashMap<String, Object> hooks;
     public static final Cell CONSTANT_ZERO = new Cell(1L, 0L);
     public static final Cell CONSTANT_FRAG = new Cell(0L, 1L);
 
-    private Clue(String name, Object parentAxis, Map<String, Object> hooks) {
+    private Clue(String name, Object parentAxis, HashMap<String, Object> hooks) {
       this.name = name;
       this.parentAxis = parentAxis;
       this.hooks = hooks;
@@ -174,9 +172,9 @@ public final class FastHintNode extends DynamicHintFormula {
       return null;
     }
 
-    private static Map<String,Object> parseHooks(Object noun) throws ClueParsingException {
+    private static HashMap<String,Object> parseHooks(Object noun) throws ClueParsingException {
       Object list = noun;
-      Map<String, Object> map = new HashMap<String, Object>();
+      HashMap<String, Object> map = new HashMap<String, Object>();
       // TODO: use data.List
       while ( !Atom.isZero(list) ) {
         Cell pair = TypesGen.asCell(list);
@@ -206,7 +204,7 @@ public final class FastHintNode extends DynamicHintFormula {
         Cell pair = TypesGen.asCell(trel.tail);
         String name = chum(trel.head);
         Object parentAxis = parseParentAxis(pair.head);
-        Map<String, Object> hooks = parseHooks(pair.tail);
+        HashMap<String, Object> hooks = parseHooks(pair.tail);
         return new Clue(name, parentAxis, hooks);
       }
       catch (ClassCastException e) {

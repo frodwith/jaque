@@ -157,9 +157,12 @@
           "init"  (let [term (make-lanterna)]
                     (>! init term)
                     term)
-          "blit"  (if (nil? term)
-                    (do (log/error "blit to uninitialized terminal")
-                        nil)
+          "blit"  (let [term (if (nil? term)
+                               (do (log/info "term was null (normal on restore) - making a new one")
+                                   (let [term (make-lanterna)]
+                                     (>! init term)
+                                     term))
+                               term)]
                     (commit
                       (reduce 
                         (fn [term ovum]
