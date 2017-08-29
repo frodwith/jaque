@@ -187,7 +187,9 @@
 
 (defn- listen [term poke]
   (.start (Thread. #(loop []
-                      (>!! poke (noun [[0 :term :1 0] (read-belt term)]))
+                      (let [belt (read-belt term)
+                            ovum (noun [[0 :term :1 0] belt])]
+                        (>!! poke ovum))
                       (recur)))))
 
 (defn- wall-seq [wall]
