@@ -409,11 +409,13 @@ public class Context {
     }
   }
   
+  @TruffleBoundary
   public void stackPush(Cell item) {
     Road r = levels.peek();
     r.stacks = new Cell(item, r.stacks);
   }
   
+  @TruffleBoundary
   public void stackPop() {
     Road r = levels.peek();
     r.stacks = Cell.expect(r.stacks).tail;

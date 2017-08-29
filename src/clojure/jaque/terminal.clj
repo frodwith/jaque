@@ -26,11 +26,7 @@
 ;; updating references.
 
 (defn- scrub-control-chars [s]
-  (letfn [(scrub-one [c]
-            (if (or (< (int c) 32) (= (int c) 127))
-              \?
-              c))]
-    (apply str (map scrub-one s))))
+  (string/replace s #"\x1b\[[0-9;]*[mG]" ""))
 
 (defn- index-str 
   ([s with] (map vector s with))
@@ -89,8 +85,9 @@
   (line [this text]
     (let [size (.getTerminalSize screen)
           row  (dec (.getRows size))
-          len  (.length text)]
-      (doseq [[c i] (index-str (scrub-control-chars text))]
+          cln  (scrub-control-chars text)
+          len  (.length cln)]
+      (doseq [[c i] (index-str cln)]
         (.setCharacter screen i row (TextCharacter. c)))
       (doseq [i (range len (.getColumns size))]
         (.setCharacter screen i row (TextCharacter. \space)))
@@ -132,8 +129,8 @@
   (go-loop [[cap i] [0 0]]
     (recur
       (if (Atom/isZero cap)
-        [(<! spin) i]
-        (alt! spin            ([cap] [cap i])
+        [(<! spin) 0]
+        (alt! spin          ([cap] [cap 0])
               (timeout 500) (let [ni (if (< i 3) (inc i) 0)]
                                 (commit (spinner-tick term (Atom/cordToString cap) i))
                                 [cap ni]))))))
@@ -148,48 +145,45 @@
       (.doResizeIfNecessary s)
       (map->Lanterna {:screen s}))))
 
-(defn- egger [init beep spin curd]
-  (go-loop [term nil]
-    (recur
-      (let [egg (<! curd)
-            tag (Atom/cordToString (.head egg))]
-        (case tag
-          "init"  (let [term (make-lanterna)]
-                    (>! init term)
-                    term)
-          "blit"  (let [term (if (nil? term)
-                               (do (log/info "term was null (normal on restore) - making a new one")
-                                   (let [term (make-lanterna)]
-                                     (>! init term)
-                                     term))
-                               term)]
-                    (commit
-                      (reduce 
-                        (fn [term ovum]
-                          (let [tag (Atom/cordToString (.head ovum))
-                                data (.tail ovum)]
-                            (log/debugf "blit: %s" (Noun/toString ovum))
-                            (case tag
-                              "bee" (do (go (>! spin data))
-                                        term)
-                              "bel" (do (go (>! beep :beep))
-                                        term)
-                              "clr" (clr term)
-                              "hop" (hop term (Atom/expectLong data))
-                              "lin" (line term (Tape/toString data))
-                              "mor" (scroll term)
-                              "sav" (let [pax (List. (.head data))
-                                          pad (Atom/toByteArray (.tail data))]
-                                      (save term pax pad))
-                              "sag" (let [pax (List. (.head data))
-                                          pad (Atom/toByteArray (Atom/jam (.tail data)))]
-                                      (save term pax pad))
-                              "url" (link term data)
-                              (do (log/warnf "unhandled blit: %s" tag)
-                                  term))))
-                        term (List. (.tail egg)))))
-          (do (log/warnf "unhandled terminal effect: %s" tag)
-              term))))))
+(defn- egger [term poke beep spin curd]
+  (go-loop []
+    (let [egg (<! curd)
+          tag (Atom/cordToString (.head egg))]
+      (case tag
+        "init"  (let [[rows cols] (dimensions term)
+                      wir  [0 :term :1 0]
+                      blew (noun [wir :blew rows cols]) 
+                      hail (noun [wir :hail 0])]
+                  (go (>! poke blew)
+                      (>! poke hail)))
+        "blit"  (commit
+                  (reduce 
+                    (fn [term ovum]
+                      (let [tag (Atom/cordToString (.head ovum))
+                            data (.tail ovum)]
+                        (log/debugf "blit: %s" (Noun/toString ovum))
+                        (case tag
+                          "bee" (do (go (>! spin data))
+                                    term)
+                          "bel" (do (go (>! beep :beep))
+                                    term)
+                          "clr" (clr term)
+                          "hop" (hop term (Atom/expectLong data))
+                          "lin" (line term (Tape/toString data))
+                          "mor" (scroll term)
+                          "sav" (let [pax (List. (.head data))
+                                      pad (Atom/toByteArray (.tail data))]
+                                  (save term pax pad))
+                          "sag" (let [pax (List. (.head data))
+                                      pad (Atom/toByteArray (Atom/jam (.tail data)))]
+                                  (save term pax pad))
+                          "url" (link term data)
+                          (do (log/warnf "unhandled blit: %s" tag)
+                              term))))
+                    term (List. (.tail egg))))
+        (do (log/warnf "unhandled terminal effect: %s" tag)
+            term)))
+    (recur)))
 
 (defn- listen [term poke]
   (.start (Thread. #(loop []
@@ -204,10 +198,9 @@
 
 (defn- dump-tank [term tank]
   (log/debug (string/join \newline (tank-seq 80 tank)))
-  (when-not (nil? term)
-    (let [[cols _] (dimensions term)]
-      (doseq [string (tank-seq (long cols) tank)]
-        (commit (scroll (line term string)))))))
+  (let [[cols _] (dimensions term)]
+    (doseq [string (tank-seq (long cols) tank)]
+      (commit (scroll (line term string))))))
 
 ; we read tanks from tank (probably from slog hints)
 ; we read arvo curds from curd (for wire [0 :term :1 0] ONLY)
@@ -215,17 +208,11 @@
 (defn start [tank curd poke]
   (let [beep (beeper)
         init (chan)
-        spin (chan)]
-    (egger init beep spin curd)
-    (go-loop [term nil]
-      (recur
-        (alt! init  ([term]
-                     (let [[rows cols] (dimensions term)
-                           pok #(noun [[0 :term :1 0] %])]
-                       (listen term poke)
-                       (spinner term spin)
-                       (go (>! poke (pok [:blew rows cols]))
-                           (>! poke (pok [:hail 0])))
-                       term))
-              tank  ([t] (do (dump-tank term t)
-                             term)))))))
+        spin (chan)
+        term (make-lanterna)]
+    (egger term poke beep spin curd)
+    (listen term poke)
+    (spinner term spin)
+    (go-loop []
+      (dump-tank term (<! tank))
+      (recur))))

@@ -50,8 +50,10 @@ public class PrevalentSystem implements Serializable, Caller {
   }
   
   public void restoreLocations(Map<Cell,Location> locations) {
-    this.context.locations.clear();
-    this.context.locations.putAll(locations);
+    if ( this.context.locations != locations ) {
+      this.context.locations.clear();
+      this.context.locations.putAll(locations);
+    }
   }
 
   public Cell axisGate(Object axis) {

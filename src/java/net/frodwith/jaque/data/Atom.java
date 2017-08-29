@@ -172,6 +172,7 @@ public class Atom {
     return add(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
 
+  @TruffleBoundary
   private static Object aes_cbc(int mode, int keysize, Object key, Object iv, Object msg) {
     int len = met((byte)3, msg),
         out = (len % 16 == 0)
@@ -233,6 +234,7 @@ public class Atom {
     return aes_cbc(Cipher.ENCRYPT_MODE, 32, key, iv, msg);
   }
 
+  @TruffleBoundary
   private static Object aes_ecb(int mode, int keysize, Object key, Object block) {
     byte[] ky = reverse(forceBytes(key, keysize)),
            by = reverse(forceBytes(block, 16));
@@ -463,6 +465,7 @@ public class Atom {
     } 
   }
   
+  @TruffleBoundary
   public static String cordToString(Object atom) {
     try {
       return new String(toByteArray(atom), "UTF-8");
@@ -472,6 +475,7 @@ public class Atom {
     }
   }
   
+  @TruffleBoundary
   private static Cell cue(Map<Object,Object> m, Object a, Object b) throws UnexpectedResultException {
     Object p, q;
 
@@ -517,6 +521,7 @@ public class Atom {
     return new Cell(p, new Cell(q, 0L));
   }
   
+  @TruffleBoundary
   public static Object cue(Object a) {
     try {
       Cell x = cue(new HashMap<Object,Object>(), a, 0L);
@@ -677,6 +682,7 @@ public class Atom {
     return new Cell(malt(xwords), malt(ywords));
   }
   
+  @TruffleBoundary
   private static Object doAesc(int mode, Object a, Object b) {
     byte[] ay = forceBytes(a, 32),
            by = forceBytes(b, 16);
@@ -735,6 +741,7 @@ public class Atom {
     return dvr(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
 
+  @TruffleBoundary
   public static Object edPuck(Object a) {
     byte[] pub = new byte[32],
            sec = new byte[64],
@@ -744,6 +751,7 @@ public class Atom {
     return takeBytes(pub, 32);
   }
   
+  @TruffleBoundary
   public static Object edShar(Object pub, Object sek) {
     byte[] puy = forceBytes(pub, 32),
            sey = forceBytes(sek, 32),
@@ -755,6 +763,7 @@ public class Atom {
     return takeBytes(shr, 32);
   }
   
+  @TruffleBoundary
   public static Object edSign(Object a, Object b) {
     byte[] sig = new byte[64],
            sed = forceBytes(b, 32),
@@ -766,6 +775,7 @@ public class Atom {
     return takeBytes(sig, 64);
   }
 
+  @TruffleBoundary
   public static Object edVeri(Object s, Object m, Object pk) {
     byte[] sig = forceBytes(s, 64),
            pub = forceBytes(pk, 32),
@@ -1035,6 +1045,7 @@ public class Atom {
     }
   }
   
+  @TruffleBoundary
   public static Object jam(Object a) {
     Trel x   = jam(new HashMap<Object,Object>(), a, 0L, 0L);
     Object q = List.flop(x.q);
@@ -1334,6 +1345,7 @@ public class Atom {
     return off;
   }
 
+  @TruffleBoundary
   public static long muk(int seed, int length, Object atom) {
     assert Atom.met((byte) 5, seed) <= 1;
     assert Atom.met(length) <= 31;
@@ -1391,6 +1403,7 @@ public class Atom {
     }
   }
   
+  @TruffleBoundary
   public static void pretty(Writer out, int[] cur) throws IOException {
     if ( 1 == cur.length && Long.compareUnsigned(cur[0], 65536) < 0 ) {
       raw(out, cur, 10, 3);
@@ -1442,6 +1455,7 @@ public class Atom {
     return malt(sal);
   }
   
+  @TruffleBoundary
   public static void raw(Writer out, int[] cur, int radix, int dot) throws IOException {
     Stack<Character> digits = new Stack<Character>();
 

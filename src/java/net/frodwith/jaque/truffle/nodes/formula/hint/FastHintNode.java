@@ -50,7 +50,7 @@ public final class FastHintNode extends DynamicHintFormula {
       Cell parentBattery = TypesGen.asCell(parentCore.head);
       Location parentLoc = context.locations.get(parentBattery);
       if ( null == parentLoc ) {
-        context.err("register: invalid parent");
+        context.err("register: invalid parent for " + clue.name);
         return null;
       }
       String label = parentLoc.label + "/" + clue.name;

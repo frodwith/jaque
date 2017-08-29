@@ -90,6 +90,7 @@
 
 (defn- boot-poke [k ech event]
   (let [ctx (:context k)
+        evt (noun event)
         old (.caller ctx)]
     (set! (.caller ctx) 
           (reify Caller
@@ -97,10 +98,12 @@
               (kernel-call k gate-name sample))
             (slog [this tank]
               (>!! (:slog k) tank))))
-    (let [res (slam k (kernel-axis k 42) [(Time/now) event])
+    (>!! ech (noun [[[0 :term :1 0] [:blit [:bee (.head (.tail (.head evt)))] 0]] 0]))
+    (let [res (slam k (kernel-axis k 42) [(Time/now) evt])
           eff (.head res)
           arv (.tail res)]
       (set! (.caller ctx) old)
+      (>!! ech (noun [[[0 :term :1 0] [:blit [:bee 0] 0]] 0]))
       (>!! ech eff)
       (assoc k :arvo arv))))
 
@@ -135,7 +138,7 @@
             k (-> k
                   (boot-poke eff [[0 :newt (:sen k) 0] :barn 0])
                   (boot-poke eff [[0 :term :1 0] :boot :sith 0 0 0])
-                  (boot-poke eff [0 :verb 0])
+                  ;(boot-poke eff [0 :verb 0])
                   (boot-poke eff (home-sync k sync-dir)))]
         (.execute pre (Boot. (.locations ctx)
                              (:arvo k)
@@ -144,8 +147,11 @@
                              (:sen k)
                              (:sev k)))))
     (go-loop []
-      (.execute pre (Poke. (<! poke)))
-      (recur))))
+      (let [p (<! poke)]
+        (>! eff (noun [[[0 :term :1 0] [:blit [:bee (.head (.tail (.head p)))] 0]] 0]))
+        (.execute pre (Poke. p))
+        (>! eff (noun [[[0 :term :1 0] [:blit [:bee 0] 0]] 0]))
+        (recur)))))
 
 (defn run []
   (let [poke (chan)
