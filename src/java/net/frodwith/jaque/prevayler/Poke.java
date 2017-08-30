@@ -20,7 +20,7 @@ public class Poke implements Transaction<PrevalentSystem> {
     Cell sample = new Cell(Time.fromInstant(now.toInstant()), this.event);
     Cell pro = Cell.expect(s.context.wrapSlam(pokeGate, sample));
     s.arvo = pro.tail;
-    s.tankSink.accept(pro.head);
+    s.effectSink.accept(pro.head);
   }
 
 }

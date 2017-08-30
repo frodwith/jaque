@@ -6,7 +6,7 @@
     [clojure.java.io :as io]
     [clojure.string :as string]
     [clojure.tools.logging :as log]
-    [clojure.core.async :refer [>! >!! <! onto-chan go go-loop chan]])
+    [clojure.core.async :refer [>! >!! <! alt! onto-chan go go-loop chan]])
   (:import 
     (java.nio.file Paths)
     (java.util.function Consumer)
@@ -94,6 +94,8 @@
         old (.caller ctx)]
     (set! (.caller ctx) 
           (reify Caller
+            (register [this battery loc]
+              nil)
             (kernel [this gate-name sample]
               (kernel-call k gate-name sample))
             (slog [this tank]
@@ -125,7 +127,9 @@
 ; poke: we read poke nouns and feed them to arvo
 ; eff:  we write lists of effects, doing no dispatching
 ; tank: we write tanks to be printed somewhere
-(defn start [poke eff tank {:keys [jets profile pill sync-dir pier-dir]}]
+; call: read [gate-name sample ch], and call a hoon kernel gate
+;       writing the product to ch
+(defn start [call poke eff tank {:keys [jets profile pill sync-dir pier-dir]}]
   (let [ctx (Context. jets profile)
         sys (PrevalentSystem. ctx (feed tank) (feed eff))
         fac (doto (PrevaylerFactory.)
@@ -147,28 +151,33 @@
                              (:sen k)
                              (:sev k)))))
     (go-loop []
-      (let [p (<! poke)]
-        (>! eff (noun [[[0 :term :1 0] [:blit [:bee (.head (.tail (.head p)))] 0]] 0]))
-        (.execute pre (Poke. p))
-        (>! eff (noun [[[0 :term :1 0] [:blit [:bee 0] 0]] 0]))
-        (recur)))))
+      (alt! poke ([p]
+                  (>! eff (noun [[[0 :term :1 0] [:blit [:bee (.head (.tail (.head p)))] 0]] 0]))
+                  (.execute pre (Poke. p))
+                  (>! eff (noun [[[0 :term :1 0] [:blit [:bee 0] 0]] 0])))
+            call ([[gate-name sample respond]]
+                  (>! respond (.externalCall sys pre gate-name sample))))
+      (recur))))
 
 (defn run []
   (let [poke (chan)
         eff  (chan)
         curd (chan)
         tank (chan)
+        call (chan)
         jets (util/read-jets "/home/pdriver/code/jaque/maint/jets.edn")
         pill (util/read-jam "/home/pdriver/code/jaque/maint/urbit.pill")
         adir "/home/pdriver/code/urbit-maint/arvo"
         pdir "/tmp/jaque-pier"]
     (term-curds eff curd)
     (terminal/start tank curd poke)
-    (start poke eff tank {:jets jets
-                          :profile false
-                          :pill pill
-                          :sync-dir adir
-                          :pier-dir pdir})
+    (start call poke eff tank
+           {:jets jets
+            :profile false
+            :pill pill
+            :sync-dir adir
+            :pier-dir pdir})
     {:poke poke
      :eff  eff
+     :call call
      :tank tank}))

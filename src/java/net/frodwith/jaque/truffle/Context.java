@@ -455,4 +455,10 @@ public class Context {
 
     return null;
   }
+
+  @TruffleBoundary
+  public void register(Cell battery, Location location) {
+    locations.put(battery, location);
+    caller.register(battery, location);
+  }
 }

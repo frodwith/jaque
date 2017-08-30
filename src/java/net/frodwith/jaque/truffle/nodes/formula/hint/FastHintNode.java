@@ -67,7 +67,7 @@ public final class FastHintNode extends DynamicHintFormula {
     Clue clue = Clue.parse(rawClue, context);
     if ( TypesGen.isCell(product) && null != clue ) {
       Cell core = TypesGen.asCell(product);
-      context.locations.put(TypesGen.asCell(core.head), register(core, clue));
+      context.register(TypesGen.asCell(core.head), register(core, clue));
     }
 
     // possibly we could discard to next, but if hint is constant

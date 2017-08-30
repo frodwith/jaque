@@ -112,15 +112,17 @@
       (recur))
     ch))
 
-(defn- spinner [sink spin]
+(defn- spinner [sink ch]
   (go-loop [[cap i] [0 0]]
     (recur
       (if (Atom/isZero cap)
-        [(<! spin) 0]
-        (alt! spin          ([cap] [cap 0])
+        [(<! ch) 0]
+        (alt! ch            ([cap] [cap 0])
               (timeout 500) (let [ni (if (< i 3) (inc i) 0)]
-                                (commit (spin sink (Atom/cordToString cap) i))
-                                [cap ni]))))))
+                              (doto sink
+                                (spin (Atom/cordToString cap) i)
+                                (commit))
+                              [cap ni]))))))
 
 (defn- make-lanterna []
   (let [f (DefaultTerminalFactory.)
