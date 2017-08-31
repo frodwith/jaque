@@ -5,14 +5,15 @@
             [clojure.string :as string]
             [clojure.tools.logging :as log])
   (:import (java.io File)
+           (java.util Timer)
            (net.frodwith.jaque
-             LineWidthHackScreen
+             JaqueScreen
              data.Atom
              data.List
              data.Tape
              data.Tank
              data.Noun)
-           (javax.sound.midi MidiSystem Synthesizer)
+           (javax.sound.midi MidiSystem Synthesizer MidiChannel)
            (com.googlecode.lanterna
              input.KeyType
              screen.TerminalScreen
@@ -29,7 +30,7 @@
   (string/replace s #"\x1b\[[0-9;]*[mG]" ""))
 
 (defprotocol BlitSink
-  (spin [this caption i])
+  (spin [this caption])
   (clr [this])
   (hop [this to-column])
   (line [this text])
@@ -37,12 +38,13 @@
   (save [this path-seq content-bytes])
   (link [this url])
   (dimensions [this])
+  (restore [this])
   (commit [this]))
 
 (defprotocol BeltSource
   (read-belt [this]))
 
-(extend-type LineWidthHackScreen
+(extend-type JaqueScreen
   BeltSource 
   (read-belt [this]
     (let [stroke (.readInput this)
@@ -68,18 +70,24 @@
   (commit [this] (.refresh this))
   (link [this url] (doto this (line url) scroll))
   (hop [this col]
-    (let [pos (.getCursorPosition this)]
-      (.setCursorPosition this (.withColumn pos (- col (.stripChars ^LineWidthHackScreen this))))))
+    (let [pos (.getCursorPosition this)
+          scr ^JaqueScreen this]
+      (set! (. scr lastHop) col)
+      (.setCursorPosition this (.withColumn pos (- col (.stripChars ^JaqueScreen this))))))
   (save [this path-seq content-bytes]
     (with-open [out (io/output-stream (io/file (string/join File/pathSeparator path-seq)))]
       (.write out content-bytes)))
+  (restore [this]
+    (let [scr ^JaqueScreen this]
+      (line this (.lastLine scr))
+      (hop this (.lastHop scr))))
   (dimensions [this]
     (let [s (.getTerminalSize this)]
       [(.getColumns s) (.getRows s)]))
-  (spin [this caption i]
+  (spin [this caption]
     (let [[cols rows] (dimensions this)
           row  (dec rows)
-          spin (case i 0 \| 1 \/ 2 \- 3 \\)
+          spin (.getSpinChar ^JaqueScreen this)
           full (str spin \u00AB caption \u00BB)]
       (doseq [[c i] (index-str full)]
         (.setCharacter this i row (TextCharacter. c)))))
@@ -93,48 +101,47 @@
     (let [[cols rows] (dimensions this)
           row  (dec rows)
           cln  (scrub-control-chars text)
+          scr  ^JaqueScreen this
           len  (.length cln)]
       (doseq [[c i] (index-str cln)]
         (.setCharacter this i row (TextCharacter. c)))
       (doseq [i (range len cols)]
         (.setCharacter this i row (TextCharacter. \space)))
-      (set! (. this stripChars) (- (.length text) len)))))
-
-(defn- beeper []
-  (let [ch    (chan)
-        synth (doto (MidiSystem/getSynthesizer) .open)
-        mch   (aget (.getChannels synth) 0)]
-    (go-loop []
-      (<! ch)
-      (.noteOn mch 67 200)
-      (<! (timeout 100))
-      (.noteOff mch 67)
-      (recur))
-    ch))
-
-(defn- spinner [sink ch]
-  (go-loop [[cap i] [0 0]]
-    (recur
-      (if (Atom/isZero cap)
-        [(<! ch) 0]
-        (alt! ch            ([cap] [cap 0])
-              (timeout 500) (let [ni (if (< i 3) (inc i) 0)]
-                              (doto sink
-                                (spin (Atom/cordToString cap) i)
-                                (commit))
-                              [cap ni]))))))
+      (set! (. scr lastLine) text)
+      (set! (. scr stripChars) (- (.length text) len)))))
 
 (defn- make-lanterna []
   (let [f (DefaultTerminalFactory.)
         t (.createTerminal f)]
     (when (isa? t ExtendedTerminal)
       (.maximize t))
-    (let [s (doto (LineWidthHackScreen. t)
+    (let [s (doto (JaqueScreen. t)
               (.startScreen)
               (.doResizeIfNecessary))
           [cols rows] (dimensions s)]
       (.setCursorPosition s (TerminalPosition. 0 (dec rows)))
       s)))
+
+(defn- wall-seq [wall]
+  (map #(Tape/toString %) (List. wall)))
+
+(defn- tank-seq [width tank]
+  (wall-seq (Tank/wash 0 width tank)))
+
+(defn- handle-tank [^BlitSink sink tank]
+  (log/debug (string/join \newline (tank-seq 80 tank)))
+  (let [[cols _] (dimensions sink)]
+    (doseq [string (tank-seq (long cols) tank)]
+      (doto sink
+        (line string)
+        (scroll)))
+    (commit sink)))
+
+(defn- handle-beep [^MidiChannel c]
+  (go
+    (.noteOn c 67 200)
+    (<! (timeout 100))
+    (.noteOff c 67)))
 
 (defn- blit-one [sink beep spin ovum]
   (let [tag (Atom/cordToString (.head ovum))
@@ -155,56 +162,60 @@
       "url" (link sink data)
       (log/warnf "unhandled blit: %s" tag))))
 
-(defn- egger [sink poke beep spin curd]
-  (go-loop []
-    (let [egg (<! curd)
-          tag (Atom/cordToString (.head egg))]
-      (case tag
-        "init"  (let [[rows cols] (dimensions sink)
-                      wir  [0 :term :1 0]
-                      blew (noun [wir :blew rows cols]) 
-                      hail (noun [wir :hail 0])]
-                  (go (>! poke blew)
-                      (>! poke hail)))
-        "blit"  (do (doseq [ovum (List. (.tail egg))]
-                      (blit-one sink beep spin ovum))
-                    (commit sink))
-        (log/warnf "unhandled terminal effect: %s" tag)))
-    (recur)))
+(defn- handle-egg [^BlitSink sink poke beep spin ^Cell egg]
+  (let [tag (Atom/cordToString (.head egg))]
+    (case tag
+      "init" (let [[rows cols] (dimensions sink)
+                   wir  [0 :term :1 0]
+                   blew (noun [wir :blew rows cols]) 
+                   hail (noun [wir :hail 0])]
+               (go (>! poke blew)
+                   (>! poke hail)))
+      "blit" (do (doseq [ovum (List. (.tail egg))]
+                   (blit-one sink beep spin ovum))
+                 (commit sink))
+      (log/warnf "unhandled terminal effect: %s" tag))))
 
-(defn- listen [source poke]
-  (.start (Thread. #(loop []
-                      (let [belt (read-belt source)
-                            ovum (noun [[0 :term :1 0] belt])]
-                        (>!! poke ovum))
-                      (recur)))))
+(defn- handle-spin [^Timer timer ^BeltSink sink cap]
+  (.cancel timer)
+  (if (Atom/isZero cap)
+    (doto sink (restore) (commit))
+    (.schedule #(spin sink cap) 0 500)))
 
-(defn- wall-seq [wall]
-  (map #(Tape/toString %) (List. wall)))
+(defn- listener [^BeltSource source poke]
+  (let [scr ^JaqueScreen source]
+    (.start
+      (Thread. #(loop []
+                  (when (. active scr)
+                    (let [belt (read-belt source)
+                          ovum (noun [[0 :term :1 0] belt])]
+                      (>!! poke ovum))
+                    (recur)))))))
 
-(defn- tank-seq [width tank]
-  (wall-seq (Tank/wash 0 width tank)))
-
-(defn- dump-tank [sink tank]
-  (log/debug (string/join \newline (tank-seq 80 tank)))
-  (let [[cols _] (dimensions sink)]
-    (doseq [string (tank-seq (long cols) tank)]
-      (doto sink
-        (line string)
-        (scroll)))
-    (commit sink)))
-
-; we read tanks from tank (probably from slog hints)
-; we read arvo curds from curd (for wire [0 :term :1 0] ONLY)
-; we send pokes to arvo on poke 
-(defn start [tank curd poke]
-  (let [beep (beeper)
-        init (chan)
-        spin (chan)
-        term (make-lanterna)]
-    (egger term poke beep spin curd)
-    (listen term poke)
-    (spinner term spin)
+(defn start [tank curd poke pubstop]
+  (let [beep    (chan)
+        spin    (chan)
+        stop    (chan)
+        sink    (make-lanterna)
+        timer   (Timer.)
+        do-beep (partial handle-beep
+                  (let [synth (doto (MidiSystem/getSynthesizer) .open)]
+                    (aget (.getChannels synth) 0)))
+        do-spin (partial handle-spin timer sink)
+        do-egg  (partial handle-egg sink poke beep spin)
+        do-tank (partial handle-tank sink)]
+    (listen sink poke)
+    (sub pubstop #(nil) stop)
     (go-loop []
-      (dump-tank term (<! tank))
-      (recur))))
+      (when (alts! beep (do (do-beep)
+                                true)
+                   curd ([egg] (do (do-egg egg)
+                                   true))
+                   spin ([cap] (do (do-spin cap)
+                                   true))
+                   tank ([tan] (do (do-tank tan)
+                                   true))
+                   stop (do (.cancel timer)
+                            (.shutdown sink)
+                            false))
+        (recur)))))
