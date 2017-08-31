@@ -3,6 +3,7 @@
   (:require 
     [jaque.util :as util]
     [jaque.terminal :as terminal]
+    [jaque.http :as http]
     [clojure.java.io :as io]
     [clojure.string :as string]
     [clojure.tools.logging :as log]
@@ -109,15 +110,18 @@
       (>!! ech eff)
       (assoc k :arvo arv))))
 
-(defn- term-curds [in out]
+(defn- curds [in term http]
   (go-loop []
     (let [effs (<! in)
           eseq (List. effs)]
       (doseq [eff eseq]
         (log/debugf "effect: %s" (Noun/toString eff))
-        (if (Noun/equals (.head eff) (noun [0 :term :1 0]))
-          (>! out (.tail eff))
-          (log/warnf "unhandled effect: %s" (Noun/toString eff))))
+        (cond (Noun/equals (.head eff) (noun [0 :term :1 0]))
+                (>! term (.tail eff))
+              (Noun/equals (.head (.tail (.head eff)))
+                           (noun :http))
+                (>! http eff)
+              :else (log/warnf "unhandled effect: %s" (Noun/toString eff))))
       (recur))))
 
 (defn- feed [ch]
@@ -165,12 +169,14 @@
         curd (chan)
         tank (chan)
         call (chan)
+        http (chan)
         jets (util/read-jets "/home/pdriver/code/jaque/maint/jets.edn")
         pill (util/read-jam "/home/pdriver/code/jaque/maint/urbit.pill")
         adir "/home/pdriver/code/urbit-maint/arvo"
         pdir "/tmp/jaque-pier"]
-    (term-curds eff curd)
+    (curds eff curd http)
     (terminal/start tank curd poke)
+    (http/start poke http 8080)
     (start call poke eff tank
            {:jets jets
             :profile false

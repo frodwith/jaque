@@ -212,7 +212,7 @@ public final class FastHintNode extends DynamicHintFormula {
         e.printStackTrace();
       }
       catch (ClueParsingException e) {
-        context.err("Invalid clue");
+        context.err("Invalid clue " + Noun.toString(raw));
         e.printStackTrace();
       }
       return null;

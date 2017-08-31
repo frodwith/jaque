@@ -95,6 +95,7 @@ public class Noun {
     return (has >>> 31) ^ (has & 0x7fffffff);
   }
 
+  @TruffleBoundary
   public static Object parse(String src) {
     StringBuilder b = null;
     int i, len = src.length();
@@ -188,6 +189,7 @@ public class Noun {
     }
   }
   
+  @TruffleBoundary
   public static String toString(Object noun) {
     StringWriter out = new StringWriter();
     try {
@@ -218,14 +220,17 @@ public class Noun {
     }
   }
   
+  @TruffleBoundary
   public static void print(Object noun) {
     print(noun, new OutputStreamWriter(System.out));
   }
 
+  @TruffleBoundary
   public static void println(Object noun) {
     println(noun, new OutputStreamWriter(System.out));
   }
   
+  @TruffleBoundary
   public static void print(Object noun, OutputStreamWriter out) {
     try {
       pretty(out, noun, false);
@@ -236,6 +241,7 @@ public class Noun {
     }
   }
 
+  @TruffleBoundary
   public static void println(Object noun, OutputStreamWriter out) {
     print(noun, out);
     try {
