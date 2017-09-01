@@ -1,14 +1,14 @@
 (ns jaque.terminal
   (:use jaque.noun)
   (:require [clojure.java.io :as io]
-            [clojure.core.async :refer [>! >!! <! go go-loop chan timeout alt!]]
+            [clojure.core.async :refer [<! put! alt! close! sub go go-loop chan timeout]]
             [clojure.string :as string]
             [clojure.tools.logging :as log])
   (:import (java.io File)
-           (java.util Timer)
            (net.frodwith.jaque
              JaqueScreen
              data.Atom
+             data.Cell
              data.List
              data.Tape
              data.Tank
@@ -128,7 +128,7 @@
 (defn- tank-seq [width tank]
   (wall-seq (Tank/wash 0 width tank)))
 
-(defn- handle-tank [^BlitSink sink tank]
+(defn- handle-tank [sink tank]
   (log/debug (string/join \newline (tank-seq 80 tank)))
   (let [[cols _] (dimensions sink)]
     (doseq [string (tank-seq (long cols) tank)]
@@ -147,8 +147,8 @@
   (let [tag (Atom/cordToString (.head ovum))
         data (.tail ovum)]
     (case tag
-      "bee" (go (>! spin data))
-      "bel" (go (>! beep :beep))
+      "bee" (put! spin data)
+      "bel" (put! beep :beep)
       "clr" (clr sink)
       "hop" (hop sink (Atom/expectLong data))
       "lin" (line sink (Tape/toString data))
@@ -162,60 +162,75 @@
       "url" (link sink data)
       (log/warnf "unhandled blit: %s" tag))))
 
-(defn- handle-egg [^BlitSink sink poke beep spin ^Cell egg]
-  (let [tag (Atom/cordToString (.head egg))]
+(defn- handle-egg [sink poke beep spin ^Cell ovum]
+  (let [egg (.tail ovum)
+        tag (Atom/cordToString (.head egg))]
     (case tag
       "init" (let [[rows cols] (dimensions sink)
                    wir  [0 :term :1 0]
                    blew (noun [wir :blew rows cols]) 
                    hail (noun [wir :hail 0])]
-               (go (>! poke blew)
-                   (>! poke hail)))
+               (put! poke blew)
+               (put! poke hail))
       "blit" (do (doseq [ovum (List. (.tail egg))]
                    (blit-one sink beep spin ovum))
                  (commit sink))
+      "logo" (close! poke)
       (log/warnf "unhandled terminal effect: %s" tag))))
 
-(defn- handle-spin [^Timer timer ^BeltSink sink cap]
-  (.cancel timer)
-  (if (Atom/isZero cap)
-    (doto sink (restore) (commit))
-    (.schedule #(spin sink cap) 0 500)))
+(defn- make-wire [id]
+  (noun [0 :term id 0]))
 
-(defn- listener [^BeltSource source poke]
+(defn- spinup [sink ch]
+  (go-loop [cap 0]
+    (let [c (if (Atom/isZero cap)
+              (<! ch)
+              (alt! ch 
+                    ([cap]
+                     (if (nil? cap)
+                       false
+                       cap))
+                    (timeout 500) 
+                    (do (spin sink (Atom/cordToString cap))
+                        (commit sink)
+                        cap)))]
+      (when c (recur c)))))
+
+(defn- listen [source poke wire]
   (let [scr ^JaqueScreen source]
     (.start
       (Thread. #(loop []
-                  (when (. active scr)
+                  (when (.active scr)
                     (let [belt (read-belt source)
-                          ovum (noun [[0 :term :1 0] belt])]
-                      (>!! poke ovum))
+                          ovum (noun [wire belt])]
+                      (put! poke ovum))
                     (recur)))))))
 
-(defn start [tank curd poke pubstop]
+(defn start [effects id tank poke]
   (let [beep    (chan)
         spin    (chan)
-        stop    (chan)
+        eggs    (chan)
+        wire    (make-wire id)
         sink    (make-lanterna)
-        timer   (Timer.)
         do-beep (partial handle-beep
                   (let [synth (doto (MidiSystem/getSynthesizer) .open)]
                     (aget (.getChannels synth) 0)))
-        do-spin (partial handle-spin timer sink)
         do-egg  (partial handle-egg sink poke beep spin)
         do-tank (partial handle-tank sink)]
-    (listen sink poke)
-    (sub pubstop #(nil) stop)
-    (go-loop []
-      (when (alts! beep (do (do-beep)
-                                true)
-                   curd ([egg] (do (do-egg egg)
-                                   true))
-                   spin ([cap] (do (do-spin cap)
-                                   true))
-                   tank ([tan] (do (do-tank tan)
-                                   true))
-                   stop (do (.cancel timer)
-                            (.shutdown sink)
-                            false))
-        (recur)))))
+    (sub effects wire eggs)
+    (listen sink poke wire)
+    (spinup sink spin)
+    (go
+      (loop []
+        (when (alt! beep (do (do-beep)
+                             true)
+                    eggs ([egg] (and (not (nil? egg))
+                                     (do (do-egg egg)
+                                         true)))
+                    tank ([tac] (and (not (nil? tac))
+                                     (do (do-tank tac)
+                                         true))))
+          (recur)))
+      (.shutdown sink)
+      (close! beep)
+      (close! spin))))

@@ -7,7 +7,7 @@
     [clojure.java.io :as io]
     [clojure.string :as string]
     [clojure.tools.logging :as log]
-    [clojure.core.async :refer [>! >!! <! alt! onto-chan go go-loop chan]])
+    [clojure.core.async :refer [put! <! >! alt! close! go-loop chan pub]])
   (:import 
     (java.nio.file Paths)
     (java.util.function Consumer)
@@ -19,10 +19,12 @@
       prevayler.PrevalentSystem
       prevayler.Boot
       prevayler.Poke
+      prevayler.Wake
       truffle.Context
       data.List
       data.Time
       data.Noun
+      data.Cell
       data.Atom)))
 
 (defn- kernel-axis [k axis]
@@ -89,8 +91,13 @@
             fav   [:into 0 0 can]]
         (noun [pax fav])))))
 
+(defn- dispatch! [ch effects]
+  (doseq [e (List. effects)]
+    (put! ch e)))
+
 (defn- boot-poke [k ech event]
   (let [ctx (:context k)
+        tir (noun [0 :term :1 0])
         evt (noun event)
         old (.caller ctx)]
     (set! (.caller ctx) 
@@ -100,54 +107,40 @@
             (kernel [this gate-name sample]
               (kernel-call k gate-name sample))
             (slog [this tank]
-              (>!! (:slog k) tank))))
-    (>!! ech (noun [[[0 :term :1 0] [:blit [:bee (.head (.tail (.head evt)))] 0]] 0]))
+              (put! (:slog k) tank))))
+    (put! ech (noun [tir [:blit [:bee (.head (.tail (.head evt)))] 0]]))
     (let [res (slam k (kernel-axis k 42) [(Time/now) evt])
           eff (.head res)
           arv (.tail res)]
       (set! (.caller ctx) old)
-      (>!! ech (noun [[[0 :term :1 0] [:blit [:bee 0] 0]] 0]))
-      (>!! ech eff)
+      (put! ech (noun [tir [:blit [:bee 0] 0]]))
+      (dispatch! ech eff)
       (assoc k :arvo arv))))
 
-(defn- curds [in term http]
-  (go-loop []
-    (let [effs (<! in)
-          eseq (List. effs)]
-      (doseq [eff eseq]
-        (log/debugf "effect: %s" (Noun/toString eff))
-        (cond (Noun/equals (.head eff) (noun [0 :term :1 0]))
-                (>! term (.tail eff))
-              (Noun/equals (.head (.tail (.head eff)))
-                           (noun :http))
-                (>! http eff)
-              :else (log/warnf "unhandled effect: %s" (Noun/toString eff))))
-      (recur))))
+(defn- by-wire [^Cell ovum]
+  (.head ovum))
 
-(defn- feed [ch]
-  (reify Consumer
-    (accept [this arg] (go (>! ch arg)))))
-
-; poke: we read poke nouns and feed them to arvo
-; eff:  we write lists of effects, doing no dispatching
-; tank: we write tanks to be printed somewhere
-; call: read [gate-name sample ch], and call a hoon kernel gate
-;       writing the product to ch
-(defn start [call poke eff tank {:keys [jets profile pill sync-dir pier-dir]}]
-  (let [ctx (Context. jets profile)
-        sys (PrevalentSystem. ctx (feed tank) (feed eff))
-        fac (doto (PrevaylerFactory.)
-              (.configurePrevalentSystem sys)
-              (.configurePrevalenceDirectory pier-dir)
+(defn start [{pro :profile, 
+              jet :jet-path, syn :sync-path, pir :pier-path, pil :pill-path
+              eff :effect-channel, tac :tank-channel, pok :poke-channel}]
+  (let [fac (doto (PrevaylerFactory.)
+              (.configurePrevalentSystem (PrevalentSystem.))
+              (.configurePrevalenceDirectory pir)
               (.configureTransactionDeepCopy false))
-        pre (.create fac)]
-    (when (nil? (.arvo sys))
-      (let [k (boot ctx pill tank)
+        pre (.create fac)
+        tir (noun [0 :term 1 0])
+        ctx (Context. (util/read-jets jet) pro)
+        tank-cb (reify Consumer
+                  (accept [this t] (put! t tac)))
+        eff-cb  (reify Consumer
+                  (accept [this es] (dispatch! eff es)))]
+    (when (.execute pre (Wake. ctx tank-cb eff-cb))
+      (let [k (boot ctx (util/read-jam pil) tac)
             k (-> k
                   (boot-poke eff [[0 :newt (:sen k) 0] :barn 0])
-                  (boot-poke eff [[0 :term :1 0] :boot :sith 0 0 0])
+                  (boot-poke eff [tir :boot :sith 0 0 0])
                   ;(boot-poke eff [0 :verb 0])
-                  (boot-poke eff (home-sync k sync-dir)))]
+                  (boot-poke eff (home-sync k syn)))]
         (.execute pre (Boot. (.locations ctx)
                              (:arvo k)
                              (:now k)
@@ -155,35 +148,47 @@
                              (:sen k)
                              (:sev k)))))
     (go-loop []
-      (alt! poke ([p]
-                  (>! eff (noun [[[0 :term :1 0] [:blit [:bee (.head (.tail (.head p)))] 0]] 0]))
-                  (.execute pre (Poke. p))
-                  (>! eff (noun [[[0 :term :1 0] [:blit [:bee 0] 0]] 0])))
-            call ([[gate-name sample respond]]
-                  (>! respond (.externalCall sys pre gate-name sample))))
-      (recur))))
+      (let [p (<! pok)]
+        (if (nil? p)
+          (do (log/info "Snapshot starting...")
+              (.takeSnapshot pre)
+              (.close pre)
+              (log/info "Snapshot saved.")
+              (close! eff))
+          (do (put! eff (noun [tir [:blit [:bee (.head (.tail (.head p)))] 0]]))
+              (.execute pre (Poke. p))
+              (put! eff (noun [tir [:blit [:bee 0] 0]]))
+              (recur)))))))
+;      (if (alt! pok ([p]
+;                     (if (nil? p)
+;                       false
+;                       (do (put! eff (noun [tir [:blit [:bee (.head (.tail (.head p)))] 0]]))
+;                           (.execute pre (Poke. p))
+;                           (put! eff (noun [tir [:blit [:bee 0] 0]]))
+;                           true)))
+;                cal ([req]
+;                     (if (nil? req)
+;                       false
+;                       (let [[gate-name sample respond] req]
+;                         (>! respond (.externalCall sys pre gate-name sample))
+;                         true))))
+;        (recur)
 
 (defn run []
   (let [poke (chan)
-        eff  (chan)
-        curd (chan)
         tank (chan)
-        call (chan)
-        http (chan)
-        jets (util/read-jets "/home/pdriver/code/jaque/maint/jets.edn")
-        pill (util/read-jam "/home/pdriver/code/jaque/maint/urbit.pill")
-        adir "/home/pdriver/code/urbit-maint/arvo"
-        pdir "/tmp/jaque-pier"]
-    (curds eff curd http)
-    (terminal/start tank curd poke)
-    (http/start poke http 8080)
-    (start call poke eff tank
-           {:jets jets
-            :profile false
-            :pill pill
-            :sync-dir adir
-            :pier-dir pdir})
-    {:poke poke
-     :eff  eff
-     :call call
-     :tank tank}))
+        ;call (chan)
+        eff  (chan)
+        ;http (chan)
+        effects (pub eff by-wire)]
+    (terminal/start effects (noun :1) tank poke)
+    ;(http/start effect poke 8080)
+    (start {:profile        false
+            :jet-path       "/home/pdriver/code/jaque/maint/jets.edn"
+            :pill-path      "/home/pdriver/code/jaque/maint/urbit.pill"
+            :sync-path      "/home/pdriver/code/urbit-maint/arvo"
+            :pier-path      "/tmp/jaque-pier"
+            :effect-channel eff
+            :tank-channel   tank
+            ;:call-channel   call
+            :poke-channel   poke})))

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
@@ -16,6 +17,7 @@ import net.frodwith.jaque.Caller;
 import net.frodwith.jaque.Location;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
+import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.data.Qual;
 import net.frodwith.jaque.truffle.Context;
 
@@ -25,16 +27,14 @@ public class PrevalentSystem implements Serializable, Caller {
   public Object wen;
   public Object sev;
   public Object sen;
-  public Context context;
-  public Queue<Registration> registrations = null;
-  public Consumer<Object> slogSink, effectSink;
-  
-  public PrevalentSystem(Context context, Consumer<Object> slogSink, Consumer<Object> effectSink) {
-    this.context = context;
-    this.slogSink = slogSink;
-    this.effectSink = effectSink;
-    context.caller = this;
-  }
+  public HashMap<Cell, Location> locations;
+
+  // used to facilitate externalCall trapping jet registrations
+  public transient Queue<Registration> registrations = null;
+
+  // must be set by a Wake when the process starts up
+  public transient Context context;
+  public transient Consumer<Object> slogSink, effectSink;
   
   public Object externalCall(Prevayler<PrevalentSystem> prevayler, String gateName, Object sample) {
     this.registrations = new LinkedList<Registration>();
@@ -45,30 +45,12 @@ public class PrevalentSystem implements Serializable, Caller {
     this.registrations = null;
     return product;
   }
-
-  private void writeObject(ObjectOutputStream out) throws IOException {
-    out.writeObject(arvo);
-    out.writeObject(now);
-    out.writeObject(wen);
-    out.writeObject(sev);
-    out.writeObject(sen);
-    out.writeObject(context.locations);
-  }
   
-  @SuppressWarnings("unchecked")
-  private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-    this.arvo = in.readObject();
-    this.now = in.readObject();
-    this.wen = in.readObject();
-    this.sev = in.readObject();
-    this.sen = in.readObject();
-    this.restoreLocations((Map<Cell, Location>) in.readObject());
-  }
-  
-  public void restoreLocations(Map<Cell,Location> locations) {
-    if ( this.context.locations != locations ) {
-      this.context.locations.clear();
-      this.context.locations.putAll(locations);
+  public void restoreLocations(Map<Cell,Location> from) {
+    locations = context.locations;
+    if ( null != from && locations != from ) {
+      locations.clear();
+      locations.putAll(from);
     }
   }
 
