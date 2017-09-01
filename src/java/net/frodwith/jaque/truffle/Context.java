@@ -347,18 +347,22 @@ public class Context {
       return tgt.call(subject);
     }
     catch (Bail e) {
-      if ( null != caller ) {
-        Cell tone = new Cell(2L, levels.peek().stacks);
-        Cell toon = Cell.expect(caller.kernel("mook", tone));
-        assert(Atom.equals(2L, toon.head));
-        for ( Object tank : new List(toon.tail) ) {
-          Object wall = Tank.wash(0L, 80L, tank);
-          for ( Object tape : new List(wall) ) {
-            err(Tape.toString(tape));
-          }
+      dumpHoonStack();
+      throw e;
+    }
+  }
+  
+  public void dumpHoonStack() {
+    if ( null != caller ) {
+      Cell tone = new Cell(2L, levels.peek().stacks);
+      Cell toon = Cell.expect(caller.kernel("mook", tone));
+      assert(Atom.equals(2L, toon.head));
+      for ( Object tank : new List(toon.tail) ) {
+        Object wall = Tank.wash(0L, 80L, tank);
+        for ( Object tape : new List(wall) ) {
+          err(Tape.toString(tape));
         }
       }
-      throw e;     
     }
   }
 

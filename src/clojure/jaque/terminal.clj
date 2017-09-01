@@ -1,10 +1,11 @@
 (ns jaque.terminal
   (:use jaque.noun)
   (:require [clojure.java.io :as io]
-            [clojure.core.async :refer [<! put! alt! close! sub go go-loop chan timeout]]
+            [clojure.core.async :refer [<! >!! put! alt! close! sub go go-loop chan timeout]]
             [clojure.string :as string]
             [clojure.tools.logging :as log])
   (:import (java.io File)
+           (java.nio file.Paths)
            (net.frodwith.jaque
              JaqueScreen
              data.Atom
@@ -35,7 +36,7 @@
   (hop [this to-column])
   (line [this text])
   (scroll [this])
-  (save [this path-seq content-bytes])
+  (save [this root-dir path-seq content-bytes])
   (link [this url])
   (dimensions [this])
   (restore [this])
@@ -63,7 +64,9 @@
                                :else                [:txt c 0]))
                        :else nil)]
       (if (nil? belt)
-        (recur this)
+        (if (= stype KeyType/EOF)
+          nil
+          (recur this))
         (noun [:belt belt]))))
   BlitSink   
   (clr [this] (.clear this))
@@ -74,9 +77,11 @@
           scr ^JaqueScreen this]
       (set! (. scr lastHop) col)
       (.setCursorPosition this (.withColumn pos (- col (.stripChars ^JaqueScreen this))))))
-  (save [this path-seq content-bytes]
-    (with-open [out (io/output-stream (io/file (string/join File/pathSeparator path-seq)))]
-      (.write out content-bytes)))
+  (save [this root-dir path-seq content-bytes]
+    (let [strs (map #(Atom/cordToString %) path-seq)
+          path (Paths/get root-dir (into-array String strs))]
+      (with-open [out (io/output-stream (.toFile path))]
+        (.write out content-bytes))))
   (restore [this]
     (let [scr ^JaqueScreen this]
       (line this (.lastLine scr))
@@ -143,7 +148,7 @@
     (<! (timeout 100))
     (.noteOff c 67)))
 
-(defn- blit-one [sink beep spin ovum]
+(defn- blit-one [sink save-dir beep spin ovum]
   (let [tag (Atom/cordToString (.head ovum))
         data (.tail ovum)]
     (case tag
@@ -155,14 +160,14 @@
       "mor" (scroll sink)
       "sav" (let [pax (List. (.head data))
                   pad (Atom/toByteArray (.tail data))]
-              (save sink pax pad))
+              (save sink save-dir pax pad))
       "sag" (let [pax (List. (.head data))
                   pad (Atom/toByteArray (Atom/jam (.tail data)))]
-              (save sink pax pad))
+              (save sink save-dir pax pad))
       "url" (link sink data)
       (log/warnf "unhandled blit: %s" tag))))
 
-(defn- handle-egg [sink poke beep spin ^Cell ovum]
+(defn- handle-egg [sink poke save-dir beep spin ^Cell ovum]
   (let [egg (.tail ovum)
         tag (Atom/cordToString (.head egg))]
     (case tag
@@ -170,10 +175,10 @@
                    wir  [0 :term :1 0]
                    blew (noun [wir :blew rows cols]) 
                    hail (noun [wir :hail 0])]
-               (put! poke blew)
-               (put! poke hail))
+               (>!! poke blew)    ; let's block until arvo is aware of us
+               (>!! poke hail))
       "blit" (do (doseq [ovum (List. (.tail egg))]
-                   (blit-one sink beep spin ovum))
+                   (blit-one sink save-dir beep spin ovum))
                  (commit sink))
       "logo" (close! poke)
       (log/warnf "unhandled terminal effect: %s" tag))))
@@ -184,7 +189,9 @@
 (defn- spinup [sink ch]
   (go-loop [cap 0]
     (let [c (if (Atom/isZero cap)
-              (<! ch)
+              (do (restore sink)
+                  (commit sink)
+                  (<! ch))
               (alt! ch 
                     ([cap]
                      (if (nil? cap)
@@ -194,32 +201,34 @@
                     (do (spin sink (Atom/cordToString cap))
                         (commit sink)
                         cap)))]
-      (when c (recur c)))))
+      (if c
+        (recur c)
+        (log/debug "spinner shutdown")))))
 
 (defn- listen [source poke wire]
   (let [scr ^JaqueScreen source]
     (.start
       (Thread. #(loop []
-                  (when (.active scr)
-                    (let [belt (read-belt source)
-                          ovum (noun [wire belt])]
-                      (put! poke ovum))
-                    (recur)))))))
+                  (let [belt (read-belt source)]
+                    (if (nil? belt)
+                      (log/debug "keystroke listener shutdown")
+                      (do (>!! poke (noun [wire belt]))
+                          (recur)))))))))
 
-(defn start [effects id tank poke]
+(defn start [effects id tank poke save-dir]
   (let [beep    (chan)
         spin    (chan)
         eggs    (chan)
         wire    (make-wire id)
         sink    (make-lanterna)
+        spinner (spinup sink spin)
         do-beep (partial handle-beep
                   (let [synth (doto (MidiSystem/getSynthesizer) .open)]
                     (aget (.getChannels synth) 0)))
-        do-egg  (partial handle-egg sink poke beep spin)
+        do-egg  (partial handle-egg sink poke save-dir beep spin)
         do-tank (partial handle-tank sink)]
     (sub effects wire eggs)
     (listen sink poke wire)
-    (spinup sink spin)
     (go
       (loop []
         (when (alt! beep (do (do-beep)
@@ -231,7 +240,9 @@
                                      (do (do-tank tac)
                                          true))))
           (recur)))
-      (.shutdown sink)
+      (.close sink)
       (close! tank)
       (close! beep)
-      (close! spin))))
+      (close! spin)
+      (<! spinner)
+      (log/debug "terminal shutdown"))))

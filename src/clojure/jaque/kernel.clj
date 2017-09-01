@@ -7,7 +7,7 @@
     [clojure.java.io :as io]
     [clojure.string :as string]
     [clojure.tools.logging :as log]
-    [clojure.core.async :refer [put! <! >! alt! close! go-loop chan pub]])
+    [clojure.core.async :refer [put! <! >! <!! >!! alt! close! go go-loop chan pub]])
   (:import 
     (java.nio.file Paths)
     (java.util.function Consumer)
@@ -92,8 +92,13 @@
         (noun [pax fav])))))
 
 (defn- dispatch! [ch effects]
+  (go
+    (doseq [e (List. effects)]
+      (>! ch e))))
+
+(defn dispatch!! [ch effects]
   (doseq [e (List. effects)]
-    (put! ch e)))
+    (>!! ch e)))
 
 (defn- boot-poke [k ech event]
   (let [ctx (:context k)
@@ -108,13 +113,13 @@
               (kernel-call k gate-name sample))
             (slog [this tank]
               (put! (:slog k) tank))))
-    (put! ech (noun [tir [:blit [:bee (.head (.tail (.head evt)))] 0]]))
+    (>!! ech (noun [tir [:blit [:bee (.head (.tail (.head evt)))] 0]]))
     (let [res (slam k (kernel-axis k 42) [(Time/now) evt])
           eff (.head res)
           arv (.tail res)]
       (set! (.caller ctx) old)
-      (put! ech (noun [tir [:blit [:bee 0] 0]]))
-      (dispatch! ech eff)
+      (>!! ech (noun [tir [:blit [:bee 0] 0]]))
+      (dispatch!! ech eff)
       (assoc k :arvo arv))))
 
 (defn- by-wire [^Cell ovum]
@@ -131,9 +136,9 @@
         tir (noun [0 :term :1 0])
         ctx (Context. (util/read-jets jet) pro)
         tank-cb (reify Consumer
-                  (accept [this t] (put! t tac)))
+                  (accept [this t] (>!! tac t)))
         eff-cb  (reify Consumer
-                  (accept [this es] (dispatch! eff es)))]
+                  (accept [this es] (dispatch!! eff es)))]
     (if (.execute pre (Wake. ctx tank-cb eff-cb))
       (let [k (boot ctx (util/read-jam pil) tac)
             k (-> k
@@ -147,18 +152,17 @@
                              (:wen k)
                              (:sen k)
                              (:sev k))))
-      (put! eff (noun [tir [:init 0]])))
+      (>!! eff (noun [tir [:init 0]])))
     (go-loop []
       (let [p (<! pok)]
         (if (nil? p)
-          (do (log/info "Snapshot starting...")
-              (.takeSnapshot pre)
+          (do (.takeSnapshot pre)
               (.close pre)
-              (log/info "Snapshot saved.")
-              (close! eff))
-          (do (put! eff (noun [tir [:blit [:bee (.head (.tail (.head p)))] 0]]))
+              (close! eff)
+              (log/debug "kernel shutdown"))
+          (do (>! eff (noun [tir [:blit [:bee (.head (.tail (.head p)))] 0]]))
               (.execute pre (Poke. p))
-              (put! eff (noun [tir [:blit [:bee 0] 0]]))
+              (>! eff (noun [tir [:blit [:bee 0] 0]]))
               (recur)))))))
 ;                cal ([req]
 ;                     (if (nil? req)
@@ -168,20 +172,21 @@
 ;                         true))))
 
 (defn run []
-  (let [poke (chan)
-        tank (chan)
-        ;call (chan)
-        eff  (chan)
-        ;http (chan)
-        effects (pub eff by-wire)]
-    (terminal/start effects (noun :1) tank poke)
-    ;(http/start effects poke 8080)
-    (start {:profile        false
-            :jet-path       "/home/pdriver/code/jaque/maint/jets.edn"
-            :pill-path      "/home/pdriver/code/jaque/maint/urbit.pill"
-            :sync-path      "/home/pdriver/code/urbit-maint/arvo"
-            :pier-path      "/tmp/jaque-pier"
-            :effect-channel eff
-            :tank-channel   tank
-            ;:call-channel   call
-            :poke-channel   poke})))
+  (let [poke    (chan) ; shutdown by terminal (logo)
+        tank    (chan) ; shutdown by terminal (logo)
+        ;call   (chan)
+        eff     (chan) ; shutdown by kernel
+        ;http   (chan)
+        effects (pub eff by-wire)
+        term-ch (terminal/start effects (noun :1) tank poke "/tmp/jaque-put")
+        kern-ch (start {:profile        false
+                        :jet-path       "/home/pdriver/code/jaque/maint/jets.edn"
+                        :pill-path      "/home/pdriver/code/jaque/maint/urbit.pill"
+                        :sync-path      "/home/pdriver/code/urbit-maint/arvo"
+                        :pier-path      "/tmp/jaque-pier"
+                        :effect-channel eff
+                        :tank-channel   tank
+                        ;:call-channel   call
+                        :poke-channel   poke})]
+    (<!! term-ch)
+    (<!! kern-ch)))

@@ -11,10 +11,8 @@ import com.googlecode.lanterna.terminal.Terminal;
 
 public class JaqueScreen extends TerminalScreen {
   public int stripChars = 0;
-  public String lastLine;
-  public Object lastHop;
-  public boolean active = true;
-  public boolean init = false;
+  public String lastLine = "";
+  public Object lastHop = 0L;
   private int spinCounter = 0;
   private final static char[] spinChars = { '|', '/', '-', '\\' };
 
@@ -26,10 +24,5 @@ public class JaqueScreen extends TerminalScreen {
     char c = spinChars[spinCounter];
     spinCounter = (spinCounter + 1) % spinChars.length;
     return c;
-  }
-  
-  public void shutdown() throws IOException {
-    this.close();
-    this.active = false;
   }
 }

@@ -209,11 +209,11 @@ public final class FastHintNode extends DynamicHintFormula {
       }
       catch (ClassCastException e) {
         context.err("Bad noun shape while parsing clue");
-        e.printStackTrace();
+        context.dumpHoonStack();
       }
       catch (ClueParsingException e) {
         context.err("Invalid clue " + Noun.toString(raw));
-        e.printStackTrace();
+        context.dumpHoonStack();
       }
       return null;
     }
