@@ -232,5 +232,6 @@
                                          true))))
           (recur)))
       (.shutdown sink)
+      (close! tank)
       (close! beep)
       (close! spin))))

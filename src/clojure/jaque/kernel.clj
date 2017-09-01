@@ -128,13 +128,13 @@
               (.configurePrevalenceDirectory pir)
               (.configureTransactionDeepCopy false))
         pre (.create fac)
-        tir (noun [0 :term 1 0])
+        tir (noun [0 :term :1 0])
         ctx (Context. (util/read-jets jet) pro)
         tank-cb (reify Consumer
                   (accept [this t] (put! t tac)))
         eff-cb  (reify Consumer
                   (accept [this es] (dispatch! eff es)))]
-    (when (.execute pre (Wake. ctx tank-cb eff-cb))
+    (if (.execute pre (Wake. ctx tank-cb eff-cb))
       (let [k (boot ctx (util/read-jam pil) tac)
             k (-> k
                   (boot-poke eff [[0 :newt (:sen k) 0] :barn 0])
@@ -146,7 +146,8 @@
                              (:now k)
                              (:wen k)
                              (:sen k)
-                             (:sev k)))))
+                             (:sev k))))
+      (put! eff (noun [tir [:init 0]])))
     (go-loop []
       (let [p (<! pok)]
         (if (nil? p)
@@ -159,20 +160,12 @@
               (.execute pre (Poke. p))
               (put! eff (noun [tir [:blit [:bee 0] 0]]))
               (recur)))))))
-;      (if (alt! pok ([p]
-;                     (if (nil? p)
-;                       false
-;                       (do (put! eff (noun [tir [:blit [:bee (.head (.tail (.head p)))] 0]]))
-;                           (.execute pre (Poke. p))
-;                           (put! eff (noun [tir [:blit [:bee 0] 0]]))
-;                           true)))
 ;                cal ([req]
 ;                     (if (nil? req)
 ;                       false
 ;                       (let [[gate-name sample respond] req]
 ;                         (>! respond (.externalCall sys pre gate-name sample))
 ;                         true))))
-;        (recur)
 
 (defn run []
   (let [poke (chan)
@@ -182,7 +175,7 @@
         ;http (chan)
         effects (pub eff by-wire)]
     (terminal/start effects (noun :1) tank poke)
-    ;(http/start effect poke 8080)
+    ;(http/start effects poke 8080)
     (start {:profile        false
             :jet-path       "/home/pdriver/code/jaque/maint/jets.edn"
             :pill-path      "/home/pdriver/code/jaque/maint/urbit.pill"

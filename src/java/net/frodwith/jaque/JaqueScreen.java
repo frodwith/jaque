@@ -14,6 +14,7 @@ public class JaqueScreen extends TerminalScreen {
   public String lastLine;
   public Object lastHop;
   public boolean active = true;
+  public boolean init = false;
   private int spinCounter = 0;
   private final static char[] spinChars = { '|', '/', '-', '\\' };
 
