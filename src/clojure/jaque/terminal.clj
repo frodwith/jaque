@@ -175,8 +175,8 @@
                    wir  [0 :term :1 0]
                    blew (noun [wir :blew rows cols]) 
                    hail (noun [wir :hail 0])]
-               (>!! poke blew)    ; let's block until arvo is aware of us
-               (>!! poke hail))
+               (put! poke blew)
+               (put! poke hail))
       "blit" (do (doseq [ovum (List. (.tail egg))]
                    (blit-one sink save-dir beep spin ovum))
                  (commit sink))
