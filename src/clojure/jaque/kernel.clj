@@ -122,15 +122,13 @@
       (dispatch!! ech eff)
       (assoc k :arvo arv))))
 
-(defn- by-wire [^Cell ovum]
-  (.head ovum))
-
 (defn start [{pro :profile, 
               jet :jet-path, syn :sync-path, pir :pier-path, pil :pill-path
               eff :effect-channel, tac :tank-channel, pok :poke-channel}]
-  (let [fac (doto (PrevaylerFactory.)
+  (let [pdir (Paths/get pir (into-array [".urb" "prevayler"]))
+        fac (doto (PrevaylerFactory.)
               (.configurePrevalentSystem (PrevalentSystem.))
-              (.configurePrevalenceDirectory pir)
+              (.configurePrevalenceDirectory (.toString pdir))
               (.configureTransactionDeepCopy false))
         pre (.create fac)
         tir (noun [0 :term :1 0])
@@ -170,23 +168,3 @@
 ;                       (let [[gate-name sample respond] req]
 ;                         (>! respond (.externalCall sys pre gate-name sample))
 ;                         true))))
-
-(defn run []
-  (let [poke    (chan) ; shutdown by terminal (logo)
-        tank    (chan) ; shutdown by terminal (logo)
-        ;call   (chan)
-        eff     (chan) ; shutdown by kernel
-        ;http   (chan)
-        effects (pub eff by-wire)
-        term-ch (terminal/start effects (noun :1) tank poke "/tmp/jaque-put")
-        kern-ch (start {:profile        false
-                        :jet-path       "/home/pdriver/code/jaque/maint/jets.edn"
-                        :pill-path      "/home/pdriver/code/jaque/maint/urbit.pill"
-                        :sync-path      "/home/pdriver/code/urbit-maint/arvo"
-                        :pier-path      "/tmp/jaque-pier"
-                        :effect-channel eff
-                        :tank-channel   tank
-                        ;:call-channel   call
-                        :poke-channel   poke})]
-    (<!! term-ch)
-    (<!! kern-ch)))

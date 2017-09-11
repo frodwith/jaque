@@ -16,9 +16,8 @@
                  "-Djava.library.path=ed25519"
 ;                 "-Djava.awt.headless=true"
                 ]
-  ;:main         jaque.main
-  ;:aot          [jaque.main]
-  :main jaque.terminal
+  :main         jaque.main
+  :aot          [jaque.main]
 
   ;; leinigen's invocation of javac causes some problems for truffle's
   ;; compiler detection. To mitigate this, please run an annotation processor
