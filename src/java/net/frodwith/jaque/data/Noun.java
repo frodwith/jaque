@@ -16,7 +16,7 @@ import net.frodwith.jaque.truffle.TypesGen;
  * 
  */
 public class Noun {
-  
+  // Arguments may be mutated during unification
   public static boolean equals(Object a, Object b) {
     if ( a == b ) {
       return true;

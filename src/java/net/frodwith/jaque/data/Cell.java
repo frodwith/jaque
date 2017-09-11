@@ -16,8 +16,8 @@ import net.frodwith.jaque.truffle.TypesGen;
  */
 
 public class Cell implements Serializable {
-  public final Object head;
-  public final Object tail;
+  // head and tail are not final because we set them during unifying equals
+  public Object head, tail;
   public int mug;
   
   public Cell(Object head, Object tail) {
@@ -48,7 +48,22 @@ public class Cell implements Serializable {
       return equalsMugged(a, b);
     }
     else {
-      return Noun.equals(a.head, b.head) && Noun.equals(a.tail, b.tail);
+      if ( Noun.equals(a.head, b.head) ) {
+        if ( 0 == a.mug && 0 != b.mug ) {
+          // if we throw away mugs, it violates our fast-path assumption
+          // also it's just a bad idea
+          Cell tmp = b;
+          b = a;
+          a = tmp;
+        }
+        b.head = a.head;
+        if ( Noun.equals(a.tail, b.tail) ) {
+          b.tail = a.tail;
+          b.mug = a.mug;
+          return true;
+        }
+      }
+      return false;
     }
   }
 
@@ -62,7 +77,14 @@ public class Cell implements Serializable {
       return false;
     }
     else {
-      return Noun.equalsMugged(a.head, b.head) && Noun.equalsMugged(a.tail, b.tail);
+      if ( Noun.equalsMugged(a.head, b.head) ) {
+        b.head = a.head;
+        if ( Noun.equalsMugged(a.tail, b.tail) ) {
+          b.tail = a.tail;
+          return true;
+        }
+      }
+      return false;
     }
   }
 

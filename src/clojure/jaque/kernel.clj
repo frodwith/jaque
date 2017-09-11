@@ -159,6 +159,7 @@
               (close! eff)
               (log/debug "kernel shutdown"))
           (do (>! eff (noun [tir [:blit [:bee (.head (.tail (.head p)))] 0]]))
+              (log/debug (Noun/toString p))
               (.execute pre (Poke. p))
               (>! eff (noun [tir [:blit [:bee 0] 0]]))
               (recur)))))))
