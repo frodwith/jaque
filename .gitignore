@@ -11,3 +11,8 @@ pom.xml.asc
 .hg/
 /bin/
 /gen/
+.classpath
+.factorypath
+.settings
+.project
+.*.swp
