@@ -45,12 +45,16 @@ public class List implements Iterable<Object> {
     }
   }
 
-  public static Object weld(Object dex, Object sin) {
-    if ( Atom.isZero(dex) ) {
-      return sin;
+  public static Object weld(Object a, Object b) {
+    Stack<Object> s = new Stack<Object>();
+    for ( Object i : new List(a) ) {
+      s.push(i);
     }
-    Cell c = Cell.expect(dex);
-    return new Cell(c.head, weld(c.tail, sin));
+    Object r = b;
+    while ( !s.isEmpty() ) {
+      r = new Cell(s.pop(), r);
+    }
+    return r;
   }
 
   public static Object lent(Object ram) {
