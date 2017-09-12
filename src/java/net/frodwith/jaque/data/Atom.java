@@ -25,7 +25,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import com.sangupta.murmur.Murmur3;
+import com.google.common.hash.Hashing;
 
 import gnu.math.MPN;
 import net.frodwith.jaque.Bail;
@@ -1350,7 +1350,7 @@ public class Atom {
     assert Atom.met((byte) 5, seed) <= 1;
     assert Atom.met(length) <= 31;
     byte[] key = forceBytes(atom, length);
-    return 0x00000000FFFFFFFFL & Murmur3.hash_x86_32(key, length, seed);
+    return Hashing.murmur3_32(seed).hashBytes(key).padToLong();
   }
   
   public static Object mul(int[] x, int[] y) {

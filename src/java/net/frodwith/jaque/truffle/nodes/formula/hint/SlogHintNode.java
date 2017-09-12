@@ -35,6 +35,7 @@ public final class SlogHintNode extends DynamicHintFormula {
       doSlog(tank);
     }
     catch ( Bail e ) {
+      context.err("bad slog");
     }
     return next.executeGeneric(frame);
   }

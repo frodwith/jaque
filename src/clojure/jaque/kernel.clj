@@ -2,8 +2,6 @@
   (:use jaque.noun)
   (:require 
     [jaque.util :as util]
-    [jaque.terminal :as terminal]
-    [jaque.http :as http]
     [clojure.java.io :as io]
     [clojure.string :as string]
     [clojure.tools.logging :as log]
@@ -159,7 +157,6 @@
               (close! eff)
               (log/debug "kernel shutdown"))
           (do (>! eff (noun [tir [:blit [:bee (.head (.tail (.head p)))] 0]]))
-              (log/debug (Noun/toString p))
               (.execute pre (Poke. p))
               (>! eff (noun [tir [:blit [:bee 0] 0]]))
               (recur)))))))

@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.kenai.jffi.Array;
 import com.oracle.truffle.api.CallTarget;
@@ -77,6 +79,7 @@ public class Context {
   public final boolean profile;
   
   public final CallTarget kickTarget;
+  private final static Logger logger = Logger.getGlobal();
   
   public void come(String name) {
     Stats st;
@@ -152,13 +155,13 @@ public class Context {
       Arm[] aa = new Arm[al.size()];
       drivers.put(e.getKey(), al.toArray(aa));
     }
-    
+
     this.kickTarget = compileTarget(new Qual(9L, 2L, 0L, 1L).toCell());
   }
   
   @TruffleBoundary
   public void err(String s) {
-    System.err.println(s);
+    logger.severe(s);
   }
 
   @TruffleBoundary
@@ -357,12 +360,15 @@ public class Context {
       Cell tone = new Cell(2L, levels.peek().stacks);
       Cell toon = Cell.expect(caller.kernel("mook", tone));
       assert(Atom.equals(2L, toon.head));
+      StringBuilder buf = new StringBuilder();
       for ( Object tank : new List(toon.tail) ) {
         Object wall = Tank.wash(0L, 80L, tank);
         for ( Object tape : new List(wall) ) {
-          err(Tape.toString(tape));
+          buf.append(Tape.toString(tape));
+          buf.append('\n');
         }
       }
+      err(buf.toString());
     }
   }
 

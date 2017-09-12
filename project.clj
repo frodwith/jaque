@@ -26,7 +26,7 @@
   :source-paths      ["src/clojure"] 
   :java-source-paths ["gen" "src/java"]
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [com.sangupta/murmur "1.0.0"]
+                 [com.google.guava/guava "23.0"]
                  [com.oracle.truffle/truffle-api "0.22"]
                  [org.clojure/tools.cli "0.3.5"]
                  [org.clojure/data.json "0.2.6"]
