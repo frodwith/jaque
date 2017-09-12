@@ -3,10 +3,9 @@
   (:require [clojure.java.io :as io]
             [clojure.core.async :refer [<! >!! put! alt! close! sub go go-loop chan timeout]]
             [clojure.string :as string]
+            [jaque.util :as util]
             [clojure.tools.logging :as log])
-  (:import (java.io File)
-           (java.nio file.Paths)
-           (net.frodwith.jaque
+  (:import (net.frodwith.jaque
              JaqueScreen
              data.Atom
              data.Cell
@@ -78,8 +77,8 @@
       (set! (. scr lastHop) col)
       (.setCursorPosition this (.withColumn pos (- col (.stripChars ^JaqueScreen this))))))
   (save [this root-dir path-seq content-bytes]
-    (let [strs (map #(Atom/cordToString %) path-seq)
-          path (Paths/get root-dir (into-array String strs))]
+    (let [path (apply (partial util/pier-path root-dir) 
+                      (map #(Atom/cordToString %) path-seq))]
       (with-open [out (io/output-stream (.toFile path))]
         (.write out content-bytes))))
   (restore [this]

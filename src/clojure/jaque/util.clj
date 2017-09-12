@@ -1,15 +1,20 @@
 (ns jaque.util
-  (:require [clojure.java.io :as io])
-  (:require [clojure.edn :as edn])
-  (import (net.frodwith.jaque
-            data.Atom
-            truffle.driver.Arm
-            truffle.driver.NamedArm
-            truffle.driver.AxisArm
-            truffle.nodes.jet.ImplementationNode)))
+  (:require [clojure.java.io :as io]
+            [clojure.edn :as edn])
+  (:import 
+    (java.nio.file Paths)
+    (net.frodwith.jaque
+      data.Atom
+      truffle.driver.Arm
+      truffle.driver.NamedArm
+      truffle.driver.AxisArm
+      truffle.nodes.jet.ImplementationNode)))
 
-(defn read-jets [path]
-	(let [jets  (edn/read (java.io.PushbackReader. (io/reader path)))
+(defn pier-path [base & parts]
+  (Paths/get (str base) (into-array String parts)))
+
+(defn read-jets [file]
+	(let [jets  (edn/read (java.io.PushbackReader. (io/reader file)))
         klass (fn [class-name]
                 (let [k (Class/forName class-name)]
                   (if (isa? k ImplementationNode)
@@ -35,5 +40,5 @@
     (-> out (.toByteArray)
         (Atom/fromByteArray Atom/LITTLE_ENDIAN))))
 
-(defn read-jam [path]
-  (Atom/cue (atom-from-file (io/as-file path))))
+(defn read-jam [file]
+  (Atom/cue (atom-from-file file)))

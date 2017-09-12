@@ -3,10 +3,10 @@
             [clojure.core.async :refer [chan pub <!!]]
             [clojure.tools.cli :as cli]
             [jaque.terminal :as term]
+            [jaque.util :as util]
             [jaque.noun :refer [noun]]
             [jaque.kernel :as kern])
-  (:import (java.nio.file Paths)
-           (net.frodwith.jaque.data Cell))
+  (:import (net.frodwith.jaque.data Cell))
   (:gen-class))
 
 (defn- by-wire [^Cell ovum]
@@ -20,7 +20,7 @@
         ;http   (chan)
         effects (pub eff by-wire)
         home    (:home options)
-        putdir  (Paths/get home (into-array [".urb" "put"]))
+        putdir  (util/pier-path home ".urb" "put")
         term-ch (term/start 
                   {:effect-channel effects
                    :terminal-id    (noun :1)
@@ -50,11 +50,20 @@
 (def file-exists? (partial exists? false))
 
 (def cli-options
-  [["-B" "--pill PATH" "Path to solid pill" :validate [file-exists?]]
-   ["-J" "--jets PATH" "Path to EDN jet config" :validate [file-exists?]]
-   ["-A" "--arvo PATH" "Path to initial sync directory" :validate [directory-exists?]]
-   ["-H" "--home PATH" "Path to pier home directory" :validate [directory-exists?]]
-   ["-P" "--profile"   "Enable profiling dump"]
+  [["-P" "--profile"   "Enable profiling dump"]
+   ["-B" "--pill PATH" "Path to solid pill"
+    :parse-fn io/as-file
+    :validate [#(.exists %) #(.isFile %)]]
+   ["-J" "--jets PATH" "Path to EDN jet config"
+    :parse-fn io/as-file
+    :validate [#(.exists %) #(.isFile %)]]
+   ["-A" "--arvo PATH" "Path to initial sync directory"
+    :parse-fn io/as-file
+    :validate [#(.exists %) #(.isDirectory %)]]
+   ["-H" "--home PATH" "Path to pier home directory"
+    :parse-fn io/as-file
+    :validate [#(or (not (.exists %))
+                    (and (.exists %) (.isDirectory %)))]]
    ["-h" "--help"]])
 
 (defn -main [& args]

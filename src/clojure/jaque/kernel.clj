@@ -74,20 +74,15 @@
         dat      [mim size contents]]
     (noun [pax 0 dat])))
 
-(defn- home-sync [k dirpath]
-  (let [f    (io/file dirpath)
-        base (Paths/get (.toURI f))]
-    (if (or (nil? f)
-            (not (.isDirectory f)))
-      (do (log/error "bad initial sync directory")
-          k)
-      (let [files (filter #(.isFile %) (file-seq f))
-            rels  (map #(.relativize base (Paths/get (.toURI %))) files)
-            vis   (filter (fn [path] (not-any? #(.startsWith (.toString %) ".") path)) rels)
-            can   (seq->it (map (partial path-to-noun base) vis))
-            pax   [0 :sync (:sen k) 0]
-            fav   [:into 0 0 can]]
-        (noun [pax fav])))))
+(defn- home-sync [k dir]
+  (let [base (Paths/get (.toURI dir))]
+    (let [files (filter #(.isFile %) (file-seq dir))
+          rels  (map #(.relativize base (Paths/get (.toURI %))) files)
+          vis   (filter (fn [path] (not-any? #(.startsWith (.toString %) ".") path)) rels)
+          can   (seq->it (map (partial path-to-noun base) vis))
+          pax   [0 :sync (:sen k) 0]
+          fav   [:into 0 0 can]]
+      (noun [pax fav]))))
 
 (defn- dispatch! [ch effects]
   (go
@@ -123,7 +118,7 @@
 (defn start [{pro :profile, 
               jet :jet-path, syn :sync-path, pir :pier-path, pil :pill-path
               eff :effect-channel, tac :tank-channel, pok :poke-channel}]
-  (let [pdir (Paths/get pir (into-array [".urb" "prevayler"]))
+  (let [pdir (util/pier-path pir ".urb" "prevayler")
         fac (doto (PrevaylerFactory.)
               (.configurePrevalentSystem (PrevalentSystem.))
               (.configurePrevalenceDirectory (.toString pdir))
