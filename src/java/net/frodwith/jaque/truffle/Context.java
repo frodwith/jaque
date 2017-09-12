@@ -169,14 +169,18 @@ public class Context {
     System.out.println(s);
   }
   
-  private Object mutateGate(Cell gate, Object sample) {
+  private Cell mutateGate(Cell gate, Object sample) {
     Cell pay = Cell.expect(gate.tail),
          yap = new Cell(sample, pay.tail);
     return  new Cell(gate.head, yap);
   }
   
+  public Object kick(Cell gate) {
+    return kickTarget.call(gate);
+  }
+  
   public Object slam(Cell gate, Object sample) {
-    return kickTarget.call(mutateGate(gate, sample));
+    return kick(mutateGate(gate, sample));
   }
   
   public Object wrapSlam(Cell gate, Object sample) {
