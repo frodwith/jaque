@@ -1,5 +1,7 @@
 package net.frodwith.jaque.truffle;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -11,8 +13,10 @@ import java.util.logging.Logger;
 
 import com.kenai.jffi.Array;
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.BlockException;
@@ -30,6 +34,8 @@ import net.frodwith.jaque.data.Tank;
 import net.frodwith.jaque.data.Tape;
 import net.frodwith.jaque.data.Trel;
 import net.frodwith.jaque.truffle.driver.Arm;
+import net.frodwith.jaque.truffle.nodes.FunctionNode;
+import net.frodwith.jaque.truffle.nodes.JaqueNode;
 import net.frodwith.jaque.truffle.nodes.JaqueRootNode;
 import net.frodwith.jaque.truffle.nodes.TopRootNode;
 import net.frodwith.jaque.truffle.nodes.formula.BailNode;
@@ -183,6 +189,61 @@ public class Context {
     return kick(mutateGate(gate, sample));
   }
   
+  public Function<Object,Object> internalSlam(VirtualFrame frame, JaqueNode holder, Cell core) {
+    Cell bat = Cell.expect(core.head);
+    Cell pay = Cell.expect(core.tail);
+    ImplementationNode jet = gateJet(bat);
+    
+    if ( null != jet ) {
+      holder.replace(jet);
+      return (sam) -> jet.doJet(frame, new Cell(bat, new Cell(sam, pay.tail)));
+    }
+    else {
+      FormulaNode fn = parseCell(bat, false);
+      holder.replace(fn);
+      return (sam) -> {
+        Object old = FunctionNode.getSubject(frame);
+        FunctionNode.setSubject(frame, new Cell(bat, new Cell(sam, pay.tail)));
+        Object pro = fn.executeGeneric(frame);
+        FunctionNode.setSubject(frame, old);
+        return pro;
+      };
+    }
+    
+  }
+  
+  @TruffleBoundary
+  public ImplementationNode findImplementation(Location loc, Object axis, Cell formula) {
+    CompilerAsserts.neverPartOfCompilation();
+    if ( null == loc ) {
+      return null;
+    }
+    Class<? extends ImplementationNode> klass = getDriver(loc, axis);
+    if ( null == klass ) {
+      return null;
+    }
+    try {
+      FormulaNode fallback = parseCell(formula, false);
+      Method cons = klass.getMethod("create", Context.class, FormulaNode.class);
+      return (ImplementationNode) cons.invoke(null, this, fallback);
+    }
+    catch (NoSuchMethodException e) {
+      e.printStackTrace();
+    }
+    catch (IllegalAccessException e) {
+      e.printStackTrace();
+    }
+    catch (InvocationTargetException e) {
+      e.printStackTrace();
+    }
+    return null;   
+  }
+
+  @TruffleBoundary
+  private ImplementationNode gateJet(Cell battery) {
+    return findImplementation(locations.get(battery), 2L, battery);
+  }
+
   public Object wrapSlam(Cell gate, Object sample) {
     return wrapCall(kickTarget, mutateGate(gate, sample));
   }
@@ -286,13 +347,15 @@ public class Context {
           return KickNodeGen.create(core, this, tail, first == Fragment.HEAD, a.atom);
         }
         case 10: {
-          Cell    cell = TypesGen.asCell(arg);
-          FormulaNode next = parseCell(TypesGen.asCell(cell.tail), tail);
+          Cell cell = TypesGen.asCell(arg);
+          Cell neck = TypesGen.asCell(cell.tail);
+          // a lot of these hints do something with the product, so aren't in tail
+          //FormulaNode next = parseCell(TypesGen.asCell(cell.tail), tail);
           Object  head = cell.head;
           if ( Noun.isAtom(head) ) {
             // What do you do with static hints you don't recognize? Nothing...
             err("unrecognized static hint: " + Atom.toString(head));
-            return next;
+            return parseCell(neck, tail);
           }
           else {
             Cell dyn     = TypesGen.asCell(head);
@@ -300,29 +363,29 @@ public class Context {
             Object kind  = dyn.head;
 
             if ( Atom.MEMO.equals(kind) ) {
-              return new MemoHintNode(next);
+              return new MemoHintNode(parseCell(neck, false));
             }
             else if ( Atom.FAST.equals(kind) ) {
-              return new FastHintNode(this, dynF, next);
+              return new FastHintNode(this, dynF, parseCell(neck, false));
             }
             else if ( Atom.SLOG.equals(kind) ) {
-              return new SlogHintNode(this, dynF, next);
+              return new SlogHintNode(this, dynF, parseCell(neck, true));
             }
             else if ( Atom.SPOT.equals(kind) ) {
-              return new StackHintNode(this, Atom.SPOT, dynF, next);
+              return new StackHintNode(this, Atom.SPOT, dynF, parseCell(neck, false));
             }
             else if ( Atom.MEAN.equals(kind) ) {
-              return new StackHintNode(this, Atom.MEAN, dynF, next);
+              return new StackHintNode(this, Atom.MEAN, dynF, parseCell(neck, false));
             }
             else if ( Atom.LOSE.equals(kind) ) {
-              return new StackHintNode(this, Atom.LOSE, dynF, next);
+              return new StackHintNode(this, Atom.LOSE, dynF, parseCell(neck, false));
             }
             else if ( Atom.HUNK.equals(kind) ) {
-              return new StackHintNode(this, Atom.HUNK, dynF, next);
+              return new StackHintNode(this, Atom.HUNK, dynF, parseCell(neck, false));
             }
             else {
               err("unrecognized dynamic hint: " + Atom.toString(kind));
-              return new DiscardHintNode(dynF, next);
+              return new DiscardHintNode(dynF, parseCell(neck, tail));
             }
           }
         }

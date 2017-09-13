@@ -61,8 +61,7 @@ public abstract class KickNode extends FormulaNode {
       @Cached("makeLocationNodes(loc)") FragmentationNode[] nodes,
       @Cached("getLabel(core)") KickLabel label,
       @Cached("getFragmentationNode()") FragmentationNode fragment,
-      @Cached("getTarget(label, core, fragment)") CallTarget target,
-      @Cached("getDriver(loc, axis, target)") ImplementationNode driver) {
+      @Cached("getDriver(loc, fragment, core)") ImplementationNode driver) {
     if ( getContext().profile ) {
       return squall(core, () -> driver.doJet(frame, core));
     }
@@ -136,16 +135,16 @@ public abstract class KickNode extends FormulaNode {
   private static Set<String> noSeen = new HashSet<String>();
 
   @TruffleBoundary
-  protected ImplementationNode getDriver(Location loc, Object axis, CallTarget fallback) {
+  protected ImplementationNode getDriver(Location loc, FragmentationNode frag, Cell core) {
     CompilerAsserts.neverPartOfCompilation();
     if ( null == loc ) {
       return null;
     }
     Context context = getContext();
-    Class<? extends ImplementationNode> klass = context.getDriver(loc, axis);
+    Class<? extends ImplementationNode> klass = context.getDriver(loc, getAxis());
     if ( null == klass ) {
       /*
-      if ( axis.equals(2L) ) {
+      if ( getAxis().equals(2L) ) {
         if ( !noSeen.contains(loc.label) ) {
           noSeen.add(loc.label);
           getContext().err("Unjetted gate: " + loc.label);
@@ -156,8 +155,11 @@ public abstract class KickNode extends FormulaNode {
       return null;
     }
     try {
-      Method cons = klass.getMethod("create", Context.class, CallTarget.class);
+      FormulaNode fallback = context.parseCell(Cell.expect(frag.executeFragment(core)), false);
+      Method cons = klass.getMethod("create", Context.class, FormulaNode.class);
       return (ImplementationNode) cons.invoke(null, context, fallback);
+    }
+    catch (FragmentationException e) {
     }
     catch (NoSuchMethodException e) {
       e.printStackTrace();

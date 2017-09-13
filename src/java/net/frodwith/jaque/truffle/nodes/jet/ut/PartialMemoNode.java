@@ -16,6 +16,7 @@ import net.frodwith.jaque.truffle.FragmentationException;
 import net.frodwith.jaque.truffle.nodes.DispatchNode;
 import net.frodwith.jaque.truffle.nodes.DispatchNodeGen;
 import net.frodwith.jaque.truffle.nodes.FragmentationNode;
+import net.frodwith.jaque.truffle.nodes.FunctionNode;
 import net.frodwith.jaque.truffle.nodes.NockDispatchNodeGen;
 import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
@@ -25,7 +26,7 @@ public abstract class PartialMemoNode extends ImplementationNode {
   private static final Map<Cell,Object> memo = new HashMap<Cell, Object>();
   protected static final FragmentationNode vanVet = new FragmentationNode(118L);
   protected static final FragmentationNode vanVrf = new FragmentationNode(59L);
-  private @Child DispatchNode dispatch = DispatchNodeGen.create();
+  private boolean adopted = false;
   
   protected static long tip(String mote, Object van) {
     try {
@@ -56,7 +57,14 @@ public abstract class PartialMemoNode extends ImplementationNode {
     //String wat = getClass().getSimpleName().substring(0, 4).toLowerCase();
     Object mem = recall(key);
     if ( null == mem ) {
-      mem = dispatch.call(frame, getFallback(), new Object[] { core });
+      Object old = FunctionNode.getSubject(frame);
+      FunctionNode.setSubject(frame, core);
+      FormulaNode fallback = getFallback();
+      if ( !adopted ) {
+        this.insert(fallback);
+      }
+      mem = fallback.executeGeneric(frame);
+      FunctionNode.setSubject(frame, old);
       store(key, mem);
     }
     return mem;

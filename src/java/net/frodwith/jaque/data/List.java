@@ -2,6 +2,7 @@ package net.frodwith.jaque.data;
 
 import java.util.Iterator;
 import java.util.Stack;
+import java.util.function.Function;
 
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
@@ -44,6 +45,36 @@ public class List implements Iterable<Object> {
       }
     }
   }
+  
+  public static Object reel(Function<Object,Object> f, Object seed, Object list) {
+    Stack<Object> s = new Stack<Object>();
+    for ( Object i : new List(list) ) {
+      s.push(i);
+    }
+    while ( !s.empty() ) {
+      seed = f.apply(new Cell(s.pop(), seed));
+    }
+    return seed;
+  }
+  
+  public static Object roll(Function<Object,Object> f, Object seed, Object list) {
+    for ( Object i : new List(list) ) {
+      seed = f.apply(new Cell(i, seed));
+    }
+    return seed;
+  }
+  
+  public static Object turn(Function<Object,Object> f, Object list) {
+    Stack<Object> s = new Stack<Object>();
+    for ( Object i : new List(list) ) {
+      s.push(i);
+    }
+    Object r = 0L;
+    while ( !s.empty() ) {
+      r = new Cell(f.apply(s.pop()), r);
+    }
+    return r;
+  }
 
   public static Object weld(Object a, Object b) {
     Stack<Object> s = new Stack<Object>();
@@ -51,10 +82,28 @@ public class List implements Iterable<Object> {
       s.push(i);
     }
     Object r = b;
-    while ( !s.isEmpty() ) {
+    while ( !s.empty() ) {
       r = new Cell(s.pop(), r);
     }
     return r;
+  }
+  
+  public static boolean lien(Function<Object,Object> f, Object list) {
+    for ( Object i : new List(list) ) {
+      if ( Atom.equals(Atom.YES, f.apply(i)) ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public static boolean levy(Function<Object,Object> f, Object list) {
+    for ( Object i : new List(list) ) {
+      if ( Atom.equals(Atom.NO, f.apply(i)) ) {
+        return false;
+      }
+    }
+    return true;
   }
 
   public static Object lent(Object ram) {
