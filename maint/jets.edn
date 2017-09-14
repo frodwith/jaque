@@ -63,14 +63,6 @@
          ["k151/mood/hoon/mul" "net.frodwith.jaque.truffle.nodes.jet.MulNodeGen"]
          ["k151/mood/hoon/peg" "net.frodwith.jaque.truffle.nodes.jet.PegNodeGen"]
          ["k151/mood/hoon/sub" "net.frodwith.jaque.truffle.nodes.jet.SubNodeGen"]
-         ;lists
-         ;["k151/mood/hoon/lent" "net.frodwith.jaque.truffle.nodes.jet.LentNodeGen"]
-         ;["k151/mood/hoon/weld" "net.frodwith.jaque.truffle.nodes.jet.WeldNodeGen"]
-         ;["k151/mood/hoon/roll" "net.frodwith.jaque.truffle.nodes.jet.RollNodeGen"]
-         ;["k151/mood/hoon/reel" "net.frodwith.jaque.truffle.nodes.jet.ReelNodeGen"]
-         ;["k151/mood/hoon/turn" "net.frodwith.jaque.truffle.nodes.jet.TurnNodeGen"]
-         ;["k151/mood/hoon/lien" "net.frodwith.jaque.truffle.nodes.jet.LienNodeGen"]
-         ;["k151/mood/hoon/levy" "net.frodwith.jaque.truffle.nodes.jet.LevyNodeGen"]
          ;hash
          ["k151/mood/hoon/mug" "net.frodwith.jaque.truffle.nodes.jet.MugNodeGen"]
          ["k151/mood/hoon/muk" "net.frodwith.jaque.truffle.nodes.jet.MukNodeGen"]
