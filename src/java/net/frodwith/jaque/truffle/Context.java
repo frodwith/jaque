@@ -8,10 +8,8 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.kenai.jffi.Array;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -367,7 +365,7 @@ public class Context {
               return new FastHintNode(this, dynF, parseCell(neck, false));
             }
             else if ( Atom.SLOG.equals(kind) ) {
-              return new SlogHintNode(this, dynF, parseCell(neck, true));
+              return new SlogHintNode(this, dynF, parseCell(neck, tail));
             }
             else if ( Atom.SPOT.equals(kind) ) {
               return new StackHintNode(this, Atom.SPOT, dynF, parseCell(neck, false));
