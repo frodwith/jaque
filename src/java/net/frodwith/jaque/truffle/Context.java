@@ -252,9 +252,7 @@ public class Context {
     return (sam) -> slam(gate, sam);
   }
   
-  /* If there was a node for this, we could profile it, but it's a slow path operation
-   * (in general, we cache formulas) so there's not(?) much benefit to making it a node.
-   */
+  @TruffleBoundary
   public FormulaNode parseCell(Cell src, boolean tail) {
     Object op  = src.head,
            arg = src.tail;
