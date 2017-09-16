@@ -1,5 +1,8 @@
 package net.frodwith.jaque.truffle;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -12,9 +15,11 @@ import java.util.logging.Logger;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.RootNode;
 
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.BlockException;
@@ -60,7 +65,7 @@ import net.frodwith.jaque.truffle.nodes.formula.hint.SlogHintNode;
 import net.frodwith.jaque.truffle.nodes.formula.hint.StackHintNode;
 import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
 
-public class Context {
+public class Context implements Serializable {
   
   private static class Invocation {
     public String name;
@@ -73,17 +78,75 @@ public class Context {
     public long own;
   }
   
-  public final Map<KickLabel, CallTarget> kicks;
-  public final Map<Cell, CallTarget> nocks;
-  public final Map<String, Arm[]> drivers;
-  public final HashMap<Cell, Location> locations;
+  // these can't be serialized
+  public transient Map<KickLabel, CallTarget> kicks;
+  public transient Map<Object, CallTarget> simpleKicks;
+  public transient Map<Cell, CallTarget> nocks;
+  public transient Caller caller;
 
-  public Map<String,Stats> times = null;
-  public Stack<Invocation> calls = new Stack<Invocation>();
-  public final boolean profile;
-  
-  public final CallTarget kickTarget;
+  // these are per-run, though they could be serialized */
+  public transient Map<String,Stats> times;
+  public transient Stack<Invocation> calls;
+  @CompilationFinal public transient boolean profile;
+
+  // this is kind of a hack for soft, and should probably work differently
+  // anyways we don't serialize it
+  public transient Stack<Road> levels;
+
+  // durable state
+  public final HashMap<Cell, Location> locations;
+  public final Map<String, Arm[]> drivers;
+
+  // this being static doesn't need special serialization logic
   private final static Logger logger = Logger.getGlobal();
+  
+  private void initTransients() {
+    caller = null;
+    profile = false;
+    kicks = new HashMap<KickLabel, CallTarget>();
+    simpleKicks = new HashMap<Object, CallTarget>();
+    nocks = new HashMap<Cell, CallTarget>();
+    times = null;
+    calls = new Stack<Invocation>();
+    levels = new Stack<Road>();
+    levels.push(new Road(null));
+  }
+  
+  // anything that varies per run gets sent through here
+  public void wake(Arm[] arms, Caller caller, boolean profile) {
+    this.profile = profile;
+    this.caller = caller;
+    this.drivers.clear();
+
+    Map<String, LinkedList<Arm>> temp = new HashMap<String, LinkedList<Arm>>();
+    if ( null != arms ) {
+      for ( Arm a : arms ) {
+        LinkedList<Arm> push = temp.get(a.label);
+        if ( null == push ) {
+          push = new LinkedList<Arm>();
+          temp.put(a.label, push);
+        }
+        push.add(a);
+      }
+    }
+    
+    for ( Map.Entry<String, LinkedList<Arm>> e : temp.entrySet() ) {
+      LinkedList<Arm> al = e.getValue();
+      Arm[] aa = new Arm[al.size()];
+      this.drivers.put(e.getKey(), al.toArray(aa));
+    }
+  }
+  
+  private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+    in.defaultReadObject();
+    initTransients();
+  }
+  
+  public Context() {
+    this.locations = new HashMap<Cell, Location>();
+    this.drivers = new HashMap<String, Arm[]>();
+    initTransients();
+  }
   
   public void come(String name) {
     Stats st;
@@ -124,45 +187,6 @@ public class Context {
     return null;
   }
   
-  public Stack<Road> levels;
-  public Caller caller = null;
-  
-  public Context(Arm[] arms) {
-    this(arms, false);
-  }
-  
-  public Context(Arm[] arms, boolean profile) {
-    this.kicks = new HashMap<KickLabel, CallTarget>();
-    this.nocks = new HashMap<Cell, CallTarget>();
-    this.locations = new HashMap<Cell, Location>();
-    this.drivers = new HashMap<String, Arm[]>();
-    this.times = new HashMap<String,Stats>();
-    this.profile = profile;
-    
-    levels = new Stack<Road>();
-    levels.push(new Road(null));
-    
-    Map<String, LinkedList<Arm>> temp = new HashMap<String, LinkedList<Arm>>();
-    if ( null != arms ) {
-      for ( Arm a : arms ) {
-        LinkedList<Arm> push = temp.get(a.label);
-        if ( null == push ) {
-          push = new LinkedList<Arm>();
-          temp.put(a.label, push);
-        }
-        push.add(a);
-      }
-    }
-    
-    for ( Map.Entry<String, LinkedList<Arm>> e : temp.entrySet() ) {
-      LinkedList<Arm> al = e.getValue();
-      Arm[] aa = new Arm[al.size()];
-      drivers.put(e.getKey(), al.toArray(aa));
-    }
-
-    this.kickTarget = compileTarget(new Qual(9L, 2L, 0L, 1L).toCell());
-  }
-  
   @TruffleBoundary
   public void err(String s) {
     logger.severe(s);
@@ -170,7 +194,7 @@ public class Context {
 
   @TruffleBoundary
   public void print(String s) {
-    System.out.println(s);
+    logger.info(s);
   }
   
   private Cell mutateGate(Cell gate, Object sample) {
@@ -179,12 +203,17 @@ public class Context {
     return  new Cell(gate.head, yap);
   }
   
-  public Object kick(Cell gate) {
-    return kickTarget.call(gate);
+  public Object kick(Cell gate, Object axis) {
+    CallTarget t = simpleKicks.get(axis);
+    if ( null == t ) {
+      t = compileTarget(parseCell(new Qual(9L, axis, 0L, 1L).toCell(), false));
+      simpleKicks.put(axis, t);
+    }
+    return t.call(gate);
   }
   
   public Object slam(Cell gate, Object sample) {
-    return kick(mutateGate(gate, sample));
+    return kick(mutateGate(gate, sample), 2L);
   }
   
   public Function<Object,Object> internalSlam(VirtualFrame frame, JaqueNode holder, Cell core) {
@@ -243,7 +272,7 @@ public class Context {
   }
 
   public Object wrapSlam(Cell gate, Object sample) {
-    return wrapCall(kickTarget, mutateGate(gate, sample));
+    return wrap(() -> kick(mutateGate(gate, sample), 2L));
   }
   
   public Function<Object, Object> slammer(Cell gate) {
@@ -399,8 +428,7 @@ public class Context {
     }
   }
   
-  private CallTarget compileTarget(Cell formula) {
-    FormulaNode program = parseCell(formula, true);
+  private CallTarget compileTarget(FormulaNode program) {
     JaqueRootNode root  = new JaqueRootNode(program);
     CallTarget inner    = Truffle.getRuntime().createCallTarget(root);
     TopRootNode top     = new TopRootNode(inner);
@@ -408,9 +436,9 @@ public class Context {
     return Truffle.getRuntime().createCallTarget(top);
   }
   
-  private Object wrapCall(CallTarget tgt, Object subject) {
+  private Object wrap(Supplier<Object> doer) {
     try {
-      return tgt.call(subject);
+      return doer.get();
     }
     catch (Bail e) {
       dumpHoonStack();
@@ -418,6 +446,7 @@ public class Context {
     }
   }
   
+  @TruffleBoundary
   public void dumpHoonStack() {
     if ( null != caller ) {
       Cell tone = new Cell(2L, levels.peek().stacks);
@@ -437,9 +466,10 @@ public class Context {
 
   /* Top-level interpeter entry point */
   public Object nock(Object subject, Cell formula) {
-    return wrapCall(compileTarget(formula), subject);
+    return wrap(() -> compileTarget(parseCell(formula, true)).call(subject));
   }
   
+  @TruffleBoundary
   public void dumpProfile() {
     for ( Map.Entry<String, Stats> kv : times.entrySet() ) {
       Stats st = kv.getValue();
@@ -532,6 +562,38 @@ public class Context {
   @TruffleBoundary
   public void register(Cell battery, Location location) {
     locations.put(battery, location);
-    caller.register(battery, location);
+  }
+  
+  @TruffleBoundary
+  public CallTarget getKickTarget(KickLabel label, Supplier<Cell> getFormula) {
+    CompilerAsserts.neverPartOfCompilation();
+    CallTarget t = kicks.get(label);
+    if ( null == t ) {
+      Cell formula = getFormula.get();
+      Location reg = locations.get(label.battery);
+      FormulaNode f = parseCell(formula, true);
+      RootNode root = (null == reg) ? new JaqueRootNode(f) : new JaqueRootNode(f, reg.label, label.axis);
+      t = Truffle.getRuntime().createCallTarget(root);
+      kicks.put(label, t);
+    }
+    return t;
+  }
+
+  @TruffleBoundary
+  public Object hook(Cell cor, String name) {
+    Cell bat = Cell.expect(cor.head);
+    Location loc = locations.get(bat);
+    if ( null == loc ) {
+      return null;
+    }
+    Object axis = loc.nameToAxis.get(name);
+    if ( null == axis ) {
+      // the caller wants a deeper core
+      Object inn = new Axis(loc.axisToParent).fragment(cor);
+      return hook(Cell.expect(inn), name);
+    }
+    else {
+      return kick(cor, axis);
+    }
   }
 }

@@ -1,40 +1,33 @@
 package net.frodwith.jaque.prevayler;
 
 import java.util.Date;
-import java.util.Map;
 import java.util.function.Consumer;
 
-import org.prevayler.Transaction;
 import org.prevayler.TransactionWithQuery;
 
-import net.frodwith.jaque.Location;
-import net.frodwith.jaque.data.Cell;
-import net.frodwith.jaque.data.Time;
-import net.frodwith.jaque.truffle.Context;
+import net.frodwith.jaque.truffle.driver.Arm;
 
 public class Wake implements TransactionWithQuery<PrevalentSystem,Boolean> {
-  public transient Context context;
-  public transient Consumer<Object> effectSink;
+  public Arm[] arms;
   public transient Consumer<Object> slogSink;
+  public transient Consumer<Object> effectSink;
+  public boolean profile;
 
-  public Wake(Context context, Consumer<Object> slogSink, Consumer<Object> effectSink) {
-    this.context = context;
+  public Wake(Arm[] arms, Consumer<Object> slogSink, Consumer<Object> effectSink, boolean profile) {
+    this.arms = arms;
     this.slogSink = slogSink;
     this.effectSink = effectSink;
+    this.profile = profile;
   }
   
   @Override
   public Boolean executeAndQuery(PrevalentSystem s, Date now) {
-    if ( null == context ) {
-      return false;
+    if ( null == slogSink ) {
+      profile = false;
     }
-    Map<Cell,Location> loaded = s.locations;
-    context.caller = s;
-    s.context = context;
-    s.effectSink = effectSink;
     s.slogSink = slogSink;
-    s.restoreLocations(loaded);
+    s.effectSink = effectSink;
+    s.context.wake(arms, s, profile);
     return (null == s.arvo);
   }
-
 }

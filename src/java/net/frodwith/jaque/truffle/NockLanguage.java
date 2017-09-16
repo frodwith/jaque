@@ -11,8 +11,8 @@ public class NockLanguage extends TruffleLanguage<Context> {
   
   @Override
   protected Context createContext(com.oracle.truffle.api.TruffleLanguage.Env env) {
-    Arm[] jetDrivers = (Arm[]) env.getConfig().get("jetDrivers");
-    return new Context(jetDrivers);
+    //Arm[] jetDrivers = (Arm[]) env.getConfig().get("jetDrivers");
+    return new Context(); // this shit has never worked
   }
   
   public Node contextNode() {

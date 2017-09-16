@@ -173,6 +173,7 @@ public abstract class KickNode extends FormulaNode {
     return null;
   }
   
+  @TruffleBoundary
   public Supplier<String> squawk(Cell core) {
     Location loc = getLocation(core);
     Object axis = getAxis();
@@ -189,6 +190,7 @@ public abstract class KickNode extends FormulaNode {
     return () -> c.flee(); 
  }
   
+  @TruffleBoundary
   public Object squall(Cell core, Supplier<Object> doIt) {
     Supplier<String> flee = squawk(core);
     Object r = doIt.get();
@@ -253,14 +255,9 @@ public abstract class KickNode extends FormulaNode {
 
   @TruffleBoundary // hash operations
   protected CallTarget getTarget(KickLabel label, Cell core, FragmentationNode fragment) {
-    CompilerAsserts.neverPartOfCompilation();
-    Context context = getContext();
-    Map<KickLabel,CallTarget> kicks = context.kicks;
-    CallTarget t = kicks.get(label);
-    if ( null == t ) {
-      Cell formula;
+    Supplier<Cell> getFormula = () -> {
       try {
-        formula = TypesGen.expectCell(fragment.executeFragment(core));
+        return TypesGen.expectCell(fragment.executeFragment(core));
       }
       catch ( UnexpectedResultException e ) {
         throw new Bail();
@@ -268,14 +265,8 @@ public abstract class KickNode extends FormulaNode {
       catch ( FragmentationException e ) {
         throw new Bail();
       }
-      
-      Location reg = context.locations.get(core.head);
-      FormulaNode f = context.parseCell(formula, true);
-      RootNode root = (null == reg) ? new JaqueRootNode(f) : new JaqueRootNode(f, reg.label, getAxis());
-      t = Truffle.getRuntime().createCallTarget(root);
-      kicks.put(label, t);
-    }
-    return t;
+    };
+    return getContext().getKickTarget(label, getFormula);
   }
 
   // Unregistered location, cached target, direct call

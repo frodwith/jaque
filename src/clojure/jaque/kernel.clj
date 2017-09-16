@@ -100,8 +100,6 @@
         old (.caller ctx)]
     (set! (.caller ctx) 
           (reify Caller
-            (register [this battery loc]
-              nil)
             (kernel [this gate-name sample]
               (kernel-call k gate-name sample))
             (slog [this tank]
@@ -125,13 +123,13 @@
               (.configureTransactionDeepCopy false))
         pre (.create fac)
         tir (noun [0 :term :1 0])
-        ctx (Context. (util/read-jets jet) pro)
         tank-cb (reify Consumer
                   (accept [this t] (>!! tac t)))
         eff-cb  (reify Consumer
                   (accept [this es] (dispatch!! eff es)))]
-    (if (.execute pre (Wake. ctx tank-cb eff-cb))
-      (let [k (boot ctx (util/read-jam pil) tac)
+    (if (.execute pre (Wake. (util/read-jets jet) tank-cb eff-cb pro))
+      (let [ctx (.context (.prevalentSystem pre))
+            k (boot ctx (util/read-jam pil) tac)
             k (-> k
                   (boot-poke eff [[0 :newt (:sen k) 0] :barn 0])
                   (boot-poke eff [tir :boot :sith 0 0 0])

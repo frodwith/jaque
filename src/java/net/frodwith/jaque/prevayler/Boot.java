@@ -19,8 +19,8 @@ import net.frodwith.jaque.Location;
  */
 
 public class Boot implements Transaction<PrevalentSystem> {
-  public Object arvo, now, wen, sen, sev;
   public HashMap<Cell,Location> locations;
+  public Object arvo, now, wen, sen, sev;
 
   public Boot(HashMap<Cell,Location> locations, Object arvo, Object now, Object wen, Object sen, Object sev) {
     this.locations = locations;
@@ -33,7 +33,10 @@ public class Boot implements Transaction<PrevalentSystem> {
 
   @Override
   public void executeOn(PrevalentSystem s, Date now) {
-    s.restoreLocations(this.locations);
+    if ( s.context.locations != locations ) {
+      s.context.locations.clear();
+      s.context.locations.putAll(locations);
+    }
     s.arvo = this.arvo;
     s.now = this.now;
     s.wen = this.wen;
