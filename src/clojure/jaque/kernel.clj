@@ -54,32 +54,12 @@
       :wen (kernel-call k "scot" [:da da])
       :sen (kernel-call k "scot" [:uv uv]))))
 
-(defn- atom-from-file [file]
-  (with-open [out (java.io.ByteArrayOutputStream.)]
-    (io/copy (io/input-stream file) out)
-    (-> out (.toByteArray)
-        (Atom/fromByteArray Atom/LITTLE_ENDIAN))))
-
-(defn- path-to-noun [base path]
-  (let [nested   (map (fn [p]
-                        (let [s (.toString p)]
-                          (string/split s #"\.")))
-                      path)
-        cords    (map #(Atom/stringToCord %) (flatten nested))
-        pax      (seq->it cords)
-        file     (.toFile (.resolve base path))
-        mim      [:text :plain 0]
-        size     (.length file)
-        contents (atom-from-file file)
-        dat      [mim size contents]]
-    (noun [pax 0 dat])))
-
 (defn- home-sync [k dir]
   (let [base (Paths/get (.toURI dir))]
     (let [files (filter #(.isFile %) (file-seq dir))
           rels  (map #(.relativize base (Paths/get (.toURI %))) files)
           vis   (filter (fn [path] (not-any? #(.startsWith (.toString %) ".") path)) rels)
-          can   (seq->it (map (partial path-to-noun base) vis))
+          can   (seq->it (map (partial util/path-to-noun base) vis))
           pax   [0 :sync (:sen k) 0]
           fav   [:into 0 0 can]]
       (noun [pax fav]))))

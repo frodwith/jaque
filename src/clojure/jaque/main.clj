@@ -40,6 +40,7 @@
              :poke-channel   poke})
         fs-ch   (fs/start
                   {:effect-pub     effects
+                   :poke-channel   poke
                    :mount-dir      home
                    :sen            sen})]
     (<!! term-ch)

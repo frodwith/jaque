@@ -1,5 +1,7 @@
 (ns jaque.util
+  (:use jaque.noun)
   (:require [clojure.java.io :as io]
+            [clojure.string :as string]
             [clojure.edn :as edn])
   (:import 
     (java.nio.file Paths)
@@ -56,3 +58,22 @@
     (with-open [out (io/output-stream file)]
       (.write out byts))))
 
+(defn- atom-from-file [file]
+  (with-open [out (java.io.ByteArrayOutputStream.)]
+    (io/copy (io/input-stream file) out)
+    (-> out (.toByteArray)
+        (Atom/fromByteArray Atom/LITTLE_ENDIAN))))
+
+(defn path-to-noun [base path]
+  (let [nested   (map (fn [p]
+                        (let [s (.toString p)]
+                          (string/split s #"\.")))
+                      path)
+        cords    (map #(Atom/stringToCord %) (flatten nested))
+        pax      (seq->it cords)
+        file     (.toFile (.resolve base path))
+        mim      [:text :plain 0]
+        size     (.length file)
+        contents (atom-from-file file)
+        dat      [mim size contents]]
+    (noun [pax 0 dat])))
