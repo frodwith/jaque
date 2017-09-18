@@ -3,6 +3,7 @@
             [clojure.core.async :refer [chan pub <!!]]
             [clojure.tools.cli :as cli]
             [jaque.terminal :as term]
+            [jaque.fs :as fs]
             [jaque.util :as util]
             [jaque.noun :refer [noun]]
             [jaque.kernel :as kern])
@@ -20,24 +21,29 @@
         ;http   (chan)
         effects (pub eff by-wire)
         home    (:home options)
-        putdir  (util/pier-path home ".urb" "put")
         term-ch (term/start 
                   {:effect-pub     effects
                    :terminal-id    (noun :1)
                    :tank-channel   tank
                    :poke-channel   poke
-                   :save-root      putdir})
-        kern-ch (kern/start 
-                  {:profile        (contains? options :profile)
-                   :jet-path       (:jets options)
-                   :pill-path      (:pill options)
-                   :sync-path      (:arvo options)
-                   :pier-path      home
-                   :effect-channel eff
-                   :tank-channel   tank
-                   ;:call-channel   call
-                   :poke-channel   poke})]
+                   :save-root      (util/pier-path home ".urb" "put")})
+        [sen kern-ch]
+          (kern/start 
+            {:profile        (contains? options :profile)
+             :jet-path       (:jets options)
+             :pill-path      (:pill options)
+             :sync-path      (:arvo options)
+             :pier-path      home
+             :effect-channel eff
+             :tank-channel   tank
+             ;:call-channel   call
+             :poke-channel   poke})
+        fs-ch   (fs/start
+                  {:effect-pub     effects
+                   :mount-dir      home
+                   :sen            sen})]
     (<!! term-ch)
+    (<!! fs-ch)
     (<!! kern-ch)))
 
 (defn exists? [is-dir path]

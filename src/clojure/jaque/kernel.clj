@@ -142,7 +142,8 @@
                              (:sen k)
                              (:sev k))))
       (>!! eff (noun [tir [:init 0]])))
-    (go-loop []
+    [(.sen (.prevalentSystem pre))
+     (go-loop []
       (let [p (<! pok)]
         (if (nil? p)
           (do (.takeSnapshot pre)
@@ -152,7 +153,7 @@
           (do (>! eff (noun [tir [:blit [:bee (.head (.tail (.head p)))] 0]]))
               (.execute pre (Poke. p))
               (>! eff (noun [tir [:blit [:bee 0] 0]]))
-              (recur)))))))
+              (recur)))))]))
 ;                cal ([req]
 ;                     (if (nil? req)
 ;                       false

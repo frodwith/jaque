@@ -77,18 +77,7 @@
       (set! (. scr lastHop) col)
       (.setCursorPosition this (.withColumn pos (- col (.stripChars ^JaqueScreen this))))))
   (save [this root-dir path-seq content-bytes]
-    (let [pas  (map #(Atom/cordToString %) path-seq)
-          end  (case (count pas)
-                 0 nil
-                 1 pas
-                 (let [[nam ext] (take-last 2 pas)]
-                   (concat (drop-last 2 pas) 
-                           [(format "%s.%s" nam ext)])))
-          path (apply (partial util/pier-path root-dir) end)
-          file (.toFile path)]
-      (.mkdirs (.getParentFile file))
-      (with-open [out (io/output-stream file)]
-        (.write out content-bytes))))
+    (util/write-file root-dir path-seq content-bytes))
   (restore [this]
     (let [scr ^JaqueScreen this]
       (line this (.lastLine scr))

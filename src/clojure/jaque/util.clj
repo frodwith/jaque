@@ -42,3 +42,17 @@
 
 (defn read-jam [file]
   (Atom/cue (atom-from-file file)))
+
+(defn write-file [base path-seq byts]
+  (let [end  (case (count path-seq)
+               0 nil
+               1 path-seq
+               (let [[nam ext] (take-last 2 path-seq)]
+                 (concat (drop-last 2 path-seq) 
+                         [(format "%s.%s" nam ext)])))
+        path (apply (partial pier-path base) end)
+        file (.toFile path)]
+    (.mkdirs (.getParentFile file))
+    (with-open [out (io/output-stream file)]
+      (.write out byts))))
+
