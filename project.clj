@@ -1,7 +1,7 @@
 (defproject jaque "0.1.0-SNAPSHOT"
   :description "Clojure implementation of nock" :jvm-opts     ["-server"
 ; think your stack overflows are spurious? they're not, but...
-                 "-Xss1024m"
+;                 "-Xss1024m"
                  "-XX:+UnlockExperimentalVMOptions" 
                  "-XX:+EnableJVMCI"
                  "-d64" 
@@ -36,6 +36,7 @@
                  [org.clojure/core.async "0.3.443"]
                  [org.prevayler/prevayler-factory "2.6"]
                  [org.prevayler.extras/prevayler-xstream "2.6"]
+                 [com.atlassian.commonmark/commonmark "0.9.0"]
                  [log4j/log4j "1.2.17" :exclusions [javax.mail/mail
                                                     javax.jms/jms
                                                     com.sun.jdmk/jmxtools
@@ -47,5 +48,6 @@
 ;                 [clojure-lanterna "0.9.7"]
                  [ring/ring-core "1.5.0"]
                  [ring/ring-jetty-adapter "1.5.0"]
+                 [hawk "0.2.11"]
                  [clj-http "3.6.1"]
                  [slingshot "0.12.2"]])

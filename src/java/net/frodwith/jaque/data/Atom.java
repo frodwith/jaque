@@ -1828,4 +1828,48 @@ public class Atom {
         ? YES
         : NO;
   }
+
+  public static Object lore(Object lub) {
+    int pos = 0;
+    Object tez = 0L;
+    byte[] lubytes = toByteArray(lub);
+    int len = lubytes.length;
+
+    while ( true ) {
+      int meg = 0;
+      boolean end;
+      byte byt;
+      while ( true ) {
+        if ( pos >= len ) {
+          byt = 0;
+          end = true;
+          break;
+        }
+        byt = pos+meg < len ? lubytes[pos+meg] : 0;
+
+        if ( 10 == byt || 0 == byt ) {
+          end = (byt == 0);
+          break;
+        }
+        else {
+          ++meg;
+        }
+      }
+      if ( (byt == 0) && ((pos + meg + 1) < len) ) {
+        throw new Bail();
+      }
+      byte[] byts = Arrays.copyOfRange(lubytes, pos, pos+meg);
+      if ( pos >= len ) {
+        return List.flop(tez);
+      }
+      else {
+        Object mega = fromByteArray(Arrays.copyOf(byts, meg));
+        tez = new Cell(mega, tez);
+        if ( end ) {
+          return List.flop(tez);
+        }
+        pos += meg + 1;
+      }
+    }
+  }
 }

@@ -222,7 +222,7 @@
                       (do (>!! poke (noun [wire belt]))
                           (recur)))))))))
 
-(defn start [{effects :effect-channel, id :terminal-id, save-dir :save-root,
+(defn start [{effects :effect-pub, id :terminal-id, save-dir :save-root,
               tank :tank-channel, poke :poke-channel}]
   (let [beep    (chan)
         spin    (chan)

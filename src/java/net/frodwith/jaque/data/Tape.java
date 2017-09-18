@@ -18,4 +18,13 @@ public class Tape {
     return b.toString();
   }
 
+  public static Object fromString(String t) {
+    char[] cs = t.toCharArray();
+    Object r = 0L;
+    for (int i = cs.length - 1; i >= 0; --i ) {
+      r = new Cell((long) cs[i], r);
+    }
+    return r;
+  }
+
 }

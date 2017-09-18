@@ -22,7 +22,7 @@
         home    (:home options)
         putdir  (util/pier-path home ".urb" "put")
         term-ch (term/start 
-                  {:effect-channel effects
+                  {:effect-pub     effects
                    :terminal-id    (noun :1)
                    :tank-channel   tank
                    :poke-channel   poke
