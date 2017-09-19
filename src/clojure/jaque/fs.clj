@@ -5,6 +5,7 @@
             [jaque.util :as util]
             [clojure.core.async :refer [<! put! sub chan go-loop]])
   (:import (java.nio.file Paths)
+           (com.google.common.io MoreFiles RecursiveDeleteOption)
            (net.frodwith.jaque
              data.Noun
              data.List
@@ -16,7 +17,7 @@
     (and (.isFile f)
          (not-any? #(.startsWith (.toString %) ".") p))))
 
-(defn handle-notify [base poke ctx e]
+(defn handle-notify [base wire nama poke ctx e]
   (if (= (:kind e) :modify)
     (let [path (.relativize base (Paths/get (.toURI (:file e))))
           in   (util/path-to-noun base path)
@@ -52,14 +53,15 @@
                           (log/debug "mount" nam)
                           (assoc watchers nam
                             (hawk/watch! [{:paths [(.toFile base)]
-                                           :handler (partial handle-notify base)
-                                           :filter (partial visible-file? base poke)}])))
-                "ogre"  (let [nam (Atom/cordToString dat)
-                              wat (get watchers nam)]
+                                           :handler (partial handle-notify base wire nama poke)
+                                           :filter (partial visible-file? base)}])))
+                "ogre"  (let [nam  (Atom/cordToString dat)
+                              wat  (get watchers nam)
+                              base (util/pier-path mnp nam)]
                           (if (nil? wat)
                             watchers
                             (do (hawk/stop! wat)
-                                ; XX rm -rf mountpoint
+                                (MoreFiles/deleteRecursively base (into-array RecursiveDeleteOption nil))
                                 (log/debug "unmount" nam)
                                 (dissoc watchers nam))))
                 "hill"  (do (log/debug (Noun/toString ovo))
