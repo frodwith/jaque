@@ -30,8 +30,19 @@
 (defn start [{effects :effect-pub, mnt :mount-dir, sen :sen, poke :poke-channel}]
   (let [syncs (chan)
         mnp   (Paths/get (.toURI mnt))
-        wire  (noun [0 :sync sen 0])]
+        wire  (noun [0 :sync sen 0])
+        w!    (fn [m nama]
+                (let [nam (Atom/cordToString nama)
+                      base (util/pier-path mnp nam)]
+                  (if (contains? m nam)
+                    m
+                    (let [w (hawk/watch! [{:paths [(.toFile base)]
+                                           :handler (partial handle-notify base wire nama poke)
+                                           :filter (partial visible? base)}])]
+                      (log/debug "mount" nam)
+                      (assoc m nam w)))))]
     (sub effects wire syncs)
+    (put! poke (noun [wire :boat 0]))
     (go-loop [watchers {}]
       (let [s (<! syncs)]
         (if (nil? s)
@@ -53,13 +64,7 @@
                                 (let [c (Atom/toByteArray (.tail (.tail (.tail umi))))]
                                   (util/write-file fil c))
                                 (when (.exists fil) (.delete fil)))))
-                          (if (contains? watchers nam)
-                            watchers
-                            (let [w (hawk/watch! [{:paths [(.toFile base)], 
-                                                   :handler (partial handle-notify base wire nama poke)
-                                                   :filter (partial visible? base)}])]
-                              (log/debug "mount" nam)
-                              (assoc watchers nam w))))
+                          (w! watchers nama))
                 "ogre"  (let [nam  (Atom/cordToString dat)
                               wat  (get watchers nam)
                               base (util/pier-path mnp nam)]
@@ -69,8 +74,14 @@
                                 (MoreFiles/deleteRecursively base (into-array RecursiveDeleteOption nil))
                                 (log/debug "unmount" nam)
                                 (dissoc watchers nam))))
-                "hill"  (do (log/debug (Noun/toString ovo))
-                            watchers)
+                "hill"  (reduce (fn [m mnt]
+                                  (let [nam (Atom/cordToString mnt)
+                                        can (util/dir-can (.toFile (util/pier-path mnp nam)))]
+                                    (put! poke (noun [wire :into mnt 0 can]))
+                                    (log/debug "hill" nam)
+                                    (w! m mnt)))
+                                watchers
+                                (List. dat))
                 (do (log/error "unknown sync effect:" (Noun/toString ovo))
                     watchers)))))))))
 

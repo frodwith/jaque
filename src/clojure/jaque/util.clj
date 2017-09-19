@@ -75,3 +75,10 @@
                      [0 mime size contents])
                    0)]
     (noun [pax dat])))
+
+(defn dir-can [dir]
+  (let [base (Paths/get (.toURI dir))]
+    (let [files (filter #(.isFile %) (file-seq dir))
+          rels  (map #(.relativize base (Paths/get (.toURI %))) files)
+          vis   (filter (fn [path] (not-any? #(.startsWith (.toString %) ".") path)) rels)]
+      (seq->it (map (partial path-to-noun base) vis)))))

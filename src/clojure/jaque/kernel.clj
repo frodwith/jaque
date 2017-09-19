@@ -55,14 +55,8 @@
       :sen (kernel-call k "scot" [:uv uv]))))
 
 (defn- home-sync [k dir]
-  (let [base (Paths/get (.toURI dir))]
-    (let [files (filter #(.isFile %) (file-seq dir))
-          rels  (map #(.relativize base (Paths/get (.toURI %))) files)
-          vis   (filter (fn [path] (not-any? #(.startsWith (.toString %) ".") path)) rels)
-          can   (seq->it (map (partial util/path-to-noun base) vis))
-          pax   [0 :sync (:sen k) 0]
-          fav   [:into 0 0 can]]
-      (noun [pax fav]))))
+  (let [wire [0 :sync (:sen k) 0]]
+    (noun [wire :into 0 0 (util/dir-can dir)])))
 
 (defn- dispatch! [ch effects]
   (go
