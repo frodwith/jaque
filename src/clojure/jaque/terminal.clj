@@ -77,7 +77,8 @@
       (set! (. scr lastHop) col)
       (.setCursorPosition this (.withColumn pos (- col (.stripChars ^JaqueScreen this))))))
   (save [this root-dir path-seq content-bytes]
-    (util/write-file root-dir path-seq content-bytes))
+    (let [fil (util/path-seq-to-file root-dir path-seq)]
+      (util/write-file fil content-bytes)))
   (restore [this]
     (let [scr ^JaqueScreen this]
       (line this (.lastLine scr))

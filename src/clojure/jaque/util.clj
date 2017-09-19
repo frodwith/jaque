@@ -45,24 +45,20 @@
 (defn read-jam [file]
   (Atom/cue (atom-from-file file)))
 
-(defn write-file [base path-seq byts]
-  (let [end  (case (count path-seq)
+(defn path-seq-to-file [base pas]
+  (let [end  (case (count pas)
                0 nil
-               1 path-seq
-               (let [[nam ext] (take-last 2 path-seq)]
-                 (concat (drop-last 2 path-seq) 
+               1 pas
+               (let [[nam ext] (take-last 2 pas)]
+                 (concat (drop-last 2 pas) 
                          [(format "%s.%s" nam ext)])))
-        path (apply (partial pier-path base) end)
-        file (.toFile path)]
-    (.mkdirs (.getParentFile file))
-    (with-open [out (io/output-stream file)]
-      (.write out byts))))
+        path (apply (partial pier-path base) end)]
+    (.toFile path)))
 
-(defn- atom-from-file [file]
-  (with-open [out (java.io.ByteArrayOutputStream.)]
-    (io/copy (io/input-stream file) out)
-    (-> out (.toByteArray)
-        (Atom/fromByteArray Atom/LITTLE_ENDIAN))))
+(defn write-file [file byts]
+  (.mkdirs (.getParentFile file))
+  (with-open [out (io/output-stream file)]
+    (.write out byts)))
 
 (defn path-to-noun [base path]
   (let [nested   (map (fn [p]
@@ -72,8 +68,10 @@
         cords    (map #(Atom/stringToCord %) (flatten nested))
         pax      (seq->it cords)
         file     (.toFile (.resolve base path))
-        mim      [:text :plain 0]
-        size     (.length file)
-        contents (atom-from-file file)
-        dat      [mim size contents]]
-    (noun [pax 0 dat])))
+        dat      (if (.exists file)
+                   (let [mime [:text :plain 0]
+                         size (.length file)
+                         contents (atom-from-file file)]
+                     [0 mime size contents])
+                   0)]
+    (noun [pax dat])))

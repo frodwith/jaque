@@ -11,19 +11,21 @@
              data.List
              data.Atom)))
 
-(defn visible-file? [base ctx e]
-  (let [f (:file e)
-        p (.relativize base (Paths/get (.toURI f)))]
-    (and (.isFile f)
-         (not-any? #(.startsWith (.toString %) ".") p))))
+(defn- rel [base f]
+  (.relativize base (Paths/get (.toURI f))))
 
-(defn handle-notify [base wire nama poke ctx e]
-  (if (= (:kind e) :modify)
-    (let [path (.relativize base (Paths/get (.toURI (:file e))))
-          in   (util/path-to-noun base path)
-          ovo (noun [wire :into nama Atom/NO in 0])]
-      (put! poke ovo))
-    (log/debug "handler" (str e))))
+(defn- visible? [base ctx e]
+  (let [f (:file e)
+        p (rel base f)]
+    (and (not-any? #(.startsWith (.toString %) ".") p)
+         (or (not (.exists f))
+             (.isFile f)))))
+
+(defn- handle-notify [base wire nama poke ctx e]
+  (let [path (rel base (:file e))
+        in   (util/path-to-noun base path)
+        ovo (noun [wire :into nama Atom/NO in 0])]
+    (put! poke ovo)))
 
 (defn start [{effects :effect-pub, mnt :mount-dir, sen :sen, poke :poke-channel}]
   (let [syncs (chan)
@@ -44,17 +46,20 @@
                               base (util/pier-path mnp nam)]
                           (doseq [f (List. (.tail dat))]
                             (let [pax (.head f)
-                                  umi (.tail f)]
-                              (util/write-file base 
-                                (map #(Atom/cordToString %) (List. pax))
-                                (if (Noun/isCell umi)
-                                  (Atom/toByteArray (.tail (.tail (.tail umi))))
-                                  (byte-array 0)))))
-                          (log/debug "mount" nam)
-                          (assoc watchers nam
-                            (hawk/watch! [{:paths [(.toFile base)]
-                                           :handler (partial handle-notify base wire nama poke)
-                                           :filter (partial visible-file? base)}])))
+                                  umi (.tail f)
+                                  pas (map #(Atom/cordToString %) (List. pax))
+                                  fil (util/path-seq-to-file base pas)]
+                              (if (Noun/isCell umi)
+                                (let [c (Atom/toByteArray (.tail (.tail (.tail umi))))]
+                                  (util/write-file fil c))
+                                (when (.exists fil) (.delete fil)))))
+                          (if (contains? watchers nam)
+                            watchers
+                            (let [w (hawk/watch! [{:paths [(.toFile base)], 
+                                                   :handler (partial handle-notify base wire nama poke)
+                                                   :filter (partial visible? base)}])]
+                              (log/debug "mount" nam)
+                              (assoc watchers nam w))))
                 "ogre"  (let [nam  (Atom/cordToString dat)
                               wat  (get watchers nam)
                               base (util/pier-path mnp nam)]
