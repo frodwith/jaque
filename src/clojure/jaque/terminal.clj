@@ -202,18 +202,21 @@
         (recur c)
         (log/debug "spinner shutdown")))))
 
-(defn- listen [source poke wire]
+(defn- listen [source poke kth wire]
   (let [scr ^JaqueScreen source]
     (.start
       (Thread. #(loop []
                   (let [belt (read-belt source)]
                     (if (nil? belt)
                       (log/debug "keystroke listener shutdown")
-                      (do (>!! poke (noun [wire belt]))
+                      (do (if (Noun/equals (noun [:belt :ctl (long \c)]) belt)
+                            (do (prn "CTRL-C!!!")
+                                (.interrupt kth))
+                            (>!! poke (noun [wire belt])))
                           (recur)))))))))
 
 (defn start [{effects :effect-pub, id :terminal-id, save-dir :save-root,
-              tank :tank-channel, poke :poke-channel}]
+              tank :tank-channel, poke :poke-channel, kth :kernel-thread}]
   (let [beep    (chan)
         spin    (chan)
         eggs    (chan)
@@ -226,7 +229,7 @@
         do-egg  (partial handle-egg sink poke save-dir beep spin)
         do-tank (partial handle-tank sink)]
     (sub effects wire eggs)
-    (listen sink poke wire)
+    (listen sink poke kth wire)
     (go
       (loop []
         (when (alt! beep (do (do-beep)

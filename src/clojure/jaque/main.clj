@@ -21,13 +21,7 @@
         ;http   (chan)
         effects (pub eff by-wire)
         home    (:home options)
-        term-ch (term/start 
-                  {:effect-pub     effects
-                   :terminal-id    (noun :1)
-                   :tank-channel   tank
-                   :poke-channel   poke
-                   :save-root      (util/pier-path home ".urb" "put")})
-        [sen kern-ch]
+        [kinit kth]
           (kern/start 
             {:profile        (contains? options :profile)
              :jet-path       (:jets options)
@@ -36,16 +30,24 @@
              :pier-path      home
              :effect-channel eff
              :tank-channel   tank
-             ;:call-channel   call
              :poke-channel   poke})
+        term-ch (term/start 
+                  {:effect-pub     effects
+                   :terminal-id    (noun :1)
+                   :tank-channel   tank
+                   :poke-channel   poke
+                   :kernel-thread  kth
+                   :save-root      (util/pier-path home ".urb" "put")})
+        sen     (kinit)
         fs-ch   (fs/start
                   {:effect-pub     effects
                    :poke-channel   poke
                    :mount-dir      home
                    :sen            sen})]
+    (.start kth)
     (<!! term-ch)
     (<!! fs-ch)
-    (<!! kern-ch)))
+    (.join kth)))
 
 (defn exists? [is-dir path]
   (let [f (io/as-file path)]

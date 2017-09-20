@@ -1,5 +1,6 @@
 package net.frodwith.jaque.truffle.nodes;
 
+import java.nio.channels.InterruptedByTimeoutException;
 import java.util.Stack;
 import java.util.function.Supplier;
 
@@ -9,7 +10,9 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.profiles.BranchProfile;
 
+import net.frodwith.jaque.Interrupt;
 import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.TailException;
 
@@ -32,9 +35,15 @@ public abstract class DispatchNode extends JaqueNode {
     return callNode.call(frame, callTarget, arguments);
   }
   
+  BranchProfile interrupted = BranchProfile.create();
+  
   public Object call(VirtualFrame frame, CallTarget target, Object[] arguments) {
     Stack<Supplier<String>> finish = new Stack<Supplier<String>>();
     while ( true ) {
+      if ( Thread.interrupted() ) {
+        interrupted.enter();
+        throw new Interrupt();
+      }
       try {
         Object r = executeDispatch(frame, target, arguments);
         while ( !finish.isEmpty() ) {

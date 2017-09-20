@@ -87,6 +87,26 @@
       (dispatch!! ech eff)
       (assoc k :arvo arv))))
 
+; There are order issues here - if we're going to take the easy way out and
+; always write events as they come in (not insensible), we need to have the
+; terminal up (and accepting ctrl-c) so that a long poke can be interrupted
+; -- alternatively, we can do the processing external to prevayler, and not
+; send the poke to be persisted until we know if it has succeeded
+; (probably correct)
+; i don't want to persist the results, is the problem.
+
+; i think basically we have to do the exception handling and re-poking of
+; lameness in the transaction object, and simply time-out pokes during
+; boot. in this way, if any poke was interrupted before the interrupt
+; handler could say "nope, actually this was lame", (say by kill -9)
+; we'll treat it like a network packet - we'll try to run it for a minute
+; or so and then drop it. we can also make sure that a user attention key
+; and a spinner are present so ctrl-c can cancel it.
+
+; this is a compromise due to Prevayler's seemingly very opinionated idea that
+; events should be written to the log as soon as they are recieved, and not
+; after the transaction is finished. Since prevayler is open source, we could
+; patch this in. I think the above compromise is acceptable, however.
 (defn start [{pro :profile, 
               jet :jet-path, syn :sync-path, pir :pier-path, pil :pill-path
               eff :effect-channel, tac :tank-channel, pok :poke-channel}]
@@ -99,35 +119,37 @@
         tir (noun [0 :term :1 0])
         tank-cb (reify Consumer
                   (accept [this t] (>!! tac t)))
-        eff-cb  (reify Consumer
-                  (accept [this es] (dispatch!! eff es)))]
-    (if (.execute pre (Wake. (util/read-jets jet) tank-cb eff-cb pro))
-      (let [ctx (.context (.prevalentSystem pre))
-            k (boot ctx (util/read-jam pil) tac)
-            k (-> k
-                  (boot-poke eff [[0 :newt (:sen k) 0] :barn 0])
-                  (boot-poke eff [tir :boot :sith 0 0 0])
-                  ;(boot-poke eff [0 :verb 0])
-                  (boot-poke eff (home-sync k syn)))]
-        (.execute pre (Boot. (.locations ctx)
-                             (:arvo k)
-                             (:now k)
-                             (:wen k)
-                             (:sen k)
-                             (:sev k))))
-      (>!! eff (noun [tir [:init 0]])))
-    [(.sen (.prevalentSystem pre))
-     (go-loop []
-      (let [p (<! pok)]
-        (if (nil? p)
-          (do (.takeSnapshot pre)
-              (.close pre)
-              (close! eff)
-              (log/debug "kernel shutdown"))
-          (do (>! eff (noun [tir [:blit [:bee (.head (.tail (.head p)))] 0]]))
-              (.execute pre (Poke. p))
-              (>! eff (noun [tir [:blit [:bee 0] 0]]))
-              (recur)))))]))
+        eff-cb  (reify Consumer 
+                  (accept [this es] (dispatch!! eff es)))
+        init    #(do (if (.execute pre (Wake. (util/read-jets jet) tank-cb eff-cb pro))
+                       (let [ctx (.context (.prevalentSystem pre))
+                             k (boot ctx (util/read-jam pil) tac)
+                             k (-> k
+                                   (boot-poke eff [[0 :newt (:sen k) 0] :barn 0])
+                                   (boot-poke eff [tir :boot :sith 0 0 0])
+                                   ;(boot-poke eff [0 :verb 0])
+                                   (boot-poke eff (home-sync k syn)))]
+                         (.execute pre (Boot. (.locations ctx)
+                                              (:arvo k)
+                                              (:now k)
+                                              (:wen k)
+                                              (:sen k)
+                                              (:sev k))))
+                       (>!! eff (noun [tir [:init 0]])))
+                     (.sen (.prevalentSystem pre)))
+        kth      (Thread.
+                   #(loop []
+                      (let [p (<!! pok)]
+                        (if (nil? p)
+                          (do (.takeSnapshot pre)
+                              (.close pre)
+                              (close! eff)
+                              (log/debug "kernel shutdown"))
+                          (do (>!! eff (noun [tir [:blit [:bee (.head (.tail (.head p)))] 0]]))
+                              (.execute pre (Poke. p))
+                              (>!! eff (noun [tir [:blit [:bee 0] 0]]))
+                              (recur))))))]
+    [init kth]))
 ;                cal ([req]
 ;                     (if (nil? req)
 ;                       false

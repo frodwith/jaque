@@ -24,6 +24,8 @@ import com.oracle.truffle.api.nodes.RootNode;
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.BlockException;
 import net.frodwith.jaque.Caller;
+import net.frodwith.jaque.Fail;
+import net.frodwith.jaque.Interrupt;
 import net.frodwith.jaque.KickLabel;
 import net.frodwith.jaque.Location;
 import net.frodwith.jaque.data.Atom;
@@ -77,6 +79,14 @@ public class Context implements Serializable {
     public long total;
     public long own;
   }
+  
+  private static final Object 
+    INTR = Atom.mote("intr"),
+    OVER = Atom.mote("over"),
+    MEME = Atom.mote("meme"),
+    EXIT = Atom.mote("exit");
+  
+  private static final Cell nullGul = new Trel(new Trel(1L, 0L, 0L).toCell(), 0L, 0L).toCell();
   
   // these can't be serialized
   public transient Map<KickLabel, CallTarget> kicks;
@@ -275,6 +285,10 @@ public class Context implements Serializable {
     return wrap(() -> kick(mutateGate(gate, sample), 2L));
   }
   
+  public Cell softSlam(Cell gate, Object sample) {
+    return softRun(nullGul, () -> kick(mutateGate(gate, sample), 2L));
+  }
+  
   public Function<Object, Object> slammer(Cell gate) {
     return (sam) -> slam(gate, sam);
   }
@@ -452,16 +466,21 @@ public class Context implements Serializable {
       Cell tone = new Cell(2L, levels.peek().stacks);
       Cell toon = Cell.expect(caller.kernel("mook", tone));
       assert(Atom.equals(2L, toon.head));
-      StringBuilder buf = new StringBuilder();
-      for ( Object tank : new List(toon.tail) ) {
-        Object wall = Tank.wash(0L, 80L, tank);
-        for ( Object tape : new List(wall) ) {
-          buf.append(Tape.toString(tape));
-          buf.append('\n');
-        }
-      }
-      err(buf.toString());
+      dumpStack(toon.tail);
     }
+  }
+  
+  @TruffleBoundary
+  public void dumpStack(Object trace) {
+    StringBuilder buf = new StringBuilder();
+    for ( Object tank : new List(trace) ) {
+      Object wall = Tank.wash(0L, 80L, tank);
+      for ( Object tape : new List(wall) ) {
+        buf.append(Tape.toString(tape));
+        buf.append('\n');
+      }
+    }
+    err(buf.toString());
   }
 
   /* Top-level interpeter entry point */
@@ -488,24 +507,62 @@ public class Context implements Serializable {
     }
   }
   
+  //Suppler<toon>
+  public Cell softTop(Supplier<Cell> f) {
+    Object cod, tax;
+    try {
+      Cell toon = f.get();
+      switch ( Atom.expectInt(toon.head) ) {
+      case 0:
+        return toon;
+      case 1:
+        err("toplevel block");
+        assert(false); // don't use toplevel .^!!
+        return null;
+      case 2:
+        cod = EXIT;
+        tax = toon.tail;
+        break;
+      default:
+        err("bad toplevel toon" + Noun.toString(toon));
+        assert(false);
+        return null;
+      }
+    }
+    catch (Fail e) {
+      cod = e.mote;
+      tax = e.trace;
+    }
+    Object mok = caller.kernel("mook", new Cell(2L, tax));
+    return new Cell(cod, Cell.expect(mok).tail);
+  }
+  
   public Cell softRun(Cell escapeGate, Supplier<Object> fn) {
     Road r = new Road(escapeGate);
     levels.push(r);
+    Object trace, fail;
     try {
       return new Cell(0L, fn.get());
     }
-    // XX: Ctrl-C is not handled yet
     catch (BlockException e) {
       return new Trel(1L, e.gof, 0L).toCell();
     }
     catch (Bail e) {
       return new Cell(2L, r.stacks);
     }
+    catch (Interrupt e) {
+      err("INTERRUPT!");
+      throw new Fail(INTR, r.stacks);
+    }
     catch (StackOverflowError e) {
-      return new Trel(3L, Atom.mote("over"), r.stacks).toCell();
+      trace = r.stacks;
+      throw new Fail(OVER, r.stacks);
     }
     catch (OutOfMemoryError e) {
-      return new Trel(3L, Atom.mote("meme"), r.stacks).toCell();
+      throw new Fail(MEME, r.stacks);
+    }
+    catch (Fail e) {
+      throw new Fail(e.mote, List.weld(e.trace, r.stacks));
     }
     finally {
       levels.pop();
