@@ -210,8 +210,7 @@
                     (if (nil? belt)
                       (log/debug "keystroke listener shutdown")
                       (do (if (Noun/equals (noun [:belt :ctl (long \c)]) belt)
-                            (do (prn "CTRL-C!!!")
-                                (.interrupt kth))
+                            (.interrupt kth)
                             (>!! poke (noun [wire belt])))
                           (recur)))))))))
 

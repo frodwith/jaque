@@ -20,6 +20,7 @@
       prevayler.Wake
       truffle.Context
       data.List
+      data.Tape
       data.Time
       data.Noun
       data.Cell
@@ -138,17 +139,31 @@
                        (>!! eff (noun [tir [:init 0]])))
                      (.sen (.prevalentSystem pre)))
         kth      (Thread.
-                   #(loop []
-                      (let [p (<!! pok)]
-                        (if (nil? p)
-                          (do (.takeSnapshot pre)
-                              (.close pre)
-                              (close! eff)
-                              (log/debug "kernel shutdown"))
-                          (do (>!! eff (noun [tir [:blit [:bee (.head (.tail (.head p)))] 0]]))
-                              (.execute pre (Poke. p))
-                              (>!! eff (noun [tir [:blit [:bee 0] 0]]))
-                              (recur))))))]
+                   (fn again []
+                      (try
+                        (loop []
+                          (let [p (<!! pok)]
+                            (if (= p :ignore) ;insurance
+                              (recur)
+                              (if (nil? p)
+                                (do (.takeSnapshot pre)
+                                    (.close pre)
+                                    (close! eff)
+                                    (log/debug "kernel shutdown"))
+                                (do (>!! eff (noun [tir [:blit [:bee (.head (.tail (.head p)))] 0]]))
+                                    (.execute pre (Poke. p))
+                                    (>!! eff (noun [tir [:blit [:bee 0] 0]]))
+                                    (recur))))))
+                        (catch InterruptedException e
+                          ; possibly a core.async bug, but after an interrupt
+                          ; the next thing is ignored
+                          (>!! pok :ignore)
+                          (>!! eff (noun [tir :blit [[:mor 0]
+                                                     [:lin (Tape/fromString "interrupt")]
+                                                     [:bel 0]
+                                                     [:mor 0]
+                                                     0]]))
+                          (again)))))]
     [init kth]))
 ;                cal ([req]
 ;                     (if (nil? req)
