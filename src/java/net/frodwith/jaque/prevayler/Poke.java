@@ -4,7 +4,6 @@ import java.util.Date;
 
 import org.prevayler.Transaction;
 
-import net.frodwith.jaque.Fail;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.List;
@@ -12,8 +11,8 @@ import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.data.Qual;
 import net.frodwith.jaque.data.Tank;
 import net.frodwith.jaque.data.Tape;
-import net.frodwith.jaque.data.Time;
 import net.frodwith.jaque.data.Trel;
+import net.frodwith.jaque.truffle.Context;
 
 public class Poke implements Transaction<PrevalentSystem> {
   private static final Object
@@ -24,9 +23,15 @@ public class Poke implements Transaction<PrevalentSystem> {
     WARN = Atom.mote("warn");
 
   public Object event;
+  public Object time;
+  /* transient result allows us to recompute result during playback
+   * without storing the arvo core in the poke */
+  public transient Cell result;
 
-  public Poke(Object event) {
+  public Poke(Object event, Object time) {
     this.event = event;
+    this.time = time;
+    this.result = null;
   }
   
   private String punt(long width, Object tan) {
@@ -39,15 +44,15 @@ public class Poke implements Transaction<PrevalentSystem> {
     return buf.toString();
   }
   
-  @Override
-  public void executeOn(PrevalentSystem s, Date now) {
-    Cell pokeGate = s.axisGate(42L);
-    Object t = Time.fromInstant(now.toInstant());
-    Cell gon = s.context.softTop(() -> s.context.softSlam(pokeGate, new Cell(t, this.event)));
+  /* we "cheat" from outside a little bit to compute result before calling execute
+   * this gives us an opportunity not to record a poke if we didn't finish computation,
+   * allowing us to match vere's drop-if-not-completed semantics */
+  public void deliver(Context ctx, Object arvo) {
+    Cell pokeGate = Cell.expect(ctx.nock(arvo, new Qual(9L, 42L, 0L, 1L).toCell()));
+    Cell gon = ctx.softTop(() -> ctx.softSlam(pokeGate, new Cell(this.time, this.event)));
     if ( Noun.equals(0L, gon.head) ) {
-      Cell pro = Cell.expect(gon.tail);
-      s.arvo = pro.tail;
-      s.effect(pro.head);
+      result = Cell.expect(gon.tail);
+      return;
     }
     else {
       Object why = gon.head,
@@ -57,34 +62,41 @@ public class Poke implements Transaction<PrevalentSystem> {
       if ( Noun.equals(EXIT, why) && Noun.equals(HEAR, Cell.expect(ovo.tail).head) ) {
         // FIXME -- some method of getting the terminal width is necessary
         // 80 is duct tape
-        s.context.err(punt(80L, tan));
+        ctx.err(punt(80L, tan));
         bov = new Trel(ovo.head, HOLE, Cell.expect(ovo.tail).tail).toCell();
       }
       else {
         bov = new Qual(ovo.head, CRUD, why, tan).toCell();
       }
-      gon = s.context.softTop(() -> s.context.softSlam(pokeGate, new Cell(t, bov)));
+      gon = ctx.softTop(() -> ctx.softSlam(pokeGate, new Cell(this.time, bov)));
       if ( Noun.equals(0L, gon.head) ) {
-        Cell pro = Cell.expect(gon.tail);
-        s.arvo = pro.tail;
-        s.effect(pro.head);
+        result = Cell.expect(gon.tail);
+        return;
       }
       else {
         Cell vab = new Trel(bov.head, WARN, Tape.fromString("crude crash!")).toCell();
-        gon = s.context.softTop(() -> s.context.softSlam(pokeGate, new Cell(t, vab)));
+        gon = ctx.softTop(() -> ctx.softSlam(pokeGate, new Cell(this.time, vab)));
         if ( Noun.equals(0L,  gon.head ) ) {
-          Cell pro = Cell.expect(gon.tail);
-          s.arvo = pro.tail;
-          s.effect(pro.head);
+          result = Cell.expect(gon.tail);
+          return;
         }
         else {
           // FIXME 80
-          s.context.err("crude: all delivery failed!");
-          s.context.err(punt(80L, tan));
+          ctx.err("crude: all delivery failed!");
+          ctx.err(punt(80L, tan));
           throw new RuntimeException("crude");
         }
       }
     }
+  }
+
+  @Override
+  public void executeOn(PrevalentSystem s, Date now) {
+    if ( null == result ) {
+      deliver(s.context, s.arvo);
+    }
+    s.arvo = result.tail;
+    s.effect(result.head);
   }
 
 }

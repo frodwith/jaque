@@ -88,26 +88,6 @@
       (dispatch!! ech eff)
       (assoc k :arvo arv))))
 
-; There are order issues here - if we're going to take the easy way out and
-; always write events as they come in (not insensible), we need to have the
-; terminal up (and accepting ctrl-c) so that a long poke can be interrupted
-; -- alternatively, we can do the processing external to prevayler, and not
-; send the poke to be persisted until we know if it has succeeded
-; (probably correct)
-; i don't want to persist the results, is the problem.
-
-; i think basically we have to do the exception handling and re-poking of
-; lameness in the transaction object, and simply time-out pokes during
-; boot. in this way, if any poke was interrupted before the interrupt
-; handler could say "nope, actually this was lame", (say by kill -9)
-; we'll treat it like a network packet - we'll try to run it for a minute
-; or so and then drop it. we can also make sure that a user attention key
-; and a spinner are present so ctrl-c can cancel it.
-
-; this is a compromise due to Prevayler's seemingly very opinionated idea that
-; events should be written to the log as soon as they are recieved, and not
-; after the transaction is finished. Since prevayler is open source, we could
-; patch this in. I think the above compromise is acceptable, however.
 (defn start [{pro :profile, 
               jet :jet-path, syn :sync-path, pir :pier-path, pil :pill-path
               eff :effect-channel, tac :tank-channel, pok :poke-channel}]
@@ -151,18 +131,22 @@
                                     (close! eff)
                                     (log/debug "kernel shutdown"))
                                 (do (>!! eff (noun [tir [:blit [:bee (.head (.tail (.head p)))] 0]]))
-                                    (.execute pre (Poke. p))
+                                    (let [sys (.prevalentSystem pre)
+                                          ctx (.context sys)
+                                          arv (.arvo sys)
+                                          tx  (Poke. p (Time/now))]
+                                      (.deliver tx ctx arv) ; throws on delivery failure
+                                                            ; drop-if-not-completed
+                                      (.execute pre tx))
                                     (>!! eff (noun [tir [:blit [:bee 0] 0]]))
                                     (recur))))))
                         (catch InterruptedException e
                           ; possibly a core.async bug, but after an interrupt
                           ; the next thing is ignored
                           (>!! pok :ignore)
-                          (>!! eff (noun [tir :blit [[:mor 0]
+                          (>!! eff (noun [tir :blit [[:bel 0] [:mor 0]
                                                      [:lin (Tape/fromString "interrupt")]
-                                                     [:bel 0]
-                                                     [:mor 0]
-                                                     0]]))
+                                                     [:mor 0] 0]]))
                           (again)))))]
     [init kth]))
 ;                cal ([req]
