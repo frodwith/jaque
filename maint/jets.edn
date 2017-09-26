@@ -81,5 +81,4 @@
          ["k151/mood/hoon/lore" "net.frodwith.jaque.truffle.nodes.jet.LoreNodeGen"]
          ["k151/mood/hoon/jam" "net.frodwith.jaque.truffle.nodes.jet.JamNodeGen"]
          ["k151/mood/hoon/cue" "net.frodwith.jaque.truffle.nodes.jet.CueNodeGen"]
-         ["k151/mood/hoon/arvo/down/mark" "net.frodwith.jaque.truffle.nodes.jet.DownNodeGen"]
          ]}

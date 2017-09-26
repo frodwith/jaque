@@ -50,4 +50,5 @@
                  [ring/ring-jetty-adapter "1.5.0"]
                  [hawk "0.2.11"]
                  [clj-http "3.6.1"]
+                 [http-kit "2.2.0"]
                  [slingshot "0.12.2"]])

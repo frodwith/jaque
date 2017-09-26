@@ -61,19 +61,26 @@
     (.write out byts)))
 
 (defn path-to-noun [base path]
-  (let [nested   (map (fn [p]
-                        (let [s (.toString p)]
-                          (string/split s #"\.")))
-                      path)
-        cords    (map #(Atom/stringToCord %) (flatten nested))
-        pax      (seq->it cords)
-        file     (.toFile (.resolve base path))
-        dat      (if (.exists file)
-                   (let [mime [:text :plain 0]
-                         size (.length file)
-                         contents (atom-from-file file)]
-                     [0 mime size contents])
-                   0)]
+  (let [fpat  (.resolve base path)
+        file  (.toFile fpat)
+        fnam  (.getName file)
+        dot   (string/last-index-of fnam \.)
+        bef   (subs fnam 0 dot)
+        aft   (subs fnam (inc dot))
+        namp  (remove string/blank? [bef aft])
+        parp  (.getParent fpat)
+        full  (if (= 0 (.compareTo base parp))
+                namp
+                (concat (.relativize base (.getParent fpat))
+                        namp))
+        cords (map #(Atom/stringToCord (.toString %)) full)
+        pax   (seq->it cords)
+        dat   (if (.exists file)
+                (let [mime [:text :plain 0]
+                      size (.length file)
+                      contents (atom-from-file file)]
+                  [0 mime size contents])
+                0)]
     (noun [pax dat])))
 
 (defn dir-can [dir]

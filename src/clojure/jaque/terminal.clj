@@ -33,7 +33,7 @@
   (spin [this caption])
   (clr [this])
   (hop [this to-column])
-  (line [this text])
+  (line [this text keep?])
   (scroll [this])
   (save [this root-dir path-seq content-bytes])
   (link [this url])
@@ -70,7 +70,7 @@
   BlitSink   
   (clr [this] (.clear this))
   (commit [this] (.refresh this))
-  (link [this url] (doto this (line url) scroll))
+  (link [this url] (doto this (line url false) scroll))
   (hop [this col]
     (let [pos (.getCursorPosition this)
           scr ^JaqueScreen this]
@@ -81,7 +81,7 @@
       (util/write-file fil content-bytes)))
   (restore [this]
     (let [scr ^JaqueScreen this]
-      (line this (.lastLine scr))
+      (line this (.lastLine scr) false)
       (hop this (.lastHop scr))))
   (dimensions [this]
     (let [s (.getTerminalSize this)]
@@ -99,7 +99,7 @@
       (doto this
         (.scrollLines 0 bottom 1)
         (.setCursorPosition newpos))))
-  (line [this text]
+  (line [this text keep?]
     (let [[cols rows] (dimensions this)
           row  (dec rows)
           cln  (scrub-control-chars text)
@@ -109,7 +109,7 @@
         (.setCharacter this i row (TextCharacter. c)))
       (doseq [i (range len cols)]
         (.setCharacter this i row (TextCharacter. \space)))
-      (set! (. scr lastLine) text)
+      (when keep? (set! (. scr lastLine) text))
       (set! (. scr stripChars) (- (.length text) len)))))
 
 (defn- make-lanterna []
@@ -135,7 +135,7 @@
   (let [[cols _] (dimensions sink)]
     (doseq [string (tank-seq (long cols) tank)]
       (doto sink
-        (line string)
+        (line string false)
         (scroll)))
     (commit sink)))
 
@@ -153,7 +153,7 @@
       "bel" (put! beep :beep)
       "clr" (clr sink)
       "hop" (hop sink (Atom/expectLong data))
-      "lin" (line sink (Tape/toString data))
+      "lin" (line sink (Tape/toString data) true)
       "mor" (scroll sink)
       "sav" (let [pax (List. (.head data))
                   pad (Atom/toByteArray (.tail data))]

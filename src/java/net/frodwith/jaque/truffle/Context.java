@@ -551,7 +551,6 @@ public class Context implements Serializable {
       return new Cell(2L, r.stacks);
     }
     catch (Interrupt e) {
-      err("INTERRUPT!");
       throw new Fail(INTR, r.stacks);
     }
     catch (StackOverflowError e) {

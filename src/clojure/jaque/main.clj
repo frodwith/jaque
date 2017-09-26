@@ -5,9 +5,11 @@
             [jaque.terminal :as term]
             [jaque.fs :as fs]
             [jaque.util :as util]
+            [jaque.http :as http]
             [jaque.noun :refer [noun]]
             [jaque.kernel :as kern])
-  (:import (net.frodwith.jaque.data Cell))
+  (:import (org.httpkit.server AsyncChannel) ; to make the loader for main AOT happy
+           (net.frodwith.jaque.data Cell))
   (:gen-class))
 
 (defn- by-wire [^Cell ovum]
@@ -16,9 +18,7 @@
 (defn run [options]
   (let [poke    (chan) ; shutdown by terminal (logo)
         tank    (chan) ; shutdown by terminal (logo)
-        ;call   (chan)
         eff     (chan) ; shutdown by kernel
-        ;http   (chan)
         effects (pub eff by-wire)
         home    (:home options)
         [kinit kth]
@@ -44,6 +44,10 @@
                    :poke-channel   poke
                    :mount-dir      home
                    :sen            sen})]
+    (http/start
+      {:effect-pub     effects
+       :poke-channel   poke
+       :port           8080})
     (.start kth)
     (<!! term-ch)
     (<!! fs-ch)
