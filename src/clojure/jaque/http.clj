@@ -46,47 +46,52 @@
                  med url hed bod]]
         (noun [pox fav])))))
 
+(defn handle-req [poke effects stop req]
+  (http/with-channel req ch
+    (let [client (Atom/stringToCord (name (gensym "http-server-request")))
+          wire   (noun [0 :http client 0])
+          poke-n (request-to-poke wire req)]
+      (if (nil? poke-n)
+        (do (http/send! ch {:status 500})
+            (http/close ch))
+        (let [rch (async/chan)]
+          (async/sub effects wire rch)
+          (async/go
+            (if-not (async/>! poke poke-n)
+              (stop)
+              (let [res (async/<! rch)]
+                (if (nil? res)
+                  (stop)
+                  (let [httr (.tail (.tail res))
+                        stat (int (.head httr))
+                        tats (.tail httr)
+                        hedr (.head tats)
+                        hmap (reduce
+                               (fn [m pair]
+                                 (let [k (Atom/cordToString (.head pair))
+                                       v (Atom/cordToString (.tail pair))]
+                                   (assoc m k v)))
+                               {}
+                               (List. hedr))
+                        unit (.tail tats)
+                        body (if-not (Noun/isCell unit)
+                               nil
+                               (let [octs (.tail unit)
+                                     siz  (.head octs)
+                                     at   (.tail octs)]
+                                 (ByteArrayInputStream. (Atom/toByteArray at))))]
+                    (async/close! rch)
+                    (http/send! ch {:status stat, :headers hmap, :body body})
+                    (http/close ch)))))))))))
+
 (defn start [{poke :poke-channel, effects :effect-pub, port :port}]
-  (let [shutdown (atom nil)
-        app      (fn [req]
-                   (http/with-channel req ch
-                     (let [client (Atom/stringToCord (name (gensym "http-server-request")))
-                           wire   (noun [0 :http client 0])
-                           poke-n (request-to-poke wire req)]
-                       (if (nil? poke-n)
-                         (do (http/send! ch {:status 500})
-                             (http/close ch))
-                         (let [rch (async/chan)]
-                           (async/sub effects wire rch)
-                           (log/debug (Noun/toString poke-n))
-                           (async/go
-                             (if-not (async/>! poke poke-n)
-                               (do (log/debug "http server shutdown")
-                                   (@shutdown))
-                               (let [res (async/<! rch)]
-                                 (if (nil? res)
-                                   (do (log/debug "http server shutdown")
-                                       (@shutdown))
-                                   (let [httr (.tail (.tail res))
-                                         stat (int (.head httr))
-                                         tats (.tail httr)
-                                         hedr (.head tats)
-                                         hmap (reduce 
-                                                (fn [m pair]
-                                                  (assoc m
-                                                         (Atom/cordToString (.head pair))
-                                                         (Atom/cordToString (.tail pair))))
-                                                {}
-                                                (List. hedr))
-                                         unit (.tail tats)
-                                         body (if-not (Noun/isCell unit)
-                                                nil
-                                                (let [octs (.tail unit)
-                                                      siz  (.head octs)
-                                                      at   (.tail octs)]
-                                                  (ByteArrayInputStream. (Atom/toByteArray at))))]
-                                     (async/close! rch)
-                                     (http/send! ch {:status stat, :headers hmap, :body body})
-                                     (http/close ch)))))))))))
-        shut-fn  (http/run-server app {:port port, :ip "127.0.0.1"})]
-    (swap! shutdown (fn [old & args] shut-fn))))
+  (let [satom (atom nil)
+        stop  #(let [f @satom]
+                 (when-not (nil? f)
+                   (swap! satom (fn [&_] nil))
+                   (log/debug "http server shutdown")
+                   (f)))
+        app   (partial handle-req poke effects stop)
+        ret   (http/run-server app {:port port, :ip "127.0.0.1"})]
+    (swap! satom (fn [&_] ret))
+    stop))

@@ -9,6 +9,8 @@
             [jaque.noun :refer [noun]]
             [jaque.kernel :as kern])
   (:import (org.httpkit.server AsyncChannel) ; to make the loader for main AOT happy
+           (java.net ServerSocket)
+           (java.io IOException)
            (net.frodwith.jaque.data Cell))
   (:gen-class))
 
@@ -43,15 +45,16 @@
                   {:effect-pub     effects
                    :poke-channel   poke
                    :mount-dir      home
-                   :sen            sen})]
-    (http/start
-      {:effect-pub     effects
-       :poke-channel   poke
-       :port           8080})
+                   :sen            sen})
+        stop-http (http/start
+                    {:effect-pub     effects
+                     :poke-channel   poke
+                     :port           (:eyre-port options)})]
     (.start kth)
     (<!! term-ch)
     (<!! fs-ch)
-    (.join kth)))
+    (.join kth)
+    (stop-http)))
 
 (defn exists? [is-dir path]
   (let [f (io/as-file path)]
@@ -62,21 +65,36 @@
 (def directory-exists? (partial exists? true))
 (def file-exists? (partial exists? false))
 
+(defn tcp-port-open? [port]
+  (let [ss (try (doto (ServerSocket. port)
+                      (.setReuseAddress true))
+             (catch IOException e
+               nil))]
+    (if (nil? ss)
+      false
+      (do (.close ss)
+          true))))
+
 (def cli-options
   [["-P" "--profile"   "Enable profiling dump"]
    ["-B" "--pill PATH" "Path to solid pill"
     :parse-fn io/as-file
-    :validate [#(.exists %) #(.isFile %)]]
+    :validate [#(and (.exists %) (.isFile %)) "pill not found"]]
    ["-J" "--jets PATH" "Path to EDN jet config"
     :parse-fn io/as-file
-    :validate [#(.exists %) #(.isFile %)]]
+    :validate [#(and (.exists %) (.isFile %)) "jet config not found"]]
    ["-A" "--arvo PATH" "Path to initial sync directory"
     :parse-fn io/as-file
-    :validate [#(.exists %) #(.isDirectory %)]]
+    :validate [#(and (.exists %) (.isDirectory %)) "initial sync not found"]]
+   ["-E" "--eyre-port PORTNUM" "port number for eyre http server"
+    :default 8080
+    :parse-fn #(Integer/parseInt %)
+    :validate [tcp-port-open? "eyre port not available"]]
    ["-H" "--home PATH" "Path to pier home directory"
     :parse-fn io/as-file
     :validate [#(or (not (.exists %))
-                    (and (.exists %) (.isDirectory %)))]]
+                    (and (.exists %) (.isDirectory %)))
+               "invalid pier directory"]]
    ["-h" "--help"]])
 
 (defn -main [& args]
