@@ -92,7 +92,8 @@
           spin (.getSpinChar ^JaqueScreen this)
           full (str spin \u00AB caption \u00BB)]
       (doseq [[c i] (index-str full)]
-        (.setCharacter this i row (TextCharacter. c)))))
+        (let [tc (if (Character/isISOControl c) \? c)]
+          (.setCharacter this i row (TextCharacter. tc))))))
   (scroll [this]
     (let [bottom (dec (.getRows (.getTerminalSize this)))
           newpos (TerminalPosition. 0 bottom)]

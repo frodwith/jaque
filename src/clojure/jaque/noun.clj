@@ -1,6 +1,6 @@
 (ns jaque.noun
   (:import clojure.lang.BigInt
-           (net.frodwith.jaque.data Atom Cell Noun)))
+           (net.frodwith.jaque.data Atom Cell Noun Trel)))
 
 (defn atom? [a]
   (Noun/isAtom a))
@@ -33,3 +33,11 @@
 (defn seq->it [s]
   (noun (conj (into [] s) 0)))
 
+(defn nlr->seq [nlr]
+  (if (= 0 nlr)
+    nil
+    (let [t (Trel/expect nlr)
+          n [(.p t)]
+          l (nlr->seq (.q t))
+          r (nlr->seq (.r t))]
+      (concat n l r))))

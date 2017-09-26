@@ -3,9 +3,11 @@
   (:require [clojure.core.async :as async]
             [clojure.tools.logging :as log]
             [clojure.string :as string]
-            [org.httpkit.server :as http])
+            [org.httpkit.client :as client]
+            [org.httpkit.server :as server])
   (:import java.io.ByteArrayInputStream
-           (net.frodwith.jaque.data Atom Noun List)))
+           (java.net URI InetAddress)
+           (net.frodwith.jaque.data Atom Noun Trel List)))
 
 (defn capitalize [low]
   (-> low 
@@ -47,13 +49,13 @@
         (noun [pox fav])))))
 
 (defn handle-req [poke effects stop req]
-  (http/with-channel req ch
-    (let [client (Atom/stringToCord (name (gensym "http-server-request")))
-          wire   (noun [0 :http client 0])
+  (server/with-channel req ch
+    (let [cname  (Atom/stringToCord (name (gensym "http-server-request")))
+          wire   (noun [0 :http cname 0])
           poke-n (request-to-poke wire req)]
       (if (nil? poke-n)
-        (do (http/send! ch {:status 500})
-            (http/close ch))
+        (do (server/send! ch {:status 500})
+            (server/close ch))
         (let [rch (async/chan)]
           (async/sub effects wire rch)
           (async/go
@@ -81,10 +83,85 @@
                                      at   (.tail octs)]
                                  (ByteArrayInputStream. (Atom/toByteArray at))))]
                     (async/close! rch)
-                    (http/send! ch {:status stat, :headers hmap, :body body})
-                    (http/close ch)))))))))))
+                    (server/send! ch {:status stat, :headers hmap, :body body})
+                    (server/close ch)))))))))))
 
-(defn start [{poke :poke-channel, effects :effect-pub, port :port}]
+(defn- purl-to-uri [purl]
+  (let [purl (Trel/expect purl)
+        hart (Trel/expect (.p purl))
+        sec  (.p hart)
+        port (.q hart)
+        host (.r hart)
+        pork (.q purl)
+        quay (.r purl)
+        hoss (if (= Atom/YES (.head host))
+               (string/join "." (reverse (map #(Atom/cordToString %) (List. (.tail host)))))
+               (str (InetAddress/getByAddress (Atom/toByteArray (.tail host)))))
+        foo  (log/debug "hoss:" hoss)
+        scem (if (= sec Atom/YES) "https" "http")
+        foo  (log/debug "scem:" scem)
+        auth (if (= port 0)
+               hoss
+               (format "%s:%d" hoss (.tail port)))
+        foo  (log/debug "auth:" auth)
+        path (str "/"
+                  (let [jon (string/join "/" (map #(Atom/cordToString %) (List. (.tail pork))))]
+                    (if (= 0 (.head pork))
+                      jon
+                      (format "%s.%s" jon (Atom/cordToString (.head pork))))))
+        foo  (log/debug "path:" path)
+        pars (map (fn [p]
+                    (let [k (.head p), v (.tail p)]
+                      (if (= 0 v)
+                        (Atom/cordToString k)
+                        (format "%s=%s" (Atom/cordToString k) (Atom/cordToString v)))))
+                  (List. quay))
+        quer (string/join "&" pars)
+        foo  (log/debug "quer:" quer)]
+    (URI. scem auth path quer "")))
+
+(defn- start-client [poke reqs]
+  (async/go-loop []
+    (let [e (async/<! reqs)]
+      (if (nil? e)
+        (log/debug "http client shutting down")
+        (let [pax  (.head e)
+              fav  (.tail e)
+              seqn (.head (.tail fav))
+              unit (.tail (.tail fav))]
+          (if (= unit 0)
+            (do (log/warn "thus: cancel?")
+                (recur))
+            (let [hiss (.tail unit)
+                  moth (Trel/expect (.tail hiss))
+                  meth (.p moth)
+                  math (.q moth)
+                  uoct (.r moth)
+                  opts {:url (str (purl-to-uri (.head hiss)))
+                        :as :byte-array
+                        :method (keyword (Atom/cordToString meth))
+                        :body (if (= 0 uoct)
+                                nil
+                                (Atom/toByteArray (.tail (.tail uoct))))
+                        :headers (reduce (fn [m p]
+                                           (let [k  (Atom/cordToString (.head p))
+                                                 vs (map #(Atom/cordToString %) (.tail p))]
+                                             (assoc m k (string/join "," vs))))
+                                         {} (nlr->seq math))}]
+              (client/request opts
+                (fn [{:keys [status headers body]}]
+                  (let [mess (seq->it (map (fn [[k v]]
+                                             (noun [(Atom/stringToCord (capitalize (name k)))
+                                                    (Atom/stringToCord v)]))
+                                           headers))
+                        uoct (if (nil? body)
+                               0
+                               (noun [0 (alength body) (Atom/fromByteArray body)]))
+                        httr [:they seqn (long status) mess uoct]]
+                    (async/put! poke (noun [pax httr])))))
+              (recur))))))))
+
+(defn start [{poke :poke-channel, effects :effect-pub, port :port, sen :sen}]
   (let [satom (atom nil)
         stop  #(let [f @satom]
                  (when-not (nil? f)
@@ -92,6 +169,11 @@
                    (log/debug "http server shutdown")
                    (f)))
         app   (partial handle-req poke effects stop)
-        ret   (http/run-server app {:port port, :ip "127.0.0.1"})]
+        wire  (noun [0 :http sen 0])
+        reqs  (async/chan)
+        ret   (server/run-server app {:port port, :ip "127.0.0.1"})]
+    (async/sub effects wire reqs)
+    (start-client poke reqs)
+    (async/put! poke (noun [wire :born 0]))
     (swap! satom (fn [&_] ret))
     stop))

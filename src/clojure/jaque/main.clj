@@ -49,6 +49,7 @@
         stop-http (http/start
                     {:effect-pub     effects
                      :poke-channel   poke
+                     :sen            sen
                      :port           (:eyre-port options)})]
     (.start kth)
     (<!! term-ch)
