@@ -97,27 +97,23 @@
         hoss (if (= Atom/YES (.head host))
                (string/join "." (reverse (map #(Atom/cordToString %) (List. (.tail host)))))
                (str (InetAddress/getByAddress (Atom/toByteArray (.tail host)))))
-        foo  (log/debug "hoss:" hoss)
         scem (if (= sec Atom/YES) "https" "http")
         foo  (log/debug "scem:" scem)
         auth (if (= port 0)
                hoss
                (format "%s:%d" hoss (.tail port)))
-        foo  (log/debug "auth:" auth)
         path (str "/"
                   (let [jon (string/join "/" (map #(Atom/cordToString %) (List. (.tail pork))))]
                     (if (= 0 (.head pork))
                       jon
                       (format "%s.%s" jon (Atom/cordToString (.head pork))))))
-        foo  (log/debug "path:" path)
         pars (map (fn [p]
                     (let [k (.head p), v (.tail p)]
                       (if (= 0 v)
                         (Atom/cordToString k)
                         (format "%s=%s" (Atom/cordToString k) (Atom/cordToString v)))))
                   (List. quay))
-        quer (string/join "&" pars)
-        foo  (log/debug "quer:" quer)]
+        quer (string/join "&" pars)]
     (URI. scem auth path quer "")))
 
 (defn- start-client [poke reqs]
