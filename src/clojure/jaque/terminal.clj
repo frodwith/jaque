@@ -1,7 +1,7 @@
 (ns jaque.terminal
   (:use jaque.noun)
   (:require [clojure.java.io :as io]
-            [clojure.core.async :refer [<! >!! put! alt! close! sub go go-loop chan timeout]]
+            [clojure.core.async :refer [<! >! >!! put! alt! close! sub go go-loop chan timeout]]
             [clojure.string :as string]
             [jaque.util :as util]
             [clojure.tools.logging :as log])
@@ -170,11 +170,9 @@
         tag (Atom/cordToString (.head egg))]
     (case tag
       "init" (let [[rows cols] (dimensions sink)
-                   wir  [0 :term :1 0]
-                   blew (noun [wir :blew rows cols]) 
-                   hail (noun [wir :hail 0])]
-               (put! poke blew)
-               (put! poke hail))
+                   wir  [0 :term :1 0]]
+               (put! poke (noun [wir :blew rows cols]))
+               (put! poke (noun [wir :hail 0])))
       "blit" (do (doseq [ovum (List. (.tail egg))]
                    (blit-one sink save-dir beep spin ovum))
                  (commit sink))
@@ -230,6 +228,11 @@
         do-tank (partial handle-tank sink)]
     (sub effects wire eggs)
     (listen sink poke kth wire)
+    (let [[cols rows] (dimensions sink)
+          wire        [0 :term :1 0]]
+      (put! poke (noun [wire :harm 0]))
+      (put! poke (noun [wire :blew rows cols]))
+      (put! poke (noun [wire :hail 0])))
     (go
       (loop []
         (when (alt! beep (do (do-beep)

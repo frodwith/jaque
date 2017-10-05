@@ -5,7 +5,7 @@
     [clojure.java.io :as io]
     [clojure.string :as string]
     [clojure.tools.logging :as log]
-    [clojure.core.async :refer [put! <! >! <!! >!! alt! close! go go-loop chan pub]])
+    [clojure.core.async :as async])
   (:import 
     (java.nio.file Paths)
     (java.util.function Consumer)
@@ -60,13 +60,13 @@
     (noun [wire :into 0 0 (util/dir-can dir)])))
 
 (defn- dispatch! [ch effects]
-  (go
+  (async/go
     (doseq [e (List. effects)]
-      (>! ch e))))
+      (async/>! ch e))))
 
 (defn dispatch!! [ch effects]
   (doseq [e (List. effects)]
-    (>!! ch e)))
+    (async/>!! ch e)))
 
 (defn- boot-poke [k ech event]
   (let [ctx (:context k)
@@ -78,15 +78,30 @@
             (kernel [this gate-name sample]
               (kernel-call k gate-name sample))
             (slog [this tank]
-              (put! (:slog k) tank))))
-    (>!! ech (noun [tir [:blit [:bee (.head (.tail (.head evt)))] 0]]))
+              (async/put! (:slog k) tank))))
+    (async/>!! ech (noun [tir [:blit [:bee (.head (.tail (.head evt)))] 0]]))
     (let [res (slam k (kernel-axis k 42) [(Time/now) evt])
           eff (.head res)
           arv (.tail res)]
       (set! (.caller ctx) old)
-      (>!! ech (noun [tir [:blit [:bee 0] 0]]))
+      (async/>!! ech (noun [tir [:blit [:bee 0] 0]]))
       (dispatch!! ech eff)
       (assoc k :arvo arv))))
+
+(defn- timers [ua ub]
+  (if (Noun/isCell ua)
+    (if (Noun/isCell ub)
+      (let [a (.tail ua)
+            b (.tail ub)
+            c (Atom/compare a b)]
+        (case c
+          -1 [a [:ames]]
+          0  [a [:ames :behn]]
+          1  [b [:behn]]))
+      [(.tail ua) [:ames]])
+    (if (Noun/isCell ub)
+      [(.tail ub) [:behn]]
+      nil)))
 
 (defn start [{pro :profile, 
               jet :jet-path, syn :sync-path, pir :pier-path, pil :pill-path
@@ -99,10 +114,10 @@
         pre (.create fac)
         tir (noun [0 :term :1 0])
         tank-cb (reify Consumer
-                  (accept [this t] (>!! tac t)))
+                  (accept [this t] (async/>!! tac t)))
         eff-cb  (reify Consumer 
                   (accept [this es] (dispatch!! eff es)))
-        init    #(do (if (.execute pre (Wake. (util/read-jets jet) tank-cb eff-cb pro))
+        init    #(do (when (.execute pre (Wake. (util/read-jets jet) tank-cb eff-cb pro))
                        (let [ctx (.context (.prevalentSystem pre))
                              k (boot ctx (util/read-jam pil) tac)
                              k (-> k
@@ -115,38 +130,50 @@
                                               (:now k)
                                               (:wen k)
                                               (:sen k)
-                                              (:sev k))))
-                       (>!! eff (noun [tir [:init 0]])))
+                                              (:sev k)))))
                      (.sen (.prevalentSystem pre)))
         kth      (Thread.
                    (fn again []
                       (try
                         (loop []
-                          (let [p (<!! pok)]
-                            (if (= p :ignore) ;insurance
-                              (recur)
-                              (if (nil? p)
-                                (do (.takeSnapshot pre)
-                                    (.close pre)
-                                    (close! eff)
-                                    (log/debug "kernel shutdown"))
-                                (do (>!! eff (noun [tir [:blit [:bee (.head (.tail (.head p)))] 0]]))
-                                    (let [sys (.prevalentSystem pre)
-                                          ctx (.context sys)
-                                          arv (.arvo sys)
-                                          tx  (Poke. p (Time/now))]
-                                      (.deliver tx ctx arv) ; throws on delivery failure
-                                                            ; drop-if-not-completed
-                                      (.execute pre tx))
-                                    (>!! eff (noun [tir [:blit [:bee 0] 0]]))
-                                    (recur))))))
+                          (let [sys (.prevalentSystem pre)
+                                ame (.keep sys (noun :ames))
+                                ben (.keep sys (noun :behn))
+                                tim (timers ame ben)
+                                wat (if (nil? tim) 
+                                      (do (log/debug "no timers")
+                                      [pok]
+                                      )(do (log/debug "timers")
+                                      [pok (async/timeout (Time/millisecondsUntil (first tim)))])
+                                      )
+                                [v ch] (async/alts!! wat)]
+                            (if-not (= ch pok)
+                              (do (doseq [k (second tim)]
+                                  (async/put! pok (noun [[0 k 0] :wake 0])))
+                                  (recur))
+                              (if (= v :ignore)
+                                (recur)
+                                (if (nil? v)
+                                  (do (.takeSnapshot pre)
+                                      (.close pre)
+                                      (async/close! eff)
+                                      (log/debug "kernel shutdown"))
+                                  (do (async/>!! eff (noun [tir [:blit [:bee (.head (.tail (.head v)))] 0]]))
+                                      (let [ctx (.context sys)
+                                            arv (.arvo sys)
+                                            tx  (Poke. v (Time/now))]
+                                        (.deliver tx ctx arv) ; throws on delivery failure
+                                        ; drop-if-not-completed
+                                        (.execute pre tx))
+                                      (async/>!! eff (noun [tir [:blit [:bee 0] 0]]))
+                                      (recur)))))))
                         (catch InterruptedException e
                           ; possibly a core.async bug, but after an interrupt
                           ; the next thing is ignored
-                          (>!! pok :ignore)
-                          (>!! eff (noun [tir :blit [[:bel 0] [:mor 0]
-                                                     [:lin (Tape/fromString "interrupt")]
-                                                     [:mor 0] 0]]))
+                          (async/>!! pok :ignore)
+                          (async/>!! eff (noun [tir :blit [[:bel 0] [:mor 0]
+                                                           [:lin (Tape/fromString "interrupt")]
+                                                           [:mor 0] 0]]))
                           (again)))))]
     [init kth]))
 ;                cal ([req]
