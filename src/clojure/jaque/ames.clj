@@ -15,10 +15,10 @@
         d (format "%s.urbit.org" n)
         a (InetAddress/getByName d)]
     (log/debug (format "resolved ~%s to %s" n a))
-    (swap! galaxy-cache (assoc galaxy-cache imp {:address a, :expires (.plusMillis (Instant/now) 300)}))
+    (swap! galaxy-cache (fn [old] (assoc old imp {:address a, :expires (.plusMillis (Instant/now) 300)})))
     a))
 
-(defn- galaxy-dns [imp]
+(defn galaxy-dns [imp]
   (let [old (@galaxy-cache imp)]
     (if (nil? old)
       (refresh-galaxy-dns! imp)
