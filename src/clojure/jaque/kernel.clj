@@ -8,6 +8,7 @@
     [clojure.core.async :as async])
   (:import 
     (java.nio.file Paths)
+    (java.security SecureRandom)
     (java.util.function Consumer)
     (org.prevayler
       foundation.serialization.JavaSerializer
@@ -19,6 +20,7 @@
       prevayler.Poke
       prevayler.Wake
       truffle.Context
+      truffle.TypesGen
       data.List
       data.Tape
       data.Time
@@ -40,7 +42,13 @@
 (defn- kernel-call [k n s]
   (slam k (wish k n) s))
 
-(defn- boot [ctx pill slog]
+(defn- assoc-unit [m k u]
+  (assoc m k
+    (if (Noun/isCell u)
+      (.tail u)
+      0)))
+
+(defn- boot [ctx pill slog id ticket]
   (let [ken (.head pill)
         roc (.tail pill)
         cor (.nock ctx 0 ken) ; "to bind jets"
@@ -50,10 +58,17 @@
              :now da
              :arvo roc
              :context ctx
-             :slog slog}]
-    (assoc k
-      :wen (kernel-call k "scot" [:da da])
-      :sen (kernel-call k "scot" [:uv uv]))))
+             :slog slog}
+        k   (assoc k :wen (kernel-call k "scot" [:da da])
+                     :sen (kernel-call k "scot" [:uv uv]))
+        k   (if (nil? id)
+              k
+              (assoc-unit k :who (kernel-call k "slaw" [:p (Atom/stringToCord id)])))
+        k   (if (nil? ticket)
+              k
+              (assoc-unit k :gun (kernel-call k "slaw" [:p (Atom/stringToCord ticket)])))
+        who (:who k)]
+    (assoc k :galaxy (and (not (nil? who)) (TypesGen/isLong who) (= -1 (Atom/compare who 256))))))
 
 (defn- home-sync [k dir]
   (let [wire [0 :sync (:sen k) 0]]
@@ -103,7 +118,13 @@
       [(.tail ub) [:behn]]
       nil)))
 
-(defn start [{pro :profile, 
+(defn- make-auth [k fake]
+  (let [fat (if fake Atom/YES Atom/NO)]
+    (if (:galaxy k)
+      [:sith (:who k) [0 (if fake 0 (:gun k))] fat]
+      [:make 0 11 (Atom/fromByteArray (.generateSeed (SecureRandom.) 64)) fat])))
+
+(defn start [{pro :profile, id :identity, ticket :ticket, fake :fake,
               jet :jet-path, syn :sync-path, pir :pier-path, pil :pill-path
               eff :effect-channel, tac :tank-channel, pok :poke-channel}]
   (let [pdir (util/pier-path pir ".urb" "prevayler")
@@ -119,19 +140,25 @@
                   (accept [this es] (dispatch!! eff es)))
         init    #(do (when (.execute pre (Wake. (util/read-jets jet) tank-cb eff-cb pro))
                        (let [ctx (.context (.prevalentSystem pre))
-                             k (boot ctx (util/read-jam pil) tac)
-                             k (-> k
-                                   (boot-poke eff [[0 :newt (:sen k) 0] :barn 0])
-                                   (boot-poke eff [tir :boot :sith 0 0 0])
-                                   ;(boot-poke eff [0 :verb 0])
-                                   (boot-poke eff (home-sync k syn)))]
+                             k (boot ctx (util/read-jam pil) tac id ticket)
+                             k (boot-poke k eff [[0 :newt (:sen k) 0] :barn 0])
+                             k (boot-poke k eff [tir :boot (make-auth k fake)])
+                             k (if (:galaxy k)
+                                 (boot-poke k eff (home-sync k syn))
+                                 (if (:who k)
+                                   (boot-poke k eff [tir :tick (:who k) (:gun k)])
+                                   k))]
                          (.execute pre (Boot. (.locations ctx)
                                               (:arvo k)
+                                              (:who k)
                                               (:now k)
                                               (:wen k)
                                               (:sen k)
                                               (:sev k)))))
-                     (.sen (.prevalentSystem pre)))
+                     (let [sys (.prevalentSystem pre)
+                           who (.who sys)
+                           galaxy (and (TypesGen/isLong who) (< who 256 ))]
+                       [(.sen sys) who galaxy]))
         kth      (Thread.
                    (fn again []
                       (try
@@ -141,11 +168,8 @@
                                 ben (.keep sys (noun :behn))
                                 tim (timers ame ben)
                                 wat (if (nil? tim) 
-                                      (do (log/debug "no timers")
                                       [pok]
-                                      )(do (log/debug "timers")
                                       [pok (async/timeout (Time/millisecondsUntil (first tim)))])
-                                      )
                                 [v ch] (async/alts!! wat)]
                             (if-not (= ch pok)
                               (do (doseq [k (second tim)]

@@ -20,11 +20,12 @@ import net.frodwith.jaque.Location;
 
 public class Boot implements Transaction<PrevalentSystem> {
   public HashMap<Cell,Location> locations;
-  public Object arvo, now, wen, sen, sev;
+  public Object arvo, who, now, wen, sen, sev;
 
-  public Boot(HashMap<Cell,Location> locations, Object arvo, Object now, Object wen, Object sen, Object sev) {
+  public Boot(HashMap<Cell,Location> locations, Object arvo, Object who, Object now, Object wen, Object sen, Object sev) {
     this.locations = locations;
     this.arvo = arvo;
+    this.who = who;
     this.now = now;
     this.wen = wen;
     this.sen = sen;
@@ -38,6 +39,7 @@ public class Boot implements Transaction<PrevalentSystem> {
       s.context.locations.putAll(locations);
     }
     s.arvo = this.arvo;
+    s.who = this.who;
     s.now = this.now;
     s.wen = this.wen;
     s.sev = this.sev;

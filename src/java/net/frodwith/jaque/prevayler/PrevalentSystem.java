@@ -15,6 +15,7 @@ import net.frodwith.jaque.truffle.Context;
 public class PrevalentSystem implements Serializable, Caller {
   public Context context;
   public Object arvo;
+  public Object who;
   public Object now;
   public Object wen;
   public Object sev;
@@ -42,7 +43,6 @@ public class PrevalentSystem implements Serializable, Caller {
     Cell hap = new Trel(0L, type, 0L).toCell(),
          sam = new Cell(Time.now(), hap);
 
-    System.out.println("keep " + Noun.toString(sam));
     return context.wrapSlam(axisGate(4L), sam);
   }
   

@@ -2,14 +2,16 @@
   (:require [clojure.java.io :as io]
             [clojure.core.async :refer [chan pub <!!]]
             [clojure.tools.cli :as cli]
+            [clojure.string :as string]
             [jaque.terminal :as term]
             [jaque.fs :as fs]
+            [jaque.ames :as ames]
             [jaque.util :as util]
             [jaque.http :as http]
             [jaque.noun :refer [noun]]
             [jaque.kernel :as kern])
   (:import (org.httpkit.server AsyncChannel) ; to make the loader for main AOT happy
-           (java.net ServerSocket)
+           (java.net ServerSocket InetAddress)
            (java.io IOException)
            (net.frodwith.jaque.data Cell))
   (:gen-class))
@@ -23,12 +25,17 @@
         eff     (chan) ; shutdown by kernel
         effects (pub eff by-wire)
         home    (:home options)
+        fake    (:fake options)
+        local   (:local-czars options)
         [kinit kth]
           (kern/start 
             {:profile        (contains? options :profile)
              :jet-path       (:jets options)
              :pill-path      (:pill options)
              :sync-path      (:arvo options)
+             :identity       (:identity options)
+             :ticket         (:ticket options)
+             :fake           fake
              :pier-path      home
              :effect-channel eff
              :tank-channel   tank
@@ -40,12 +47,25 @@
                    :poke-channel   poke
                    :kernel-thread  kth
                    :save-root      (util/pier-path home ".urb" "put")})
-        sen     (kinit)
+        [sen who galaxy] (kinit)
         fs-ch   (fs/start
                   {:effect-pub     effects
                    :poke-channel   poke
                    :mount-dir      home
                    :sen            sen})
+        ames-ch (ames/start
+                  {:effect-pub     effects
+                   :poke-channel   poke
+                   :sen            sen
+                   :identity       who
+                   :galaxy         galaxy
+                   :local-czars    local
+                   :ames-port      (if galaxy
+                                     (+ who (if local 31337 13337))
+                                     (:ames-port options))
+                   :ames-host      (if local
+                                     (InetAddress/getLoopbackAddress)
+                                     (:ames-host options))})
         stop-http (http/start
                     {:effect-pub     effects
                      :poke-channel   poke
@@ -54,6 +74,7 @@
     (.start kth)
     (<!! term-ch)
     (<!! fs-ch)
+    (<!! ames-ch)
     (.join kth)
     (stop-http)))
 
@@ -76,8 +97,19 @@
       (do (.close ss)
           true))))
 
+(defn- add-sig [s]
+  (if (string/starts-with? s "~")
+    s
+    (str "~" s)))
+
 (def cli-options
   [["-P" "--profile"   "Enable profiling dump"]
+   ["-F" "--fake" "use null security (implies -L)"]
+   ["-L" "--local-czars" "talk to galaxies only on localhost"]
+   ["-I" "--identity SHIPNAME" "Ship name (e.g. samzod-dozzod)"
+    :parse-fn add-sig]
+   ["-t" "--ticket TICKET" "Bootup crypto secret (e.g. samzod-dozzod-samzod-dozzod)"
+    :parse-fn add-sig]
    ["-B" "--pill PATH" "Path to solid pill"
     :parse-fn io/as-file
     :validate [#(and (.exists %) (.isFile %)) "pill not found"]]
@@ -91,6 +123,12 @@
     :default 8080
     :parse-fn #(Integer/parseInt %)
     :validate [tcp-port-open? "eyre port not available"]]
+   ["-p" "--ames-port PORT" "local udp port for ames to listen on"
+    :default 0
+    :parse-fn #(Integer/parseInt %)]
+   ["-l" "--ames-host HOST" "local host for ames to listen on"
+    :default (InetAddress/getByName "0.0.0.0")
+    :parse-fn #(InetAddress/getByName %)]
    ["-H" "--home PATH" "Path to pier home directory"
     :parse-fn io/as-file
     :validate [#(or (not (.exists %))
@@ -104,5 +142,5 @@
         (println summary)
 			errors
         (println errors)
-      :else
-        (run options))))
+      :else (let [o (if (:fake options) (assoc options :local-czars true) options)]
+              (run o)))))
