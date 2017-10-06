@@ -26,63 +26,66 @@
         (refresh-galaxy-dns! imp)
         (:address old)))))
 
-(defn- czarify [fake addr]
+(defn- czarify [local addr]
   (let [inet (.getAddress addr)
+        karl (local :czars)
         byts (.getAddress inet)]
     (if-not (and (= 0 (aget byts 0))
                  (= 0 (aget byts 1))
                  (= 1 (aget byts 2)))
       addr
       (let [i (aget byts 3)
-            a (if fake (InetAddress/getLocalHost) (galaxy-dns i))
-            p (+ i (if fake 31337 13337))]
+            a (if karl (InetAddress/getLocalHost) (galaxy-dns i))
+            p (+ i (if karl 31337 13337))]
         (InetSocketAddress. a p)))))
 
-(defn- lane-help [fake local-port pad]
+(defn- lane-help [local pad]
   (let [ad (.head pad)
         po (.tail pad)]
     (if (= 0 ad)
-      (InetSocketAddress. (InetAddress/getLocalHost) local-port)
-      (czarify fake
+      (InetSocketAddress. (local :host) (local :port))
+      (czarify local
         (InetSocketAddress.
           (InetAddress/getByAddress (Atom/toByteArray ad))
           (Atom/expectLong po))))))
 
-(defn- lane->address [fake local-port lane]
+(defn- lane->address [local lane]
   (loop [lane lane]
     (let [pad (.tail (.tail lane))]
       (case (keyword (Atom/cordToString (.head lane)))
-        :if (lane-help fake local-port pad)
+        :if (lane-help local pad)
         :is (let [pq (.head pad)]
               (if (= pq 0)
                 nil
                 (recur (.tail pq))))
-        :ix (lane-help local-port pad)
+        :ix (lane-help local pad)
         nil))))
 
-(defn server-thread [poke host port]
+(defn server-thread [poke ^DatagramSocket srv]
   (Thread.
-    #(let [srv (DatagramSocket. host port)]
-       (log/info (format "ames: on %s, UDP %d" host port))
-       (try
-         (loop []
-           (let [pack (.recieve srv)
-                 mesg (-> pack (.getData) (Atom/fromByteArray))
-                 addr (-> pack (.getAddress) (.getAddress) (Atom/fromByteArray))
-                 port (long (.getPort pack))
-                 opac (async/chan)
-                 wire [0 :ames 0]
-                 ovum [[0 :ames 0] :hear [:if (Time/now) port addr] mesg]]
-             (async/put! poke ovum)
-             (if (Thread/interrupted)
-               (throw (InterruptedException.))
-               (recur))))
-         (catch InterruptedException e
-           (log/debug "ames server shutdown"))))))
+    (fn []
+      (log/info (format "ames: on %s, UDP %d" (.getInetAdress srv) (.getPort srv)))
+      (try
+        (loop []
+          (let [pack (.recieve srv)
+                mesg (-> pack (.getData) (Atom/fromByteArray))
+                addr (-> pack (.getAddress) (.getAddress) (Atom/fromByteArray))
+                port (long (.getPort pack))
+                opac (async/chan)
+                wire [0 :ames 0]
+                ovum [[0 :ames 0] :hear [:if (Time/now) port addr] mesg]]
+            (async/put! poke ovum)
+            (if (Thread/interrupted)
+              (throw (InterruptedException.))
+              (recur))))
+        (catch InterruptedException e
+          (log/debug "ames server shutdown"))))))
 
 (defn start [{poke :poke-channel, effects :effect-pub, sen :sen, 
-              fake :fake, port :port, ^InetAddress host :host-address}]
-  (let [sth  (server-thread poke host port)
+              local :localhost-czars, port :ames-port, ^InetAddress host :ames-host}]
+  (let [srv  (DatagramSocket. host port)
+        loc  {:czars local, :host (.getInetAddress srv), :port (.getPort srv)}
+        sth  (server-thread poke srv)
         paks (async/chan)
         wire [0 :newt sen 0]]
     (async/put! (noun [wire :barn 0]))
@@ -99,7 +102,7 @@
                           lan (.head ld)
                           pac (.tail ld)
                           byt (Atom/toByteArray pac)
-                          adr (lane->address fake port lan)]
+                          adr (lane->address loc lan)]
                       (if (nil? adr)
                         (log/error "ames: bad lane" (Noun/toString lan))
                         (doto (DatagramSocket.)
