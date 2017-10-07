@@ -137,4 +137,50 @@ public class List implements Iterable<Object> {
     }
     return r;
   }
+  
+  // longest common subsequence
+  // credit to: https://rosettacode.org/wiki/Longest_common_subsequence#Dynamic_Programming_3
+  public static Object loss(Object a, Object b) {
+    int i, j, lea = Atom.expectInt(lent(a)), leb = Atom.expectInt(lent(b));
+    int[][] lens = new int[lea+1][leb+1];
+    Object[] aa = new Object[lea], bb = new Object[leb];
+    
+    i = 0;
+    for ( Object o : new List(a) ) {
+      aa[i++] = o;
+    }
+    
+    i = 0;
+    for ( Object o : new List(b) ) {
+      bb[i++] = o;
+    }
+    
+    for ( i = 0; i < lea; ++i ) {
+      for ( j = 0; j < leb; ++j ) {
+        if ( Noun.equals(aa[i], bb[j]) ) {
+          lens[i+1][j+1] = lens[i][j] + 1;
+        }
+        else {
+          lens[i+1][j+1] = Math.max(lens[i+1][j], lens[i][j+1]);
+        }
+      }
+    }
+    
+    Object r = 0L;
+    for ( i = lea, j = leb;
+          i != 0 && j != 0; ) {
+      if ( lens[i][j] == lens[i-1][j] ) {
+        --i;
+      }
+      else if ( lens[i][j] == lens[i][j-1] ) {
+        --j;
+      }
+      else {
+        assert aa[i-1] == bb[j-1];
+        --i; --j;
+        r = new Cell(aa[i],r);
+      }
+    }
+    return r;
+  }
 }

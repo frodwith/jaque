@@ -79,6 +79,7 @@
          ;misc
          ["k151/mood/hoon/trip" "net.frodwith.jaque.truffle.nodes.jet.TripNodeGen"]
          ["k151/mood/hoon/lore" "net.frodwith.jaque.truffle.nodes.jet.LoreNodeGen"]
+         ["k151/mood/hoon/loss" "net.frodwith.jaque.truffle.nodes.jet.LossNodeGen"]
          ["k151/mood/hoon/jam" "net.frodwith.jaque.truffle.nodes.jet.JamNodeGen"]
          ["k151/mood/hoon/cue" "net.frodwith.jaque.truffle.nodes.jet.CueNodeGen"]
          ]}
