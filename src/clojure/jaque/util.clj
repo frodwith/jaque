@@ -21,20 +21,22 @@
                 (let [k (Class/forName class-name)]
                   (if (isa? k ImplementationNode)
                     k
-                    (throw (Exception. (str "Invalid jet class" class-name))))))
-
-        gates (map (fn [[label class-name]]
-                     (AxisArm. label 2 (klass class-name)))
-                   (:gates jets))
-        arms  (map (fn [[label typ class-name]]
-                     (let [k (klass class-name)]
-                       (cond (contains? typ :name) 
-                               (NamedArm. label (:name typ) k)
-                             (contains? typ :axis)
-                               (AxisArm. label (:axis typ) k)
-                             :else (throw (Exception. (str "Invalid arm type" typ))))))
-                   (:arms jets))]
-    (into-array Arm (concat arms gates))))
+                    (throw (Exception. (str "Invalid jet class" class-name))))))]
+    (into-array Arm
+      ((fn collect-from-core [pfx cor]
+         (let [[n a & c] cor
+               fix (conj pfx n)
+               label (string/join "/" (map name fix))
+               arms (if (string? a)
+                      [(AxisArm. label 2 (klass a))]
+                      (map (fn [[k v]]
+                               (if (keyword? k)
+                                 (NamedArm. label (name k) (klass v))
+                                 (AxisArm. label k (klass v))))
+                           a))]
+           (apply (partial concat arms)
+                  (map (partial collect-from-core fix) c))))
+       [] jets))))
 
 (defn atom-from-file [file]
   (with-open [out (java.io.ByteArrayOutputStream.)]
