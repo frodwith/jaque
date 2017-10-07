@@ -4,7 +4,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 
 import net.frodwith.jaque.data.Atom;
 
-public abstract class AesCbccEnNode extends TrelGateNode {
+public abstract class AesCbccEnNode extends AesCbcNode {
 
   @Specialization
   protected Object en(Object key, Object iv, Object msg) {
