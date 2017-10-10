@@ -98,7 +98,6 @@
                (string/join "." (reverse (map #(Atom/cordToString %) (List. (.tail host)))))
                (str (InetAddress/getByAddress (Atom/toByteArray (.tail host)))))
         scem (if (= sec Atom/YES) "https" "http")
-        foo  (log/debug "scem:" scem)
         auth (if (= port 0)
                hoss
                (format "%s:%d" hoss (.tail port)))

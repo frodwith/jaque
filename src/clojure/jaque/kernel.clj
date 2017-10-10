@@ -134,6 +134,15 @@
               (.configureTransactionDeepCopy false))
         pre (.create fac)
         tir (noun [0 :term :1 0])
+        poke! (fn [v]
+                (async/put! eff (noun [tir [:blit [:bee (.head (.tail (.head v)))] 0]]))
+                (let [sys (.prevalentSystem pre)
+                      ctx (.context sys)
+                      arv (.arvo sys)
+                      tx  (Poke. v (Time/now))]
+                  (.deliver tx ctx arv)
+                  (.execute pre tx))
+                (async/put! eff (noun [tir [:blit [:bee 0] 0]])))
         tank-cb (reify Consumer
                   (accept [this t] (async/>!! tac t)))
         eff-cb  (reify Consumer 
@@ -173,24 +182,16 @@
                                 [v ch] (async/alts!! wat)]
                             (if-not (= ch pok)
                               (do (doseq [k (second tim)]
-                                  (async/put! pok (noun [[0 k 0] :wake 0])))
+                                    (poke! (noun [[0 k 0] :wake 0])))
                                   (recur))
-                              (if (= v :ignore)
-                                (recur)
-                                (if (nil? v)
-                                  (do (.takeSnapshot pre)
-                                      (.close pre)
-                                      (async/close! eff)
-                                      (log/debug "kernel shutdown"))
-                                  (do (async/>!! eff (noun [tir [:blit [:bee (.head (.tail (.head v)))] 0]]))
-                                      (let [ctx (.context sys)
-                                            arv (.arvo sys)
-                                            tx  (Poke. v (Time/now))]
-                                        (.deliver tx ctx arv) ; throws on delivery failure
-                                        ; drop-if-not-completed
-                                        (.execute pre tx))
-                                      (async/>!! eff (noun [tir [:blit [:bee 0] 0]]))
-                                      (recur)))))))
+                              (case v
+                                    :ignore (recur)
+                                    nil     (do (.takeSnapshot pre)
+                                                (.close pre)
+                                                (async/close! eff)
+                                                (log/debug "kernel shutdown"))
+                                    (do (poke! v)
+                                        (recur))))))
                         (catch InterruptedException e
                           ; possibly a core.async bug, but after an interrupt
                           ; the next thing is ignored

@@ -1624,9 +1624,10 @@ public class Atom {
   }
   
   private static Object sha_help(Object len, Object atom, String algo) {
-    byte[] in  = Atom.toByteArray(cut((byte)3, 0L, len, atom)),
-           out = doSha(algo, in);
-    return Atom.fromByteArray(out);
+    int lei = expectInt(len);
+    byte[] an = toByteArray(atom), in = new byte[lei];
+    System.arraycopy(an, 0, in, 0, Math.min(lei, an.length));
+    return Atom.fromByteArray(doSha(algo, in));
   }
   
   public static Object shal(Object len, Object atom) {
