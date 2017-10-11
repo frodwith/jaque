@@ -83,7 +83,7 @@ public class Poke implements Transaction<PrevalentSystem> {
         else {
           // FIXME 80
           ctx.err("crude: all delivery failed!");
-          ctx.err(punt(80L, tan));
+          ctx.err(punt(80L, gon.tail));
           throw new RuntimeException("crude");
         }
       }

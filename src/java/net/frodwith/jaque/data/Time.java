@@ -17,6 +17,17 @@ public class Time {
     return fromInstant(Instant.now());
   }
   
+  /* we round up because because some time is closer than no time when there are fractos */
+  private static long fractosToMillis(long frac) {
+    long num = (frac >>> 48) * 1000,
+         div = 65536L,
+         truc = num / div;
+    return ( num % div == 0 )
+        ? truc
+        : truc + 1;
+  }
+  
+  /*
   public static Instant toInstant(Object atom) {
     long fractos = Atom.expectLong(Atom.cut((byte) 6, 0L, 1L, atom)),
          seconds = Atom.expectLong(Atom.cut((byte) 6, 1L, 1L, atom)),
@@ -24,9 +35,17 @@ public class Time {
          micros  = ((fractos >> 48) * 1000000L) / 65536L;
     return Instant.ofEpochSecond(epoch, micros * 1000);
   }
+  */
   
-  public static long millisecondsUntil(Object atom) {
-    Duration d = Duration.between(Instant.now(), toInstant(atom));
-    return (d.getSeconds() * 1000L) + (d.getNano() / 1000000L);
+  public static long gapMs(Object now, Object wen) {
+    if ( -1 == Atom.compare(now(), wen) ) {
+      Object dif = Atom.sub(wen,  now);
+      long fra = Atom.expectLong(Atom.cut((byte) 6, 0L, 1L, dif)),
+           sec = Atom.expectLong(Atom.cut((byte) 6, 1L, 1L, dif));
+      return (sec * 1000) + fractosToMillis(fra);
+    }
+    else {
+      return 0;
+    }
   }
 }

@@ -31,7 +31,9 @@
                   (throw (IllegalArgumentException.)))))
 
 (defn seq->it [s]
-  (noun (conj (into [] s) 0)))
+  (if (empty? s)
+    0
+    (noun (conj (into [] s) 0))))
 
 (defn nlr->seq [nlr]
   (if (= 0 nlr)

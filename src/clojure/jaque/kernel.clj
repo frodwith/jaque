@@ -135,14 +135,14 @@
         pre (.create fac)
         tir (noun [0 :term :1 0])
         poke! (fn [v]
-                (async/put! eff (noun [tir [:blit [:bee (.head (.tail (.head v)))] 0]]))
+                (async/>!! eff (noun [tir [:blit [:bee (.head (.tail (.head v)))] 0]]))
                 (let [sys (.prevalentSystem pre)
                       ctx (.context sys)
                       arv (.arvo sys)
                       tx  (Poke. v (Time/now))]
                   (.deliver tx ctx arv)
                   (.execute pre tx))
-                (async/put! eff (noun [tir [:blit [:bee 0] 0]])))
+                (async/>!! eff (noun [tir [:blit [:bee 0] 0]])))
         tank-cb (reify Consumer
                   (accept [this t] (async/>!! tac t)))
         eff-cb  (reify Consumer 
@@ -176,22 +176,28 @@
                                 ame (.keep sys (noun :ames))
                                 ben (.keep sys (noun :behn))
                                 tim (timers ame ben)
-                                wat (if (nil? tim) 
-                                      [pok]
-                                      [pok (async/timeout (Time/millisecondsUntil (first tim)))])
-                                [v ch] (async/alts!! wat)]
-                            (if-not (= ch pok)
-                              (do (doseq [k (second tim)]
-                                    (poke! (noun [[0 k 0] :wake 0])))
-                                  (recur))
-                              (case v
-                                    :ignore (recur)
-                                    nil     (do (.takeSnapshot pre)
-                                                (.close pre)
-                                                (async/close! eff)
-                                                (log/debug "kernel shutdown"))
-                                    (do (poke! v)
-                                        (recur))))))
+                                wake! #(doseq [k (second tim)]
+                                         (poke! (noun [[0 k 0] :wake 0])))
+                                recv! (fn [t]
+                                        (let [wat (if (nil? t) [pok] [pok t])
+                                              [v ch] (async/alts!! wat)]
+                                          (if-not (= ch pok)
+                                            (do (wake!) true)
+                                            (case v
+                                              :ignore true
+                                              nil     (do (.takeSnapshot pre)
+                                                          (.close pre)
+                                                          (async/close! eff)
+                                                          (log/debug "kernel shutdown")
+                                                          false)
+                                              (do (poke! v) true)))))]
+                            (if (nil? tim)
+                              (when (recv! nil) (recur))
+                              (let [til (Time/gapMs (Time/now) (first tim))]
+                                (if (<= til 0)
+                                  (do (wake!)
+                                      (recur))
+                                  (when (recv! (async/timeout til)) (recur)))))))
                         (catch InterruptedException e
                           ; possibly a core.async bug, but after an interrupt
                           ; the next thing is ignored

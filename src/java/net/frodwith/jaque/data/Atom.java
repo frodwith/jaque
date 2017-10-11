@@ -864,16 +864,20 @@ public class Atom {
     return (int) al;
   }
   
-  private static byte[] forceBytes(Object a, int maxLen) {
+  public static byte[] forceBytes(Object a, int maxLen) {
+    return forceBytes(a, maxLen, false);
+  }
+  
+  public static byte[] forceBytes(Object a, int maxLen, boolean trim) {
     byte[] src = toByteArray(a);
     if ( src.length == maxLen ) {
       return src;
     }
-    if ( src.length > maxLen ) {
+    if ( !trim && src.length > maxLen ) {
       throw new Bail();
     }
     byte[] r = new byte[maxLen];
-    System.arraycopy(src, 0, r, 0, src.length);
+    System.arraycopy(src, 0, r, 0, Math.min(src.length, maxLen));
     return r;
   }
   
@@ -1622,11 +1626,10 @@ public class Atom {
       throw new Bail();
     }
   }
-  
+
   private static Object sha_help(Object len, Object atom, String algo) {
     int lei = expectInt(len);
-    byte[] an = toByteArray(atom), in = new byte[lei];
-    System.arraycopy(an, 0, in, 0, Math.min(lei, an.length));
+    byte[] in = forceBytes(atom, lei, true);
     return Atom.fromByteArray(doSha(algo, in));
   }
   
