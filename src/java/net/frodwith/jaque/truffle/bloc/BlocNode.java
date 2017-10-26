@@ -8,7 +8,6 @@ import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.truffle.nodes.JaqueNode;
 
 public abstract class BlocNode extends JaqueNode {
@@ -27,7 +26,7 @@ public abstract class BlocNode extends JaqueNode {
       return (Stack<Object>) frame.getObject(STACK);
     }
     catch (FrameSlotTypeException e) {
-      throw new Bail();
+      throw new RuntimeException("fatal frame slot error");
     }
   }
 }

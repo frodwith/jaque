@@ -27,6 +27,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
+import jnr.x86asm.OP;
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.BlockException;
 import net.frodwith.jaque.Caller;
@@ -343,6 +344,17 @@ public class Context implements Serializable {
       }
     }
     return t;
+  }
+  
+  public Object bloc(Cell formula, Object subject) {
+    try {
+      BlockNode main = Block.compile(formula).cps(this);
+      net.frodwith.jaque.truffle.bloc.TopRootNode root = new net.frodwith.jaque.truffle.bloc.TopRootNode(main);
+      return Truffle.getRuntime().createCallTarget(root).call(subject);
+    }
+    catch ( UnexpectedResultException e ) {
+      throw new Bail();
+    }
   }
   
   @TruffleBoundary

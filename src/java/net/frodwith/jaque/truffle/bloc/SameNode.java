@@ -4,8 +4,13 @@ import java.util.Stack;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-public class SameNode extends OpNode {
-  @Child private SameOpNode same = SameOpNodeGen.create();
+public final class SameNode extends OpNode {
+  @Child private SameOpNode same;
+  
+  public SameNode() {
+    this.same = SameOpNodeGen.create();
+    insert(same);
+  }
 
   @Override
   public void execute(VirtualFrame frame) {

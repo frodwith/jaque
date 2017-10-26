@@ -19,6 +19,6 @@ public final class EvalNode extends FlowNode {
     Stack<Object> s = getStack(frame);
     Object formula = s.pop();
     CallTarget t = op.executeTarget(frame, context, formula);
-    return new Continuation(t, this.continuation);
+    return Continuation.call(t, after);
   }
 }

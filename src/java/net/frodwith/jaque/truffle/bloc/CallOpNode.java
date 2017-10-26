@@ -2,45 +2,35 @@ package net.frodwith.jaque.truffle.bloc;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.LinkedList;
-import java.util.Queue;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
-import com.oracle.truffle.api.dsl.NodeField;
-import com.oracle.truffle.api.dsl.NodeFields;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
 import net.frodwith.jaque.Bail;
-import net.frodwith.jaque.KickLabel;
 import net.frodwith.jaque.Location;
-import net.frodwith.jaque.data.Atom;
-import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.data.Axis;
 import net.frodwith.jaque.data.Cell;
+import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.Context;
-import net.frodwith.jaque.truffle.FragmentationException;
 import net.frodwith.jaque.truffle.TypesGen;
-import net.frodwith.jaque.truffle.nodes.FragmentationNode;
 import net.frodwith.jaque.truffle.nodes.JaqueNode;
-import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
 import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
 
 public abstract class CallOpNode extends JaqueNode {
   
-  public abstract Continuation executeCall(VirtualFrame frame, Context context, CallTarget after, Object core, Axis axis);
+  public abstract Continuation executeCall(VirtualFrame frame, Context context, Continuation after, Object core, Axis axis);
   
   @Specialization(
     guards = { "driver != null",
                "same(core.head, cachedBattery)",
                "fineNode.executeFine(frame, core)" })
-  protected Continuation jet(VirtualFrame frame, Context context, CallTarget after, Cell core, Axis axis,
+  protected Continuation jet(VirtualFrame frame, Context context, Continuation after, Cell core, Axis axis,
       @Cached("core.head") Object cachedBattery,
       @Cached("getLocation(context, core)") Location location,
       @Cached("getDriver(context, axis, location, core)") CallTarget driver,
@@ -50,7 +40,7 @@ public abstract class CallOpNode extends JaqueNode {
   }
   
   @Specialization(guards = { "same(core.head, cachedBattery)" })
-  protected Continuation cached(VirtualFrame frame, Context context, CallTarget after, Cell core, Axis axis,
+  protected Continuation cached(VirtualFrame frame, Context context, Continuation after, Cell core, Axis axis,
       @Cached("core.head") Object cachedBattery,
       @Cached("unjetted(context, core, axis)") CallTarget target,
       @Cached("getContinuation(target, after)") Continuation cont) {
@@ -58,7 +48,7 @@ public abstract class CallOpNode extends JaqueNode {
   }
   
   @Specialization
-  protected Continuation uncached(VirtualFrame frame, Context context, CallTarget after, Cell core, Axis axis) {
+  protected Continuation uncached(VirtualFrame frame, Context context, Continuation after, Cell core, Axis axis) {
     return getContinuation(unjetted(context, core, axis), after);
   }
   
@@ -66,8 +56,19 @@ public abstract class CallOpNode extends JaqueNode {
     return Noun.equals(a, b);
   }
   
-  protected static Continuation getContinuation(CallTarget driver, CallTarget after) {
-    return ( null == driver ) ? null : new Continuation(driver, after);
+  protected static Continuation getContinuation(CallTarget target, Continuation k) {
+    if ( null == k.target ) {
+      return Continuation.jump(target);
+    }
+    else if ( null == k.after ) {
+      return Continuation.call(target, k.target);
+    }
+    else {
+      // k is only a continuation because null doesn't pass instanceof, it really can only
+      // represent ret or jump, not a full call
+      assert(false);
+      return null;
+    }
   }
   
   protected static FineCheckNode getFineNode(Location loc) {

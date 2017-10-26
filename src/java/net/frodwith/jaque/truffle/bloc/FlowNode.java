@@ -8,9 +8,9 @@ public abstract class FlowNode extends BlocNode {
   /* if we weren't originally in tail position, there will be
      some code to run after the eval, i.e. a continuation.
      blok exists to arrange this. */
-  @CompilationFinal protected CallTarget continuation = null;
+  @CompilationFinal protected CallTarget after = null;
   public abstract Continuation execute(VirtualFrame frame);
-  public void setContinuation(CallTarget k) {
-    this.continuation = k;
+  public void setAfter(CallTarget target) {
+    after = target;
   }
 }

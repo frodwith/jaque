@@ -13,11 +13,16 @@ public final class CallNode extends FlowNode {
   public CallNode(Context context, Axis axis) {
     this.context = context;
     this.axis = axis;
+    this.opNode = CallOpNodeGen.create();
+    insert(opNode);
   }
 
   @Override
   public Continuation execute(VirtualFrame frame) {
-    return opNode.executeCall(frame, context, this.continuation, getStack(frame).peek(), axis);
+    Continuation k = (null == after)
+                   ? Continuation.ret()
+                   : Continuation.jump(after);
+    return opNode.executeCall(frame, context, k, getStack(frame).peek(), axis);
   }
 
 }

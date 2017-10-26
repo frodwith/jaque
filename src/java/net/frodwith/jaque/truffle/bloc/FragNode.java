@@ -13,7 +13,7 @@ import net.frodwith.jaque.data.Axis;
 import net.frodwith.jaque.data.Fragment;
 
 public final class FragNode extends OpNode {
-  @Children private ReadOpNode[] reads;
+  @Children private final ReadOpNode[] reads;
 
   public FragNode (Axis axis) {
     Queue<ReadOpNode> q = new LinkedList<ReadOpNode>();

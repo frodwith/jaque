@@ -4,8 +4,13 @@ import java.util.Stack;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-public class BumpNode extends OpNode {
-  @Child private BumpOpNode bump = BumpOpNodeGen.create();
+public final class BumpNode extends OpNode {
+  @Child private BumpOpNode bump;
+  
+  public BumpNode() {
+    this.bump = BumpOpNodeGen.create();
+    insert(bump);
+  }
 
   @Override
   public void execute(VirtualFrame frame) {

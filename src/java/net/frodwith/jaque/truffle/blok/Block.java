@@ -38,12 +38,12 @@ public class Block {
   public BlockNode afterCps(Context context, BlockNode continuation) {
     OpNode[] nodeBody;
     FlowNode flow;
-    Op last = body[body.length];
+    Op last = body[body.length-1];
     if ( last.tailOnly() ) {
       nodeBody = new OpNode[body.length-1];
       flow = (FlowNode) last.toNode(context);
       if ( null != continuation ) {
-        flow.setContinuation(Truffle.getRuntime().createCallTarget(new BlockRootNode(continuation)));
+        flow.setAfter(Truffle.getRuntime().createCallTarget(new BlockRootNode(continuation)));
       }
     }
     else {
@@ -71,7 +71,7 @@ public class Block {
         }
         else {
           Block b = new Block(Arrays.copyOfRange(body, 0, i)),
-                k = new Block(Arrays.copyOfRange(body, i+1, body.length+1));
+                k = new Block(Arrays.copyOfRange(body, i+1, body.length));
           return b.afterCps(context, k.cps(context));
         }
       }
@@ -84,9 +84,9 @@ public class Block {
     Queue<Op> q = new LinkedList<Op>();
     if ( TypesGen.isCell(op) ) {
       q.add(new Dup());
-      compile(TypesGen.asCell(op)).addTo(q);
+      compile(TypesGen.expectCell(a)).addTo(q);
       q.add(new Swap());
-      compile(TypesGen.expectCell(op)).addTo(q);
+      compile(TypesGen.asCell(op)).addTo(q);
       q.add(new Cons());
     }
     else {
@@ -129,7 +129,8 @@ public class Block {
           break;
         }
         case 6: {
-          Trel tyn = Trel.orBail(a);
+          Trel tyn = Trel.expect(a);
+          q.add(new Dup());
           compile(TypesGen.expectCell(tyn.p)).addTo(q);
           q.add(new If(compile(TypesGen.expectCell(tyn.q)), 
                        compile(TypesGen.expectCell(tyn.r))));
@@ -145,7 +146,6 @@ public class Block {
           Cell c = TypesGen.expectCell(a);
           q.add(new Dup());
           compile(TypesGen.expectCell(c.head)).addTo(q);
-          q.add(new Swap());
           q.add(new Cons());
           compile(TypesGen.expectCell(c.tail)).addTo(q);
           break;

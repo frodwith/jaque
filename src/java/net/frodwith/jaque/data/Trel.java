@@ -15,7 +15,7 @@ public class Trel {
   
   public static Trel expect(Object noun) throws UnexpectedResultException {
     Cell h = Cell.expect(noun),
-         t = Cell.expect(noun);
+         t = Cell.expect(h.tail);
     return new Trel(h.head, t.head, t.tail);
   }
   

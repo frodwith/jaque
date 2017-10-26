@@ -4,7 +4,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 
 public final class BlockNode extends BlocNode {
-  @Children private OpNode[] body;
+  @Children private final OpNode[] body;
   @Child private FlowNode flow;
   
   public BlockNode(OpNode[] body, FlowNode flow) {
@@ -18,6 +18,6 @@ public final class BlockNode extends BlocNode {
       node.execute(frame);
     }
     
-    return (null == flow) ? null : flow.execute(frame);
+    return (null == flow) ? Continuation.ret() : flow.execute(frame);
   }
 }
