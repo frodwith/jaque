@@ -7,10 +7,10 @@ import net.frodwith.jaque.data.Cell;
 public abstract class CropNode extends PartialMemoNode {
   @Specialization
   public Cell key(Cell core) {
-    Cell pay = Cell.expect(core.tail),
-         van = Cell.expect(pay.tail);
+    Cell pay = Cell.orBail(core.tail),
+         van = Cell.orBail(pay.tail);
          
-    Object sut = Cell.expect(van.tail).head,
+    Object sut = Cell.orBail(van.tail).head,
            ref = pay.head;
     
     return new Cell(tip("crop", van), new Cell(sut, ref));

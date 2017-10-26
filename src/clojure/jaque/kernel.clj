@@ -14,7 +14,7 @@
       foundation.serialization.JavaSerializer
       PrevaylerFactory)
     (net.frodwith.jaque
-      Caller
+      Caller Interrupt
       prevayler.PrevalentSystem
       prevayler.Boot
       prevayler.Poke
@@ -88,6 +88,7 @@
         tir (noun [0 :term :1 0])
         evt (noun event)
         old (.caller ctx)]
+    (try
     (set! (.caller ctx) 
           (reify Caller
             (kernel [this gate-name sample]
@@ -101,7 +102,13 @@
       (set! (.caller ctx) old)
       (async/>!! ech (noun [tir [:blit [:bee 0] 0]]))
       (dispatch!! ech eff)
-      (assoc k :arvo arv))))
+      (assoc k :arvo arv))
+    (catch Error e
+      (.dumpHoonStack ctx)
+      (throw e))
+    (catch Exception e
+      (.dumpHoonStack ctx)
+      (throw e)))))
 
 (defn- timers [ua ub]
   (if (Noun/isCell ua)
@@ -170,42 +177,46 @@
                        [(.sen sys) who galaxy]))
         kth      (Thread.
                    (fn again []
-                      (try
-                        (loop []
-                          (let [sys (.prevalentSystem pre)
-                                ame (.keep sys (noun :ames))
-                                ben (.keep sys (noun :behn))
-                                tim (timers ame ben)
-                                wake! #(doseq [k (second tim)]
-                                         (poke! (noun [[0 k 0] :wake 0])))
-                                recv! (fn [t]
-                                        (let [wat (if (nil? t) [pok] [pok t])
-                                              [v ch] (async/alts!! wat)]
-                                          (if-not (= ch pok)
-                                            (do (wake!) true)
-                                            (case v
-                                              :ignore true
-                                              nil     (do (.takeSnapshot pre)
-                                                          (.close pre)
-                                                          (async/close! eff)
-                                                          (log/debug "kernel shutdown")
-                                                          false)
-                                              (do (poke! v) true)))))]
-                            (if (nil? tim)
-                              (when (recv! nil) (recur))
-                              (let [til (Time/gapMs (Time/now) (first tim))]
-                                (if (<= til 0)
-                                  (do (wake!)
-                                      (recur))
-                                  (when (recv! (async/timeout til)) (recur)))))))
-                        (catch InterruptedException e
-                          ; possibly a core.async bug, but after an interrupt
-                          ; the next thing is ignored
-                          (async/>!! pok :ignore)
-                          (async/>!! eff (noun [tir :blit [[:bel 0] [:mor 0]
-                                                           [:lin (Tape/fromString "interrupt")]
-                                                           [:mor 0] 0]]))
-                          (again)))))]
+                     (letfn [(handle-interrupt []
+                               ; possibly a core.async bug, but after an interrupt
+                               ; the next thing is ignored
+                               (async/put! pok :ignore)
+                               (async/>!! eff (noun [tir :blit [[:bee 0] [:bel 0] [:mor 0]
+                                                                [:lin (Tape/fromString "interrupt")]
+                                                                [:mor 0] 0]]))
+                               (again))]
+                       (try
+                         (loop []
+                           (let [sys (.prevalentSystem pre)
+                                 ame (.keep sys (noun :ames))
+                                 ben (.keep sys (noun :behn))
+                                 tim (timers ame ben)
+                                 wake! #(doseq [k (second tim)]
+                                          (poke! (noun [[0 k 0] :wake 0])))
+                                 recv! (fn [t]
+                                         (let [wat (if (nil? t) [pok] [pok t])
+                                               [v ch] (async/alts!! wat)]
+                                           (if-not (= ch pok)
+                                             (do (wake!) true)
+                                             (case v
+                                               :ignore true
+                                               nil     (do (.takeSnapshot pre)
+                                                           (.close pre)
+                                                           (async/close! eff)
+                                                           (log/debug "kernel shutdown")
+                                                           false)
+                                               (do (poke! v) true)))))]
+                             (if (nil? tim)
+                               (when (recv! nil) (recur))
+                               (let [til (Time/gapMs (Time/now) (first tim))]
+                                 (if (<= til 0)
+                                   (do (wake!)
+                                       (recur))
+                                   (when (recv! (async/timeout til)) (recur)))))))
+                         (catch Interrupt e
+                           (handle-interrupt))
+                         (catch InterruptedException e
+                           (handle-interrupt))))))]
     [init kth]))
 ;                cal ([req]
 ;                     (if (nil? req)

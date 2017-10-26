@@ -21,7 +21,7 @@ public abstract class MuleNode extends SampleContextNode {
     */
     //return getContext().kernel("mute", tap); cheating
     Context context = getContext();
-    return context.slam(Cell.expect(context.hook(Cell.expect(con), "mute")), tap);
+    return context.slam(Cell.orBail(context.hook(Cell.orBail(con), "mute")), tap);
   }
 
 }

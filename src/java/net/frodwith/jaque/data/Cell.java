@@ -1,6 +1,9 @@
 package net.frodwith.jaque.data;
 
 import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Stack;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -87,11 +90,43 @@ public class Cell implements Serializable {
       return false;
     }
   }
+  
+  private static Cell shouldMug(Object o) {
+    if ( TypesGen.isCell(o) ) {
+      Cell c = TypesGen.asCell(o);
+      if ( 0 == c.mug ) {
+        return c;
+      }
+    }
+    return null;
+  }
 
   @TruffleBoundary
   public void calculateMug() {
     if ( 0 == mug ) {
-      mug = mug_both(Noun.mug(head), Noun.mug(tail));
+      // recursion here can cause stack overflows for large nouns,
+      // so we do an explicit iterative post-order traversal
+      Stack<Cell> s = new Stack<Cell>();
+      Object last = null;
+      Cell node = this;
+      while ( null != node || !s.empty() ) {
+        if ( null != node ) {
+          s.push(node);
+          node = shouldMug(node.head);
+        }
+        else {
+          Cell peek = s.peek(),
+               rite = shouldMug(peek.tail);
+
+          if ( null != rite && last != rite ) {
+            node = rite;
+          }
+          else {
+            peek.mug = mug_both(Noun.mug(peek.head), Noun.mug(peek.tail));
+            last = s.pop();
+          }
+        }
+      }
     }
   }
   
@@ -108,7 +143,11 @@ public class Cell implements Serializable {
     return mug;
   }
   
-  public static Cell expect(Object noun) {
+  public static Cell expect(Object noun) throws UnexpectedResultException {
+    return TypesGen.expectCell(noun);
+  }
+  
+  public static Cell orBail(Object noun) {
     try {
       return TypesGen.expectCell(noun);
     }

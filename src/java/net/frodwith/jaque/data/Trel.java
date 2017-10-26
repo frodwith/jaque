@@ -1,5 +1,9 @@
 package net.frodwith.jaque.data;
 
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
+
+import net.frodwith.jaque.Bail;
+
 public class Trel {
   public Object p, q, r;
   
@@ -9,10 +13,19 @@ public class Trel {
     this.r = r;
   }
   
-  public static Trel expect(Object noun) {
+  public static Trel expect(Object noun) throws UnexpectedResultException {
     Cell h = Cell.expect(noun),
-         t = Cell.expect(h.tail);
+         t = Cell.expect(noun);
     return new Trel(h.head, t.head, t.tail);
+  }
+  
+  public static Trel orBail(Object noun) {
+    try {
+      return expect(noun);
+    }
+    catch ( UnexpectedResultException e ) {
+      throw new Bail();
+    }
   }
   
   public Cell toCell() {

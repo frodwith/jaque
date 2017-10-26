@@ -1,5 +1,7 @@
 package net.frodwith.jaque.data;
 
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
+
 public class Qual {
   public Object p, q, r, s;
   
@@ -10,9 +12,16 @@ public class Qual {
     this.s = s;
   }
   
-  public static Qual expect(Object noun) {
+  public static Qual expect(Object noun) throws UnexpectedResultException {
     Cell c = Cell.expect(noun);
     Trel t = Trel.expect(c.tail);
+    return new Qual(c.head, t.p, t.q, t.r);
+  }
+  
+  
+  public static Qual orBail(Object noun) {
+    Cell c = Cell.orBail(noun);
+    Trel t = Trel.orBail(c.tail);
     
     return new Qual(c.head, t.p, t.q, t.r);
   }

@@ -9,7 +9,7 @@ public abstract class RapNode extends PairGateNode {
 
   @Specialization
   protected Object rap(long a, Object b) {
-    return Atom.rap(Atom.expectBloq(a), new List(b));
+    return Atom.rap(Atom.bloqOrBail(a), new List(b));
   }
 
 }

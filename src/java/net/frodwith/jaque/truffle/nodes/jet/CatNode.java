@@ -8,7 +8,7 @@ public abstract class CatNode extends TrelGateNode {
 
   @Specialization
   protected Object cat(long a, Object b, Object c) {
-    return Atom.cat(Atom.expectBloq(a), Atom.expect(b), Atom.expect(c));
+    return Atom.cat(Atom.bloqOrBail(a), Atom.orBail(b), Atom.orBail(c));
   }
 
 }

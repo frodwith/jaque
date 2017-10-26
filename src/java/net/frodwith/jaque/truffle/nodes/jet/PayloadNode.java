@@ -9,7 +9,7 @@ public abstract class PayloadNode extends ImplementationNode {
 
   @Override
   public Object doJet(VirtualFrame frame, Object subject) {
-    return doPayload(frame, Cell.expect(subject).tail);
+    return doPayload(frame, Cell.orBail(subject).tail);
   }
 
 }

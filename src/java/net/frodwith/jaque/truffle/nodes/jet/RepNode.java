@@ -9,7 +9,7 @@ public abstract class RepNode extends PairGateNode {
 
   @Specialization
   protected Object rep(long a, Object b) {
-    return Atom.rep(Atom.expectBloq(a), new List(b));
+    return Atom.rep(Atom.bloqOrBail(a), new List(b));
   }
 
 }

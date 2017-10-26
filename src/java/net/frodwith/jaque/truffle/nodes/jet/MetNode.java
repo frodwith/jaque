@@ -8,7 +8,7 @@ public abstract class MetNode extends PairGateNode {
 
   @Specialization
   protected long met(long a, Object b) {
-    return Atom.met(Atom.expectBloq(a), Atom.expect(b));
+    return Atom.met(Atom.bloqOrBail(a), Atom.orBail(b));
   }
 
 }

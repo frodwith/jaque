@@ -8,7 +8,7 @@ public abstract class AesEcbNode extends SampleContextNode {
   public abstract Object executeEcb(VirtualFrame frame, Object key, Object block);
   
   public Object doSampleContext(VirtualFrame frame, Object sample, Object context) {
-    Object conSam = Cell.expect(Cell.expect(context).tail).head;
+    Object conSam = Cell.orBail(Cell.orBail(context).tail).head;
     return executeEcb(frame, conSam, sample);
   }
 

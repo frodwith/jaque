@@ -124,7 +124,7 @@ public class List implements Iterable<Object> {
       if ( !Noun.isCell(b) ) {
         return 0L;
       }
-      b = Cell.expect(b).tail;
+      b = Cell.orBail(b).tail;
       a = Atom.dec(a);
     }
     return b;
@@ -141,7 +141,7 @@ public class List implements Iterable<Object> {
   // longest common subsequence
   // credit to: https://rosettacode.org/wiki/Longest_common_subsequence#Dynamic_Programming_3
   public static Object loss(Object a, Object b) {
-    int i, j, lea = Atom.expectInt(lent(a)), leb = Atom.expectInt(lent(b));
+    int i, j, lea = Atom.intOrBail(lent(a)), leb = Atom.intOrBail(lent(b));
     int[][] lens = new int[lea+1][leb+1];
     Object[] aa = new Object[lea], bb = new Object[leb];
     

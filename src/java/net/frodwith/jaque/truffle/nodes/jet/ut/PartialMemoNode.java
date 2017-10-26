@@ -53,7 +53,7 @@ public abstract class PartialMemoNode extends ImplementationNode {
 
   @Override
   public Object doJet(VirtualFrame frame, Object core) {
-    Cell key = executeMemoKey(Cell.expect(core));
+    Cell key = executeMemoKey(Cell.orBail(core));
     //String wat = getClass().getSimpleName().substring(0, 4).toLowerCase();
     Object mem = recall(key);
     if ( null == mem ) {

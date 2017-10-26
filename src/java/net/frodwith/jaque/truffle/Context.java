@@ -8,10 +8,15 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Stack;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
+
+import net.frodwith.jaque.truffle.bloc.BlockNode;
+import net.frodwith.jaque.truffle.bloc.BlockRootNode;
+import net.frodwith.jaque.truffle.blok.Block;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerAsserts;
@@ -20,6 +25,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.RootNode;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.BlockException;
@@ -92,6 +98,7 @@ public class Context implements Serializable {
   public transient Map<KickLabel, CallTarget> kicks;
   public transient Map<Object, CallTarget> simpleKicks;
   public transient Map<Cell, CallTarget> nocks;
+  public transient Map<Cell, CallTarget> evalBlocks;
   public transient Caller caller;
 
   // these are per-run, though they could be serialized */
@@ -116,6 +123,7 @@ public class Context implements Serializable {
     kicks = new HashMap<KickLabel, CallTarget>();
     simpleKicks = new HashMap<Object, CallTarget>();
     nocks = new HashMap<Cell, CallTarget>();
+    evalBlocks = new HashMap<Cell, CallTarget>();
     times = null;
     calls = new Stack<Invocation>();
     levels = new Stack<Road>();
@@ -145,6 +153,9 @@ public class Context implements Serializable {
       Arm[] aa = new Arm[al.size()];
       this.drivers.put(e.getKey(), al.toArray(aa));
     }
+    
+    print("running on " + Truffle.getRuntime().getName());
+
   }
   
   private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
@@ -208,7 +219,7 @@ public class Context implements Serializable {
   }
   
   private Cell mutateGate(Cell gate, Object sample) {
-    Cell pay = Cell.expect(gate.tail),
+    Cell pay = Cell.orBail(gate.tail),
          yap = new Cell(sample, pay.tail);
     return  new Cell(gate.head, yap);
   }
@@ -227,8 +238,8 @@ public class Context implements Serializable {
   }
   
   public Function<Object,Object> internalSlam(VirtualFrame frame, JaqueNode holder, Cell core) {
-    Cell bat = Cell.expect(core.head);
-    Cell pay = Cell.expect(core.tail);
+    Cell bat = Cell.orBail(core.head);
+    Cell pay = Cell.orBail(core.tail);
     ImplementationNode jet = gateJet(bat);
     
     if ( null != jet ) {
@@ -293,6 +304,47 @@ public class Context implements Serializable {
     return (sam) -> slam(gate, sam);
   }
   
+  private class Emitter<T> {
+    private Queue<T> code = new LinkedList<T>();
+
+    public void addOp(T o) {
+      code.add(o);
+    }
+    
+    public void addBlock(T[] ops) {
+      for ( T o : ops ) {
+        code.add(o);
+      }
+    }
+    
+    public T[] build() {
+      T[] r = (T[]) new Object[code.size()];
+      int i = 0;
+      while ( !code.isEmpty() ) {
+        r[i++] = code.poll();
+      }
+      return r;
+    }
+  }
+  
+  // nock: expression language, represented as cells
+  // blok: stack-language with nock fundamental ops
+  // bloc: cps-transformed blok, tail calls only, truffle nodes
+  @TruffleBoundary
+  public CallTarget evalByCell(Cell label) {
+    CompilerAsserts.neverPartOfCompilation();
+    CallTarget t = evalBlocks.get(label);
+    if ( null == t ) {
+      try {
+        t = Truffle.getRuntime().createCallTarget(new BlockRootNode(Block.compile(label).cps(this)));
+      }
+      catch ( UnexpectedResultException e ) {
+        throw new Bail();
+      }
+    }
+    return t;
+  }
+  
   @TruffleBoundary
   public FormulaNode parseCell(Cell src, boolean tail) {
     Object op  = src.head,
@@ -313,7 +365,7 @@ public class Context implements Serializable {
             return new IdentityNode();
           }
           else {
-            return new FragmentNode(Atom.expect(arg));
+            return new FragmentNode(Atom.orBail(arg));
           }
         }
         case 1: {
@@ -379,7 +431,7 @@ public class Context implements Serializable {
         case 9: {
           Cell c = TypesGen.asCell(arg),
                t = TypesGen.asCell(c.tail);
-          Axis a = new Axis(Atom.expect(c.head));
+          Axis a = new Axis(Atom.orBail(c.head));
           Fragment first = a.iterator().next();
           FormulaNode core = parseCell(t, false);
 
@@ -464,7 +516,7 @@ public class Context implements Serializable {
   public void dumpHoonStack() {
     if ( null != caller ) {
       Cell tone = new Cell(2L, levels.peek().stacks);
-      Cell toon = Cell.expect(caller.kernel("mook", tone));
+      Cell toon = Cell.orBail(caller.kernel("mook", tone));
       assert(Atom.equals(2L, toon.head));
       dumpStack(toon.tail);
     }
@@ -512,7 +564,7 @@ public class Context implements Serializable {
     Object cod, tax;
     try {
       Cell toon = f.get();
-      switch ( Atom.expectInt(toon.head) ) {
+      switch ( Atom.intOrBail(toon.head) ) {
       case 0:
         return toon;
       case 1:
@@ -533,8 +585,14 @@ public class Context implements Serializable {
       cod = e.mote;
       tax = e.trace;
     }
-    Object mok = caller.kernel("mook", new Cell(2L, tax));
-    return new Cell(cod, Cell.expect(mok).tail);
+    try {
+      Object mok = caller.kernel("mook", new Cell(2L, tax));
+      return new Cell(cod, Cell.orBail(mok).tail);
+    }
+    catch ( Exception e ) {
+      err("mook failure!");
+      return new Cell(cod, 0L);
+    }
   }
   
   public Cell softRun(Cell escapeGate, Supplier<Object> fn) {
@@ -561,6 +619,7 @@ public class Context implements Serializable {
       throw new Fail(MEME, r.stacks);
     }
     catch (Fail e) {
+      err(Atom.cordToString(e.mote));
       throw new Fail(e.mote, List.weld(e.trace, r.stacks));
     }
     finally {
@@ -577,7 +636,7 @@ public class Context implements Serializable {
   @TruffleBoundary
   public void stackPop() {
     Road r = levels.peek();
-    r.stacks = Cell.expect(r.stacks).tail;
+    r.stacks = Cell.orBail(r.stacks).tail;
   }
   
   public class Road {
@@ -637,7 +696,7 @@ public class Context implements Serializable {
 
   @TruffleBoundary
   public Object hook(Cell cor, String name) {
-    Cell bat = Cell.expect(cor.head);
+    Cell bat = Cell.orBail(cor.head);
     Location loc = locations.get(bat);
     if ( null == loc ) {
       return null;
@@ -645,11 +704,16 @@ public class Context implements Serializable {
     Object axis = loc.nameToAxis.get(name);
     if ( null == axis ) {
       // the caller wants a deeper core
-      Object inn = new Axis(loc.axisToParent).fragment(cor);
-      return hook(Cell.expect(inn), name);
+      Object inn = new Axis(loc.axisToParent).fragOrBail(cor);
+      return hook(Cell.orBail(inn), name);
     }
     else {
       return kick(cor, axis);
     }
+  }
+
+  public CallTarget targetByCell(Cell expectCell) {
+    // TODO Auto-generated method stub
+    return null;
   }
 }

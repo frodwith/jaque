@@ -9,16 +9,16 @@ public class Parse {
       return edge;
     }
     else {
-      Cell qvex = Cell.expect(edge.tail);
-      Cell uqvex = Cell.expect(qvex.tail);
-      Cell yit = Cell.expect(rule.apply(uqvex.tail));
-      Object yur = last(Cell.expect(edge.head), Cell.expect(yit.head));
+      Cell qvex = Cell.orBail(edge.tail);
+      Cell uqvex = Cell.orBail(qvex.tail);
+      Cell yit = Cell.orBail(rule.apply(uqvex.tail));
+      Object yur = last(Cell.orBail(edge.head), Cell.orBail(yit.head));
 
       if ( Noun.isAtom(yit.tail) ) {
         return new Cell(yur, 0L);
       }
       else {
-        Cell uqyit = Cell.expect(Cell.expect(yit.tail).tail);
+        Cell uqyit = Cell.orBail(Cell.orBail(yit.tail).tail);
         Object thr = raq.apply(new Cell(uqvex.head, uqyit.head));
         return new Qual(yur, 0L, thr, uqyit.tail).toCell();
       }
@@ -26,10 +26,10 @@ public class Parse {
   }
 
   private static Object last(Cell zyc, Cell naz) {
-    long pzyc = Atom.expectLong(zyc.head),
-         qzyc = Atom.expectLong(zyc.tail),
-         pnaz = Atom.expectLong(naz.head),
-         qnaz = Atom.expectLong(naz.tail);
+    long pzyc = Atom.longOrBail(zyc.head),
+         qzyc = Atom.longOrBail(zyc.tail),
+         pnaz = Atom.longOrBail(naz.head),
+         qnaz = Atom.longOrBail(naz.tail);
 
     return (pzyc == pnaz)
         ? ((Atom.compare(qzyc, qnaz) == 1) ? zyc : naz)

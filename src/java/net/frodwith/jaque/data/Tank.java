@@ -6,8 +6,8 @@ public final class Tank {
   private static final long SPACE = 32L;
 
   private static final Object re_ram(Object tac) {
-    Cell c = Cell.expect(tac);
-    long  tem = Atom.expectLong(c.head);
+    Cell c = Cell.orBail(tac);
+    long  tem = Atom.longOrBail(c.head);
     
     if ( Atom.LEAF.equals(tem) ) {
       return c.tail;
@@ -24,8 +24,8 @@ public final class Tank {
   }
   
   private static final Object re_ram_palm(Object noun) {
-    Cell bub = Cell.expect(noun);
-    Qual qua = Qual.expect(bub.head);
+    Cell bub = Cell.orBail(noun);
+    Qual qua = Qual.orBail(bub.head);
     Trel pur = new Trel(qua.p, List.weld(qua.q, qua.r), qua.s);
     Cell rob = new Cell(pur.toCell(), bub.tail);
 
@@ -33,8 +33,8 @@ public final class Tank {
   }
   
   private static final Object re_ram_rose(Object noun) {
-    Cell bub = Cell.expect(noun);
-    Trel tre = Trel.expect(bub.head);
+    Cell bub = Cell.orBail(noun);
+    Trel tre = Trel.orBail(bub.head);
     
     return List.weld(tre.q, re_ram_rose_in(tre.p, tre.r, bub.tail));
   }
@@ -43,7 +43,7 @@ public final class Tank {
     if ( Atom.isZero(res) ) {
       return r;
     }
-    Cell rec = Cell.expect(res);
+    Cell rec = Cell.orBail(res);
     Object voz = re_ram_rose_in(p, r, rec.tail),
            dex = re_ram(rec.head),
            sin = Atom.isZero(rec.tail) ? voz : List.weld(p, voz);
@@ -52,8 +52,8 @@ public final class Tank {
   }
   
   private static final Object re_win_buc(Object tac, Object tab, Object edg, Object lug) {
-    Cell c = Cell.expect(tac);
-    long tem = Atom.expectLong(c.head);
+    Cell c = Cell.orBail(tac);
+    long tem = Atom.longOrBail(c.head);
     
     if ( Atom.LEAF.equals(tem) ) {
       return re_win_leaf(tac, tab, edg, lug);
@@ -82,7 +82,7 @@ public final class Tank {
   }
   
   private static final Object re_win_leaf(Object tac, Object tab, Object edg, Object lug) {
-    Cell c = Cell.expect(tac);
+    Cell c = Cell.orBail(tac);
     return re_win_rig(c.tail, tab, lug);
   }
   
@@ -91,14 +91,14 @@ public final class Tank {
       return re_win_rig(re_ram(tac), tab, lug);
     }
     else {
-      Cell c = Cell.expect(tac);
-      Cell bub = Cell.expect(c.tail);
-      Qual qua = Qual.expect(bub.head);
+      Cell c = Cell.orBail(tac);
+      Cell bub = Cell.orBail(c.tail);
+      Qual qua = Qual.orBail(bub.head);
       
       if ( Atom.isZero(bub.tail) ) {
         return re_win_rig(qua.q, tab, lug);
       }
-      Cell res = Cell.expect(bub.tail);
+      Cell res = Cell.orBail(bub.tail);
       if ( Atom.isZero(res.tail) ) {
         Object bat = Atom.add(2L,  tab),
                gul = re_win_buc(res.head, tab, edg, lug);
@@ -116,7 +116,7 @@ public final class Tank {
     if ( Atom.isZero(res) ) {
       return lug;
     }
-    Cell c = Cell.expect(res);
+    Cell c = Cell.orBail(res);
     Object cat = c.head,
            sub = Atom.sub(lyn, 2L),
            bat = Atom.add(tab, sub),
@@ -130,9 +130,9 @@ public final class Tank {
   }
 
   private static final Object re_win_rose(Object tac, Object tab, Object edg, Object lug) {
-    Cell c = Cell.expect(tac);
-    Cell bub = Cell.expect(c.tail);
-    Trel tre = Trel.expect(bub.head);
+    Cell c = Cell.orBail(tac);
+    Cell bub = Cell.orBail(c.tail);
+    Trel tre = Trel.orBail(bub.head);
     
     if ( re_win_fit(tac, tab, edg).equals(Atom.YES) ) {
       return re_win_rig(re_ram(tac), tab, lug);
@@ -158,7 +158,7 @@ public final class Tank {
       }
     }
     else {
-      Cell c = Cell.expect(res);
+      Cell c = Cell.orBail(res);
       Object cat = c.head,
              gul = re_win_rose_lug(r, tab, edg, c.tail, lug),
              bat = re_win_din(tab, edg);
@@ -171,7 +171,7 @@ public final class Tank {
       return re_win_rig(hom, tab, lug);
     }
 
-    Cell c = Cell.expect(lug);
+    Cell c = Cell.orBail(lug);
     Object lin = List.lent(hom),
            wug = Atom.increment(Atom.add(tab, lin));
 
@@ -193,7 +193,7 @@ public final class Tank {
     if ( Atom.isZero(wug) ) {
       return Atom.YES;
     }
-    Cell c = Cell.expect(mir);
+    Cell c = Cell.orBail(mir);
     if ( c.head.equals(SPACE) ) {
       return Atom.NO;
     }

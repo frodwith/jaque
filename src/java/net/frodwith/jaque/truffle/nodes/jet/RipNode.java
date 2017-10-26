@@ -8,7 +8,7 @@ public abstract class RipNode extends PairGateNode {
 
   @Specialization
   protected Object rip(long a, Object b) {
-    return Atom.rip(Atom.expectBloq(a), Atom.expect(b));
+    return Atom.rip(Atom.bloqOrBail(a), Atom.orBail(b));
   }
 
 }

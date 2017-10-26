@@ -9,7 +9,7 @@ public abstract class SampleNode extends PayloadNode {
 
   @Override
   public Object doPayload(VirtualFrame frame, Object payload) {
-    return doSample(frame, Cell.expect(payload).head);
+    return doSample(frame, Cell.orBail(payload).head);
   }
 
 }

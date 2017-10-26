@@ -30,8 +30,8 @@ public final class SlogHintNode extends DynamicHintFormula {
   @Override
   public Object executeGeneric(VirtualFrame frame) {
     try {
-      Cell slog = Cell.expect(hint.executeGeneric(frame));
-      Cell tank = Cell.expect(slog.tail);
+      Cell slog = Cell.orBail(hint.executeGeneric(frame));
+      Cell tank = Cell.orBail(slog.tail);
       doSlog(tank);
     }
     catch ( Bail e ) {

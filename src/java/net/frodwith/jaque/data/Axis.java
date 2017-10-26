@@ -38,17 +38,22 @@ public final class Axis implements Iterable<Fragment> {
     this.length = Atom.met(atom) - 1;
   }
 
-  public Object fragment(Object a) {
+  
+  public Object fragOrBail(Object a) {
     try {
-      for ( Fragment f : this ) {
-        Cell c = TypesGen.expectCell(a);
-        a = ( Fragment.HEAD == f ) ? c.head : c.tail;
-      }
-      return a;
+      return fragment(a);
     }
     catch ( UnexpectedResultException e ) {
       throw new Bail();
     }
+  }
+
+  public Object fragment(Object a) throws UnexpectedResultException {
+    for ( Fragment f : this ) {
+      Cell c = TypesGen.expectCell(a);
+      a = ( Fragment.HEAD == f ) ? c.head : c.tail;
+    }
+    return a;
   }
 
   @Override

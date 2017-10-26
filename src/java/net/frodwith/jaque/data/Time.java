@@ -40,8 +40,8 @@ public class Time {
   public static long gapMs(Object now, Object wen) {
     if ( -1 == Atom.compare(now(), wen) ) {
       Object dif = Atom.sub(wen,  now);
-      long fra = Atom.expectLong(Atom.cut((byte) 6, 0L, 1L, dif)),
-           sec = Atom.expectLong(Atom.cut((byte) 6, 1L, 1L, dif));
+      long fra = Atom.longOrBail(Atom.cut((byte) 6, 0L, 1L, dif)),
+           sec = Atom.longOrBail(Atom.cut((byte) 6, 1L, 1L, dif));
       return (sec * 1000) + fractosToMillis(fra);
     }
     else {

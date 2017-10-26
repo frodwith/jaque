@@ -30,12 +30,12 @@ public class PrevalentSystem implements Serializable, Caller {
   public transient Consumer<Object> slogSink, effectSink;
 
   public Cell axisGate(Object axis) {
-    return Cell.expect(context.nock(arvo, new Qual(9L, axis, 0L, 1L).toCell()));
+    return Cell.orBail(context.nock(arvo, new Qual(9L, axis, 0L, 1L).toCell()));
   }
 
   @Override
   public Object kernel(String gateName, Object sample) {
-    Cell gate = Cell.expect(context.wrapSlam(axisGate(20L), Atom.stringToCord(gateName)));
+    Cell gate = Cell.orBail(context.wrapSlam(axisGate(20L), Atom.stringToCord(gateName)));
     return context.wrapSlam(gate, sample);
   }
   

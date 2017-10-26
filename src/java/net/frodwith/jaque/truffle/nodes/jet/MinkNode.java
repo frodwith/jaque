@@ -18,7 +18,7 @@ public abstract class MinkNode extends PairGateNode {
       insert(dispatch);
     }
     Object subject = busfol.head;
-    Cell   formula = Cell.expect(busfol.tail);
+    Cell   formula = Cell.orBail(busfol.tail);
 
     return getContext().softRun(gul, () -> dispatch.executeNock(frame, subject, formula));
   }

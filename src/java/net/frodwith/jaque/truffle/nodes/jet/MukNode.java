@@ -8,9 +8,9 @@ public abstract class MukNode extends TrelGateNode {
 
   @Specialization
   protected long muk(long seed, long length, Object key) {
-    return Atom.muk(Atom.expectUnsignedInt(seed),
-        Atom.expectUnsignedInt(length),
-        Atom.expect(key));
+    return Atom.muk(Atom.unsignedIntOrBail(seed),
+        Atom.unsignedIntOrBail(length),
+        Atom.orBail(key));
   }
 
 }

@@ -9,7 +9,7 @@ public abstract class PairGateNode extends SampleNode {
   
   @Override
   public Object doSample(VirtualFrame frame, Object sample) {
-    Cell c = Cell.expect(sample);
+    Cell c = Cell.orBail(sample);
     return executePair(frame, c.head, c.tail);
   }
 }

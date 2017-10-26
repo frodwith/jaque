@@ -156,10 +156,10 @@
       "hop" (hop sink (Atom/expectLong data))
       "lin" (line sink (Tape/toString data) true)
       "mor" (scroll sink)
-      "sav" (let [pax (List. (.head data))
+      "sav" (let [pax (map #(Atom/cordToString %) (List. (.head data)))
                   pad (Atom/toByteArray (.tail data))]
               (save sink save-dir pax pad))
-      "sag" (let [pax (List. (.head data))
+      "sag" (let [pax (map #(Atom/cordToString %) (List. (.head data)))
                   pad (Atom/toByteArray (Atom/jam (.tail data)))]
               (save sink save-dir pax pad))
       "url" (link sink data)
@@ -209,7 +209,8 @@
                     (if (nil? belt)
                       (log/debug "keystroke listener shutdown")
                       (do (if (Noun/equals (noun [:belt :ctl (long \c)]) belt)
-                            (.interrupt kth)
+                            (do (log/debug "interrupting kernel thread")
+                                (.interrupt kth))
                             (>!! poke (noun [wire belt])))
                           (recur)))))))))
 

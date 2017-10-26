@@ -8,11 +8,11 @@ import net.frodwith.jaque.data.Noun;
 public abstract class FindNode extends PartialMemoNode {
   @Specialization
   public Cell key(Cell core) {
-    Cell pay = Cell.expect(core.tail),
-         van = Cell.expect(pay.tail),
-         sam = Cell.expect(pay.head);
+    Cell pay = Cell.orBail(core.tail),
+         van = Cell.orBail(pay.tail),
+         sam = Cell.orBail(pay.head);
          
-    Object sut = Cell.expect(van.tail).head,
+    Object sut = Cell.orBail(van.tail).head,
            way = sam.head,
            hyp = sam.tail;
     

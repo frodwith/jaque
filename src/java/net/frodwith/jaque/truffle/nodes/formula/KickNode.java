@@ -155,7 +155,7 @@ public abstract class KickNode extends FormulaNode {
       return null;
     }
     try {
-      FormulaNode fallback = context.parseCell(Cell.expect(frag.executeFragment(core)), false);
+      FormulaNode fallback = context.parseCell(Cell.orBail(frag.executeFragment(core)), false);
       Method cons = klass.getMethod("create", Context.class, FormulaNode.class);
       return (ImplementationNode) cons.invoke(null, context, fallback);
     }

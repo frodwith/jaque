@@ -10,10 +10,10 @@ public abstract class CutNode extends TrelGateNode {
   @Specialization
   protected Object cut(long a, Cell bc, Object d) {
     return Atom.cut(
-        Atom.expectBloq(a),
-        Atom.expect(bc.head),
-        Atom.expect(bc.tail),
-        Atom.expect(d));
+        Atom.bloqOrBail(a),
+        Atom.orBail(bc.head),
+        Atom.orBail(bc.tail),
+        Atom.orBail(d));
   }
 
 }

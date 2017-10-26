@@ -94,7 +94,8 @@
         sth  (server-thread poke udp)
         paks (async/chan)
         wire (noun [0 :newt sen 0])]
-    (async/put! poke (noun [wire :barn 0]))
+    (async/put! poke (noun [wire :barn 0])) ; XX - barn is what sets duct, but kick seems like the wake poke?
+    (async/put! poke (noun [[0 :ames 0] :kick 0]))
     (async/sub effects wire paks)
     (.start sth)
     (async/go-loop []

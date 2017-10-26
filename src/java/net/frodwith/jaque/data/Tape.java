@@ -13,7 +13,7 @@ public class Tape {
   public static String toString(Object tape) {
     StringBuilder b = new StringBuilder();
     for ( Object atom : new List(tape)) {
-      b.append((char) Atom.expectInt(atom));
+      b.append((char) Atom.intOrBail(atom));
     }
     return b.toString();
   }

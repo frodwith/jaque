@@ -533,9 +533,9 @@ public class Atom {
   }
   
   public static Object cut(byte a, Object b, Object c, Object d) {
-    int ci, bi = expectInt(b);
+    int ci, bi = intOrBail(b);
     try {
-      ci = expectInt(c);
+      ci = intOrBail(c);
     } 
     catch (Bail e) {
       ci = 0x7fffffff;
@@ -790,7 +790,7 @@ public class Atom {
     int bi;
 
     try {
-      bi = expectInt(b);
+      bi = intOrBail(b);
     }
     catch (Bail e) {
       return c;
@@ -824,40 +824,60 @@ public class Atom {
         || Arrays.equals(TypesGen.asImplicitIntArray(a), TypesGen.asImplicitIntArray(b));
   }
   
-  public static Object expect(Object o) {
+  public static Object expect(Object o) throws UnexpectedResultException {
+    if ( !Noun.isAtom(o) ) {
+      throw new UnexpectedResultException(o);
+    }
+    return o;
+  }
+  
+  public static Object orBail(Object o) {
     if ( !Noun.isAtom(o) ) {
       throw new Bail();
     }
     return o;
   }
 
-  public static byte expectBloq(long atom) {
+  public static byte bloqOrBail(long atom) {
     if ( atom >= 32 || atom < 0) {
       throw new Bail();
     }
     return (byte) atom;
   }
-
-  public static int expectInt(Object a) {
+  
+  public static int expectInt(Object a) throws UnexpectedResultException {
     long al = expectLong(a);
     int  ai = (int) al;
     if ( al != ai ) {
-      throw new Bail();
+      throw new UnexpectedResultException(a);
     }
     return ai;
   }
-  
-  public static long expectLong(Object a) {
+
+  public static int intOrBail(Object a) {
     try {
-      return TypesGen.expectLong(a);
+      return expectInt(a);
+    }
+    catch ( UnexpectedResultException e ) {
+      throw new Bail();
+    }
+  }
+  
+  public static long expectLong(Object a) throws UnexpectedResultException {
+    return TypesGen.expectLong(a);
+  }
+  
+  public static long longOrBail(Object a) {
+    try {
+      return expectLong(a);
     }
     catch (UnexpectedResultException e) {
       throw new Bail();
     }
   }
   
-  public static int expectUnsignedInt(Object a) {
-    long al  = expectLong(a);
+  public static int unsignedIntOrBail(Object a) {
+    long al  = longOrBail(a);
     if ( al != (al & 0x00000000FFFFFFFFL) ) {
       throw new Bail();
     }
@@ -1043,7 +1063,7 @@ public class Atom {
         return jamFlat(m, a, l);
       }
       else {
-        Cell pair = Cell.expect(a);
+        Cell pair = Cell.orBail(a);
         return jamPair(m, pair.head, pair.tail, b, l);
       }     
     }
@@ -1168,7 +1188,7 @@ public class Atom {
     c  = (long) ci;
 
     u  = dec(c);
-    ui = Atom.expectInt(u);
+    ui = Atom.intOrBail(u);
     v  = add(c, c);
     w  = bex(ci);
     x  = end((byte) 0, u, b);
@@ -1296,7 +1316,7 @@ public class Atom {
   }
 
   public static long mote(String s) {
-    return expectUnsignedInt(stringToCord(s));
+    return unsignedIntOrBail(stringToCord(s));
   }
   
   public static int mug(Object atom) {
@@ -1436,7 +1456,7 @@ public class Atom {
     int tot = 0;
     try {
       for ( Object i : b ) {
-        tot = Math.addExact(tot, met(a, Atom.expect(i)));
+        tot = Math.addExact(tot, met(a, Atom.orBail(i)));
       }
     }
     catch ( ArithmeticException e ) {
@@ -1492,7 +1512,7 @@ public class Atom {
     int tot = 0;
     try {
       for ( Object i : b ) {
-        Atom.expect(i);
+        Atom.orBail(i);
         tot = Math.incrementExact(tot);
       }
     }
@@ -1602,7 +1622,7 @@ public class Atom {
     d = increment(x);
 
     x = dec(c);
-    y = bex(expectLong(x));
+    y = bex(longOrBail(x));
     z = cut((byte)0, d, x, b);
 
     e = add(y, z);
@@ -1628,7 +1648,7 @@ public class Atom {
   }
 
   private static Object sha_help(Object len, Object atom, String algo) {
-    int lei = expectInt(len);
+    int lei = intOrBail(len);
     byte[] in = forceBytes(atom, lei, true);
     return Atom.fromByteArray(doSha(algo, in));
   }

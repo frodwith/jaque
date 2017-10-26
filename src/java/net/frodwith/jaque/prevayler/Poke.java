@@ -48,36 +48,36 @@ public class Poke implements Transaction<PrevalentSystem> {
    * this gives us an opportunity not to record a poke if we didn't finish computation,
    * allowing us to match vere's drop-if-not-completed semantics */
   public void deliver(Context ctx, Object arvo) {
-    Cell pokeGate = Cell.expect(ctx.nock(arvo, new Qual(9L, 42L, 0L, 1L).toCell()));
+    Cell pokeGate = Cell.orBail(ctx.nock(arvo, new Qual(9L, 42L, 0L, 1L).toCell()));
     Cell gon = ctx.softTop(() -> ctx.softSlam(pokeGate, new Cell(this.time, this.event)));
     if ( Noun.equals(0L, gon.head) ) {
-      result = Cell.expect(gon.tail);
+      result = Cell.orBail(gon.tail);
       return;
     }
     else {
       Object why = gon.head,
              tan = gon.tail;
       // lame
-      Cell bov, ovo = Cell.expect(this.event);
-      if ( Noun.equals(EXIT, why) && Noun.equals(HEAR, Cell.expect(ovo.tail).head) ) {
+      Cell bov, ovo = Cell.orBail(this.event);
+      if ( Noun.equals(EXIT, why) && Noun.equals(HEAR, Cell.orBail(ovo.tail).head) ) {
         // FIXME -- some method of getting the terminal width is necessary
         // 80 is duct tape
         ctx.err(punt(80L, tan));
-        bov = new Trel(ovo.head, HOLE, Cell.expect(ovo.tail).tail).toCell();
+        bov = new Trel(ovo.head, HOLE, Cell.orBail(ovo.tail).tail).toCell();
       }
       else {
         bov = new Qual(ovo.head, CRUD, why, tan).toCell();
       }
       gon = ctx.softTop(() -> ctx.softSlam(pokeGate, new Cell(this.time, bov)));
       if ( Noun.equals(0L, gon.head) ) {
-        result = Cell.expect(gon.tail);
+        result = Cell.orBail(gon.tail);
         return;
       }
       else {
         Cell vab = new Trel(bov.head, WARN, Tape.fromString("crude crash!")).toCell();
         gon = ctx.softTop(() -> ctx.softSlam(pokeGate, new Cell(this.time, vab)));
         if ( Noun.equals(0L,  gon.head ) ) {
-          result = Cell.expect(gon.tail);
+          result = Cell.orBail(gon.tail);
           return;
         }
         else {

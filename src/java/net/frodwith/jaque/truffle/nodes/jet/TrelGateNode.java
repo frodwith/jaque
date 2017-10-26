@@ -9,8 +9,8 @@ public abstract class TrelGateNode extends SampleNode {
   
   @Override
   public Object doSample(VirtualFrame frame, Object sample) {
-    Cell trel = Cell.expect(sample),
-         pair = Cell.expect(trel.tail);
+    Cell trel = Cell.orBail(sample),
+         pair = Cell.orBail(trel.tail);
     return executeTrel(frame, trel.head, pair.head, pair.tail);
   }
 }

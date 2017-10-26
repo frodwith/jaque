@@ -16,14 +16,14 @@ public abstract class CompFunNode extends ImplementationNode {
  protected abstract Object executeCompFun(VirtualFrame frame, Cell raq, Cell vax, Cell sab);
  
  public Object doJet(VirtualFrame frame, Object subject) {
-   Cell cor = Cell.expect(subject),
-        pay = Cell.expect(cor.tail),
-        sam = Cell.expect(pay.head),
-        cag = Cell.expect(pay.tail),
-        cap = Cell.expect(cag.tail),
-        raq = Cell.expect(cap.head),
-        vax = Cell.expect(sam.head),
-        sab = Cell.expect(sam.tail);
+   Cell cor = Cell.orBail(subject),
+        pay = Cell.orBail(cor.tail),
+        sam = Cell.orBail(pay.head),
+        cag = Cell.orBail(pay.tail),
+        cap = Cell.orBail(cag.tail),
+        raq = Cell.orBail(cap.head),
+        vax = Cell.orBail(sam.head),
+        sab = Cell.orBail(sam.tail);
 
    return executeCompFun(frame, raq, vax, sab);
  }
