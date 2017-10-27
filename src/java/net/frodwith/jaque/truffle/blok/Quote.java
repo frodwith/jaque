@@ -1,5 +1,6 @@
 package net.frodwith.jaque.truffle.blok;
 
+import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.TypesGen;
 import net.frodwith.jaque.truffle.bloc.BlocNode;
@@ -23,5 +24,9 @@ public final class Quote extends Op {
     else {
       return new QuoteWordsNode(TypesGen.asIntArray(value));
     }
+  }
+  @Override
+  public String toString() {
+    return "<Quote " + Noun.toString(value) + ">";
   }
 }

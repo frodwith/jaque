@@ -21,4 +21,9 @@ public final class If extends Op {
   public BlocNode toNode(Context context) {
     return new IfNode(yes.toTarget(context), no.toTarget(context));
   }
+
+  @Override
+  public String toString() {
+    return "<If " + yes.toString() + " Else " + no.toString() + ">";
+  }
 }

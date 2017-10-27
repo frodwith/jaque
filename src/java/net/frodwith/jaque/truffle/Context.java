@@ -334,6 +334,7 @@ public class Context implements Serializable {
     if ( null == t ) {
       try {
         t = Truffle.getRuntime().createCallTarget(new BlockRootNode(Block.compile(label).cps(this)));
+        evalBlocks.put(label, t);
       }
       catch ( UnexpectedResultException e ) {
         throw new Bail();

@@ -1,5 +1,7 @@
 package net.frodwith.jaque.truffle.bloc;
 
+import java.util.Stack;
+
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 public final class QuoteWordsNode extends OpNode {
@@ -11,7 +13,9 @@ public final class QuoteWordsNode extends OpNode {
 
   @Override
   public void execute(VirtualFrame frame) {
-    getStack(frame).push(value);
+    Stack<Object> s = getStack(frame);
+    s.pop();
+    s.push(value);
   }
 
 }

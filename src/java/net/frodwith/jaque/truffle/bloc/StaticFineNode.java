@@ -1,17 +1,18 @@
 package net.frodwith.jaque.truffle.bloc;
 
-import com.oracle.truffle.api.dsl.NodeField;
-import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 
-import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Noun;
 
-@NodeField(name="expectedPayload", type=Object.class)
-public abstract class StaticFineNode extends FineOpNode {
-  public abstract Object getExpectedPayload();
+public final class StaticFineNode extends FineOpNode {
+  private final Object constant;
   
-  @Specialization
-  public boolean fine(Cell core) {
-    return Noun.equals(core.tail, getExpectedPayload());
+  public StaticFineNode(Object constant) {
+    this.constant = constant;
+  }
+  
+  @Override
+  public boolean executeFine(VirtualFrame frame, Object got) {
+    return Noun.equals(constant, got);
   }
 }

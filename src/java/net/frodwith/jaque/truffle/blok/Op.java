@@ -8,4 +8,9 @@ public abstract class Op {
     return false;
   }
   public abstract BlocNode toNode(Context context);
+
+  @Override
+  public String toString() {
+    return getClass().getSimpleName();
+  }
 }

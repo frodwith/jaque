@@ -280,12 +280,11 @@
 ::::
 ::
 =~
-  %main
-  ~%    %main
+  ~%    %k151
       ~
     ~
   |%
-  ++  main  %main
+  ++  hoon  %151
   --
   ~%    %mood
       +
@@ -295,7 +294,7 @@
   ++  list  |*  a/$-(* *)                                 ::  null-term list
             $@($~ {i/a t/(list a)})
   --
-  ~%    %lib
+  ~%    %hoon
       +
     ~
   |%

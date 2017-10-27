@@ -1,5 +1,6 @@
 package net.frodwith.jaque.truffle.blok;
 
+import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.bloc.BlocNode;
 import net.frodwith.jaque.truffle.bloc.PushPlaceNode;
@@ -12,5 +13,9 @@ public final class PushPlace extends Op {
   @Override
   public BlocNode toNode(Context context) {
     return new PushPlaceNode(context, kind);
+  }
+  @Override
+  public String toString() {
+    return "<PushPlace " + Atom.cordToString(kind) + ">";
   }
 }

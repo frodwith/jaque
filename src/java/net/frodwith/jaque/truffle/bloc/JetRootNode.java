@@ -11,6 +11,7 @@ public class JetRootNode extends RootNode {
   
   public JetRootNode(ImplementationNode impl) {
     this.impl = impl;
+    insert(impl);
   }
 
   public Continuation execute(VirtualFrame frame) {
@@ -22,6 +23,6 @@ public class JetRootNode extends RootNode {
     // gates as arguments or use their fallback or something. They could, but it
     // would involve rewriting a lot of jets for no real benefit and might require
     // writing those jets in CPS (gross).
-    return null;
+    return Continuation.ret();
   }
 }

@@ -12,13 +12,13 @@ import net.frodwith.jaque.Location;
 import net.frodwith.jaque.data.Axis;
 
 public final class FineCheckNode extends BlocNode {
-  @Children private FineOpNode[] checks;
-  @Children private FragNode[] frags;
+  @Children private final FineOpNode[] checks;
+  @Children private final FragNode[] frags;
 
   public FineCheckNode(Location loc) {
     if ( loc.isStatic ) {
-      this.checks = new FineOpNode[] { StaticFineNodeGen.create(loc.noun) };
-      this.frags = null;
+      this.checks = new FineOpNode[] { new StaticFineNode(loc.noun) };
+      this.frags = new FragNode[] { new FragNode(new Axis(3L)) };
     }
     else {
       Queue<FineOpNode> fine = new LinkedList<FineOpNode>();
@@ -32,33 +32,29 @@ public final class FineCheckNode extends BlocNode {
         loc = loc.parent;
       }
       assert( loc.isStatic );
-      fine.add(StaticFineNodeGen.create(loc.noun));
+      fine.add(new StaticFineNode(loc.noun));
       this.checks = fine.toArray(new FineOpNode[fine.size()]);
       this.frags = frag.toArray(new FragNode[frag.size()]);
+      insert(checks);
+      insert(frags);
     }
   }
   
   @ExplodeLoop
   public boolean executeFine(VirtualFrame frame, Object core) {
     try {
-      if ( null == frags ) {
-        assert( checks.length == 1 );
-        return checks[0].executeFine(frame, core);
-      }
-      else {
-        Stack<Object> s = getStack(frame);
-        boolean pass = true;
-        s.push(core);
-        for ( int i = 0; i < frags.length; ++i ) {
-          frags[i].execute(frame);
-          if ( !checks[i].executeFine(frame, s.peek()) ) {
-            pass = false;
-            break;
-          }
+      Stack<Object> s = getStack(frame);
+      boolean pass = true;
+      s.push(core);
+      for ( int i = 0; i < frags.length; ++i ) {
+        frags[i].execute(frame);
+        if ( !checks[i].executeFine(frame, s.peek()) ) {
+          pass = false;
+          break;
         }
-        s.pop();
-        return pass;
       }
+      s.pop();
+      return pass;
     }
     catch ( UnsupportedSpecializationException e ) {
       return false;

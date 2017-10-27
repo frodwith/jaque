@@ -70,7 +70,7 @@ public class Block {
           break;
         }
         else {
-          Block b = new Block(Arrays.copyOfRange(body, 0, i)),
+          Block b = new Block(Arrays.copyOfRange(body, 0, i+1)),
                 k = new Block(Arrays.copyOfRange(body, i+1, body.length));
           return b.afterCps(context, k.cps(context));
         }
@@ -211,7 +211,23 @@ public class Block {
         }
       }
     }
-    Op[] body = new Op[q.size()];
-    return new Block(q.toArray(body));
+
+    Block b = new Block(q.toArray(new Op[q.size()]));
+    //System.out.print("compiled " + Noun.toString(src) + " to ");
+    //System.out.println(b.toString());
+    return b;
+  }
+  
+  /* really only used in debugging */
+  public String toString() {
+    StringBuilder b = new StringBuilder();
+    b.append('[');
+    for ( Op o : body ) {
+      b.append(o.toString());
+      b.append(' ');
+    }
+    b.deleteCharAt(b.length()-1);
+    b.append(']');
+    return b.toString();
   }
 }

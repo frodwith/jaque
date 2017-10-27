@@ -10,6 +10,7 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
 import net.frodwith.jaque.Bail;
@@ -101,8 +102,9 @@ public abstract class CallOpNode extends JaqueNode {
       return null;
     }
     try {
-      Method cons = klass.getMethod("create", Context.class, CallTarget.class);
-      ImplementationNode jet = (ImplementationNode) cons.invoke(null, context, unjetted(context, core, axis));
+      Method cons = klass.getMethod("create", Context.class, DirectCallNode.class);
+      DirectCallNode fallback = DirectCallNode.create(unjetted(context, core, axis));
+      ImplementationNode jet = (ImplementationNode) cons.invoke(null, context, fallback);
       return Truffle.getRuntime().createCallTarget(new JetRootNode(jet));
     }
     catch (NoSuchMethodException e) {
