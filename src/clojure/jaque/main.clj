@@ -13,7 +13,7 @@
   (:import (org.httpkit.server AsyncChannel) ; to make the loader for main AOT happy
            (java.net ServerSocket InetAddress)
            (java.io IOException)
-           (net.frodwith.jaque.data Cell))
+           (net.frodwith.jaque truffle.driver.Arm truffle.Context data.Noun data.Cell))
   (:gen-class))
 
 (defn- by-wire [^Cell ovum]
@@ -78,6 +78,16 @@
     (.join kth)
     (stop-http)))
 
+(defn run-formula-pill [options]
+  (let [arms (if (:jets options)
+               (util/read-jets (:jets options))
+               (make-array Arm 0))
+        ctx  (let [ctx (Context.)]
+               (.wake ctx arms nil (boolean (:profile options)))
+               ctx)
+        res  (.bloc ctx 0 (util/read-jam (:formula options)))]
+    (println (Noun/toString res))))
+
 (defn exists? [is-dir path]
   (let [f (io/as-file path)]
     (and (.exists f)
@@ -134,13 +144,18 @@
     :validate [#(or (not (.exists %))
                     (and (.exists %) (.isDirectory %)))
                "invalid pier directory"]]
+   ["-N" "--formula PATH" "Nock the formula pill file at PATH with ~ subject, print result, and exit."
+    :parse-fn io/as-file]
    ["-h" "--help"]])
 
 (defn -main [& args]
   (let [{:keys [options arguments errors summary]} (cli/parse-opts args cli-options)]
-		(cond (:help options)
+		(cond 
+      (:help options)
         (println summary)
 			errors
         (println errors)
+      (:formula options)
+        (run-formula-pill options)
       :else (let [o (if (:fake options) (assoc options :local-czars true) options)]
               (run o)))))

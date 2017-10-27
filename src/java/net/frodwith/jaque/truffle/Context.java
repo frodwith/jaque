@@ -14,10 +14,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-import net.frodwith.jaque.truffle.bloc.BlockNode;
-import net.frodwith.jaque.truffle.bloc.BlockRootNode;
-import net.frodwith.jaque.truffle.blok.Block;
-
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
@@ -27,7 +23,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
-import jnr.x86asm.OP;
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.BlockException;
 import net.frodwith.jaque.Caller;
@@ -45,6 +40,9 @@ import net.frodwith.jaque.data.Qual;
 import net.frodwith.jaque.data.Tank;
 import net.frodwith.jaque.data.Tape;
 import net.frodwith.jaque.data.Trel;
+import net.frodwith.jaque.truffle.bloc.BlockNode;
+import net.frodwith.jaque.truffle.bloc.BlockRootNode;
+import net.frodwith.jaque.truffle.blok.Block;
 import net.frodwith.jaque.truffle.driver.Arm;
 import net.frodwith.jaque.truffle.nodes.FunctionNode;
 import net.frodwith.jaque.truffle.nodes.JaqueNode;
@@ -129,6 +127,7 @@ public class Context implements Serializable {
     calls = new Stack<Invocation>();
     levels = new Stack<Road>();
     levels.push(new Road(null));
+    print("running on " + Truffle.getRuntime().getName());
   }
   
   // anything that varies per run gets sent through here
@@ -154,9 +153,6 @@ public class Context implements Serializable {
       Arm[] aa = new Arm[al.size()];
       this.drivers.put(e.getKey(), al.toArray(aa));
     }
-    
-    print("running on " + Truffle.getRuntime().getName());
-
   }
   
   private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
@@ -346,7 +342,7 @@ public class Context implements Serializable {
     return t;
   }
   
-  public Object bloc(Cell formula, Object subject) {
+  public Object bloc(Object subject, Cell formula) {
     try {
       BlockNode main = Block.compile(formula).cps(this);
       net.frodwith.jaque.truffle.bloc.TopRootNode root = new net.frodwith.jaque.truffle.bloc.TopRootNode(main);
