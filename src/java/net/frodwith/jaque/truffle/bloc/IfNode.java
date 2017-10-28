@@ -27,10 +27,10 @@ public class IfNode extends FlowNode {
       long loob = TypesGen.expectLong(s.pop());
       if ( 1L == loob || 0L == loob ) {
         if ( test.profile(Atom.YES == loob) ) {
-          return Continuation.jump(yes);
+          return Continuation.call(yes, after);
         }
         else {
-          return Continuation.jump(no);
+          return Continuation.call(no, after);
         }
       }
       else {

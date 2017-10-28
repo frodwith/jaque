@@ -6,9 +6,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
-import net.frodwith.jaque.truffle.nodes.JaqueNode;
 
-public abstract class SameOpNode extends JaqueNode {
+public abstract class SameOpNode extends BlocNode {
   public abstract Object executeSame(VirtualFrame frame, Object a, Object b);
 
   @Specialization

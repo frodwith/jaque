@@ -20,10 +20,9 @@ import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.TypesGen;
-import net.frodwith.jaque.truffle.nodes.JaqueNode;
-import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
+import net.frodwith.jaque.truffle.jet.ImplementationNode;
 
-public abstract class CallOpNode extends JaqueNode {
+public abstract class CallOpNode extends BlocNode {
   
   public abstract Continuation executeCall(VirtualFrame frame, Context context, Continuation after, Object core, Axis axis);
   

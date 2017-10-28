@@ -5,9 +5,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
-import net.frodwith.jaque.truffle.nodes.JaqueNode;
 
-public abstract class DeepOpNode extends JaqueNode {
+public abstract class DeepOpNode extends BlocNode {
   public abstract long executeDeep(VirtualFrame frame, Object o);
   
   @Specialization

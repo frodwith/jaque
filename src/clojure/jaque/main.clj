@@ -85,7 +85,7 @@
         ctx  (let [ctx (Context.)]
                (.wake ctx arms nil (boolean (:profile options)))
                ctx)
-        res  (.bloc ctx 0 (util/read-jam (:formula options)))]
+        res  (.nock ctx 0 (util/read-jam (:formula options)))]
     (println (Noun/toString res))))
 
 (defn exists? [is-dir path]

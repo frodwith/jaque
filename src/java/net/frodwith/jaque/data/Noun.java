@@ -167,6 +167,7 @@ public class Noun {
     }
   }
   
+  @SuppressWarnings("unchecked")
   private static Object readRec(Object o) {
     if (o instanceof String) {
       return Atom.fromString((String) o);

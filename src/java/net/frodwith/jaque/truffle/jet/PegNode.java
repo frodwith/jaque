@@ -1,0 +1,14 @@
+package net.frodwith.jaque.truffle.jet;
+
+import com.oracle.truffle.api.dsl.Specialization;
+
+import net.frodwith.jaque.data.Atom;
+
+public abstract class PegNode extends PairGateNode {
+
+  @Specialization
+  protected Object peg(Object a, Object b) {
+    return Atom.peg(Atom.orBail(a), Atom.orBail(b));
+  }
+
+}

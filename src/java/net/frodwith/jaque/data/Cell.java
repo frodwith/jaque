@@ -1,8 +1,6 @@
 package net.frodwith.jaque.data;
 
 import java.io.Serializable;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Stack;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;

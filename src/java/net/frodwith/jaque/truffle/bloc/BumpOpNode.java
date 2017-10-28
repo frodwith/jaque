@@ -4,9 +4,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.data.Atom;
-import net.frodwith.jaque.truffle.nodes.JaqueNode;
 
-public abstract class BumpOpNode extends JaqueNode {
+public abstract class BumpOpNode extends BlocNode {
   public abstract Object executeBump(VirtualFrame frame, Object o);
 
   @Specialization(rewriteOn = ArithmeticException.class)

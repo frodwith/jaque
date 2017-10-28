@@ -1,6 +1,5 @@
 package net.frodwith.jaque.data;
 
-import java.time.Duration;
 import java.time.Instant;
 
 public class Time {

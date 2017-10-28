@@ -1,7 +1,6 @@
 package net.frodwith.jaque.truffle.bloc;
 
 import java.util.Stack;
-import java.util.Optional;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
@@ -19,6 +18,9 @@ public class TopRootNode extends RootNode {
   public Object execute(VirtualFrame frame) {
     Stack<Object> data = new Stack<Object>();
     Stack<Continuation> cont = new Stack<Continuation>();
+    if ( frame.getArguments()[0] == null ) {
+      assert(false);
+    }
     data.push(frame.getArguments()[0]);
     Object[] args = new Object[] { data };
     frame.setObject(BlocNode.STACK, data);

@@ -4,7 +4,7 @@ import java.util.Stack;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
+import net.frodwith.jaque.truffle.jet.ImplementationNode;
 
 public class JetRootNode extends RootNode {
   private ImplementationNode impl;

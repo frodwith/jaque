@@ -6,7 +6,6 @@ import java.util.function.Consumer;
 import net.frodwith.jaque.Caller;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Cell;
-import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.data.Qual;
 import net.frodwith.jaque.data.Time;
 import net.frodwith.jaque.data.Trel;

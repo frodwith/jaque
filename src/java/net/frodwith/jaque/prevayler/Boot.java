@@ -1,17 +1,12 @@
 package net.frodwith.jaque.prevayler;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Date;
 import java.util.HashMap;
 
 import org.prevayler.Transaction;
 
-import net.frodwith.jaque.data.Atom;
-import net.frodwith.jaque.data.Cell;
-import net.frodwith.jaque.data.Qual;
 import net.frodwith.jaque.Location;
+import net.frodwith.jaque.data.Cell;
 
 /* the boot sequence is special because it cannot be meaningfully interrupted;
 * therefore a single transaction is used to set up the initial state on system

@@ -10,7 +10,7 @@
       truffle.driver.Arm
       truffle.driver.NamedArm
       truffle.driver.AxisArm
-      truffle.nodes.jet.ImplementationNode)))
+      truffle.jet.ImplementationNode)))
 
 (defn pier-path [base & parts]
   (Paths/get (str base) (into-array String parts)))

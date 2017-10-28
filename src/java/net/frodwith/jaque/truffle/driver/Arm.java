@@ -3,7 +3,7 @@ package net.frodwith.jaque.truffle.driver;
 import java.io.Serializable;
 
 import net.frodwith.jaque.Location;
-import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
+import net.frodwith.jaque.truffle.jet.ImplementationNode;
 
 public abstract class Arm implements Serializable {
   public final String label;

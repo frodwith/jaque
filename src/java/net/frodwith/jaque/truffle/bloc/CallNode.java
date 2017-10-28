@@ -22,6 +22,9 @@ public final class CallNode extends FlowNode {
     Continuation k = (null == after)
                    ? Continuation.ret()
                    : Continuation.jump(after);
+    if ( null == getStack(frame).peek() ) {
+      assert(false);
+    }
     return opNode.executeCall(frame, context, k, getStack(frame).peek(), axis);
   }
 

@@ -6,10 +6,12 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 public final class BlockNode extends BlocNode {
   @Children private final OpNode[] body;
   @Child private FlowNode flow;
+  private final boolean hasFlow;
   
   public BlockNode(OpNode[] body, FlowNode flow) {
     this.body = body;
     this.flow = flow;
+    this.hasFlow = (null != flow);
   }
   
   @ExplodeLoop
@@ -18,6 +20,6 @@ public final class BlockNode extends BlocNode {
       node.execute(frame);
     }
     
-    return (null == flow) ? Continuation.ret() : flow.execute(frame);
+    return hasFlow ? flow.execute(frame) : Continuation.ret();
   }
 }

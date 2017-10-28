@@ -5,7 +5,6 @@ import java.util.Iterator;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
 import net.frodwith.jaque.Bail;
-import net.frodwith.jaque.truffle.FragmentationException;
 import net.frodwith.jaque.truffle.TypesGen;
 
 public final class Axis implements Iterable<Fragment> {

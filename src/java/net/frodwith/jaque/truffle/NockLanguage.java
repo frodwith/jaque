@@ -5,8 +5,6 @@ package net.frodwith.jaque.truffle;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.nodes.Node;
 
-import net.frodwith.jaque.truffle.driver.Arm;
-
 public class NockLanguage extends TruffleLanguage<Context> {
   
   @Override

@@ -8,7 +8,6 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Stack;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -19,8 +18,6 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
 import net.frodwith.jaque.Bail;
@@ -28,49 +25,20 @@ import net.frodwith.jaque.BlockException;
 import net.frodwith.jaque.Caller;
 import net.frodwith.jaque.Fail;
 import net.frodwith.jaque.Interrupt;
-import net.frodwith.jaque.KickLabel;
 import net.frodwith.jaque.Location;
+import net.frodwith.jaque.blok.Block;
 import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Axis;
 import net.frodwith.jaque.data.Cell;
-import net.frodwith.jaque.data.Fragment;
 import net.frodwith.jaque.data.List;
 import net.frodwith.jaque.data.Noun;
-import net.frodwith.jaque.data.Qual;
 import net.frodwith.jaque.data.Tank;
 import net.frodwith.jaque.data.Tape;
 import net.frodwith.jaque.data.Trel;
 import net.frodwith.jaque.truffle.bloc.BlockNode;
 import net.frodwith.jaque.truffle.bloc.BlockRootNode;
-import net.frodwith.jaque.truffle.blok.Block;
 import net.frodwith.jaque.truffle.driver.Arm;
-import net.frodwith.jaque.truffle.nodes.FunctionNode;
-import net.frodwith.jaque.truffle.nodes.JaqueNode;
-import net.frodwith.jaque.truffle.nodes.JaqueRootNode;
-import net.frodwith.jaque.truffle.nodes.TopRootNode;
-import net.frodwith.jaque.truffle.nodes.formula.BailNode;
-import net.frodwith.jaque.truffle.nodes.formula.BumpNodeGen;
-import net.frodwith.jaque.truffle.nodes.formula.ComposeNode;
-import net.frodwith.jaque.truffle.nodes.formula.ConsNodeGen;
-import net.frodwith.jaque.truffle.nodes.formula.DeepNodeGen;
-import net.frodwith.jaque.truffle.nodes.formula.EscapeNodeGen;
-import net.frodwith.jaque.truffle.nodes.formula.FormulaNode;
-import net.frodwith.jaque.truffle.nodes.formula.FragmentNode;
-import net.frodwith.jaque.truffle.nodes.formula.IdentityNode;
-import net.frodwith.jaque.truffle.nodes.formula.IfNode;
-import net.frodwith.jaque.truffle.nodes.formula.KickNodeGen;
-import net.frodwith.jaque.truffle.nodes.formula.LiteralCellNode;
-import net.frodwith.jaque.truffle.nodes.formula.LiteralIntArrayNode;
-import net.frodwith.jaque.truffle.nodes.formula.LiteralLongNode;
-import net.frodwith.jaque.truffle.nodes.formula.NockNode;
-import net.frodwith.jaque.truffle.nodes.formula.PushNode;
-import net.frodwith.jaque.truffle.nodes.formula.SameNodeGen;
-import net.frodwith.jaque.truffle.nodes.formula.hint.DiscardHintNode;
-import net.frodwith.jaque.truffle.nodes.formula.hint.FastHintNode;
-import net.frodwith.jaque.truffle.nodes.formula.hint.MemoHintNode;
-import net.frodwith.jaque.truffle.nodes.formula.hint.SlogHintNode;
-import net.frodwith.jaque.truffle.nodes.formula.hint.StackHintNode;
-import net.frodwith.jaque.truffle.nodes.jet.ImplementationNode;
+import net.frodwith.jaque.truffle.jet.ImplementationNode;
 
 public class Context implements Serializable {
   
@@ -94,9 +62,6 @@ public class Context implements Serializable {
   private static final Cell nullGul = new Trel(new Trel(1L, 0L, 0L).toCell(), 0L, 0L).toCell();
   
   // these can't be serialized
-  public transient Map<KickLabel, CallTarget> kicks;
-  public transient Map<Object, CallTarget> simpleKicks;
-  public transient Map<Cell, CallTarget> nocks;
   public transient Map<Cell, CallTarget> evalBlocks;
   public transient Caller caller;
 
@@ -119,9 +84,6 @@ public class Context implements Serializable {
   private void initTransients() {
     caller = null;
     profile = false;
-    kicks = new HashMap<KickLabel, CallTarget>();
-    simpleKicks = new HashMap<Object, CallTarget>();
-    nocks = new HashMap<Cell, CallTarget>();
     evalBlocks = new HashMap<Cell, CallTarget>();
     times = null;
     calls = new Stack<Invocation>();
@@ -221,74 +183,21 @@ public class Context implements Serializable {
     return  new Cell(gate.head, yap);
   }
   
-  public Object kick(Cell gate, Object axis) {
-    CallTarget t = simpleKicks.get(axis);
-    if ( null == t ) {
-      t = compileTarget(parseCell(new Qual(9L, axis, 0L, 1L).toCell(), false));
-      simpleKicks.put(axis, t);
+  public Object kick(Object gate, Object axis) {
+    try {
+      Axis a = new Axis(axis);
+      Cell formula = Cell.expect(a.fragment(gate));
+      return nock(gate, formula);
     }
-    return t.call(gate);
+    catch ( UnexpectedResultException e ) {
+      throw new Bail();
+    }
   }
   
   public Object slam(Cell gate, Object sample) {
     return kick(mutateGate(gate, sample), 2L);
   }
   
-  public Function<Object,Object> internalSlam(VirtualFrame frame, JaqueNode holder, Cell core) {
-    Cell bat = Cell.orBail(core.head);
-    Cell pay = Cell.orBail(core.tail);
-    ImplementationNode jet = gateJet(bat);
-    
-    if ( null != jet ) {
-      holder.replace(jet);
-      return (sam) -> jet.doJet(frame, new Cell(bat, new Cell(sam, pay.tail)));
-    }
-    else {
-      FormulaNode fn = parseCell(bat, false);
-      holder.replace(fn);
-      return (sam) -> {
-        Object old = FunctionNode.getSubject(frame);
-        FunctionNode.setSubject(frame, new Cell(bat, new Cell(sam, pay.tail)));
-        Object pro = fn.executeGeneric(frame);
-        FunctionNode.setSubject(frame, old);
-        return pro;
-      };
-    }
-    
-  }
-  
-  @TruffleBoundary
-  public ImplementationNode findImplementation(Location loc, Object axis, Cell formula) {
-    CompilerAsserts.neverPartOfCompilation();
-    if ( null == loc ) {
-      return null;
-    }
-    Class<? extends ImplementationNode> klass = getDriver(loc, axis);
-    if ( null == klass ) {
-      return null;
-    }
-    try {
-      FormulaNode fallback = parseCell(formula, false);
-      Method cons = klass.getMethod("create", Context.class, FormulaNode.class);
-      return (ImplementationNode) cons.invoke(null, this, fallback);
-    }
-    catch (NoSuchMethodException e) {
-      e.printStackTrace();
-    }
-    catch (IllegalAccessException e) {
-      e.printStackTrace();
-    }
-    catch (InvocationTargetException e) {
-      e.printStackTrace();
-    }
-    return null;   
-  }
-
-  @TruffleBoundary
-  private ImplementationNode gateJet(Cell battery) {
-    return findImplementation(locations.get(battery), 2L, battery);
-  }
-
   public Object wrapSlam(Cell gate, Object sample) {
     return wrap(() -> kick(mutateGate(gate, sample), 2L));
   }
@@ -299,29 +208,6 @@ public class Context implements Serializable {
   
   public Function<Object, Object> slammer(Cell gate) {
     return (sam) -> slam(gate, sam);
-  }
-  
-  private class Emitter<T> {
-    private Queue<T> code = new LinkedList<T>();
-
-    public void addOp(T o) {
-      code.add(o);
-    }
-    
-    public void addBlock(T[] ops) {
-      for ( T o : ops ) {
-        code.add(o);
-      }
-    }
-    
-    public T[] build() {
-      T[] r = (T[]) new Object[code.size()];
-      int i = 0;
-      while ( !code.isEmpty() ) {
-        r[i++] = code.poll();
-      }
-      return r;
-    }
   }
   
   // nock: expression language, represented as cells
@@ -343,7 +229,8 @@ public class Context implements Serializable {
     return t;
   }
   
-  public Object bloc(Object subject, Cell formula) {
+  @TruffleBoundary
+  public Object nock(Object subject, Cell formula) {
     try {
       BlockNode main = Block.compile(formula).cps(this);
       net.frodwith.jaque.truffle.bloc.TopRootNode root = new net.frodwith.jaque.truffle.bloc.TopRootNode(main);
@@ -352,163 +239,6 @@ public class Context implements Serializable {
     catch ( UnexpectedResultException e ) {
       throw new Bail();
     }
-  }
-  
-  @TruffleBoundary
-  public FormulaNode parseCell(Cell src, boolean tail) {
-    Object op  = src.head,
-           arg = src.tail;
-
-    if ( TypesGen.isCell(op) ) {
-      return ConsNodeGen.create(
-          parseCell(TypesGen.asCell(op), false),
-          parseCell(TypesGen.asCell(arg), false));
-    }
-    else {
-      switch ( (int) TypesGen.asLong(op) ) {
-        case 0: {
-          if ( Atom.isZero(arg) ) {
-            return new BailNode();
-          }
-          if ( Noun.equals(1L, arg) ) {
-            return new IdentityNode();
-          }
-          else {
-            return new FragmentNode(Atom.orBail(arg));
-          }
-        }
-        case 1: {
-          if ( TypesGen.isCell(arg) ) {
-            return new LiteralCellNode(TypesGen.asCell(arg));
-          }
-          else if ( TypesGen.isLong(arg) ) {
-            return new LiteralLongNode(TypesGen.asLong(arg));
-          }
-          else {
-            return new LiteralIntArrayNode(TypesGen.asIntArray(arg));
-          }
-        }
-        case 2: {
-          Cell c = TypesGen.asCell(arg),
-               h = TypesGen.asCell(c.head),
-               t = TypesGen.asCell(c.tail);
-          FormulaNode left = parseCell(h, false),
-                     right = parseCell(t, false);
-          return new NockNode(left, right, this, tail);
-        }
-        case 3:
-          return DeepNodeGen.create(parseCell(TypesGen.asCell(arg), false));
-        case 4:
-          return BumpNodeGen.create(parseCell(TypesGen.asCell(arg), false));
-        case 5: {
-          Cell c = TypesGen.asCell(arg),
-               h = TypesGen.asCell(c.head),
-               t = TypesGen.asCell(c.tail);
-          return SameNodeGen.create(
-              parseCell(h, false),
-              parseCell(t, false));
-        }
-        case 6: {
-          Cell trel = TypesGen.asCell(arg),
-               pair = TypesGen.asCell(trel.tail),
-               one  = TypesGen.asCell(trel.head),
-               two  = TypesGen.asCell(pair.head),
-               tre  = TypesGen.asCell(pair.tail);
-
-          return new IfNode(
-              parseCell(one, false),
-              parseCell(two, tail),
-              parseCell(tre, tail));
-        }
-        case 7: {
-          Cell c = TypesGen.asCell(arg),
-               h = TypesGen.asCell(c.head),
-               t = TypesGen.asCell(c.tail);
-
-          return new ComposeNode(
-              parseCell(h, false), 
-              parseCell(t, tail));
-        }
-        case 8: {
-          Cell c = TypesGen.asCell(arg),
-               h = TypesGen.asCell(c.head),
-               t = TypesGen.asCell(c.tail);
-          return new PushNode(
-              parseCell(h, false), 
-              parseCell(t, tail));
-        }
-        case 9: {
-          Cell c = TypesGen.asCell(arg),
-               t = TypesGen.asCell(c.tail);
-          Axis a = new Axis(Atom.orBail(c.head));
-          Fragment first = a.iterator().next();
-          FormulaNode core = parseCell(t, false);
-
-          return KickNodeGen.create(core, this, tail, first == Fragment.HEAD, a.atom);
-        }
-        case 10: {
-          Cell cell = TypesGen.asCell(arg);
-          Cell neck = TypesGen.asCell(cell.tail);
-          // a lot of these hints do something with the product, so aren't in tail
-          //FormulaNode next = parseCell(TypesGen.asCell(cell.tail), tail);
-          Object  head = cell.head;
-          if ( Noun.isAtom(head) ) {
-            // What do you do with static hints you don't recognize? Nothing...
-            err("unrecognized static hint: " + Atom.toString(head));
-            return parseCell(neck, tail);
-          }
-          else {
-            Cell dyn     = TypesGen.asCell(head);
-            FormulaNode dynF = parseCell(TypesGen.asCell(dyn.tail), false);
-            Object kind  = dyn.head;
-
-            if ( Atom.MEMO.equals(kind) ) {
-              return new MemoHintNode(parseCell(neck, false));
-            }
-            else if ( Atom.FAST.equals(kind) ) {
-              return new FastHintNode(this, dynF, parseCell(neck, false));
-            }
-            else if ( Atom.SLOG.equals(kind) ) {
-              return new SlogHintNode(this, dynF, parseCell(neck, tail));
-            }
-            else if ( Atom.SPOT.equals(kind) ) {
-              return new StackHintNode(this, Atom.SPOT, dynF, parseCell(neck, false));
-            }
-            else if ( Atom.MEAN.equals(kind) ) {
-              return new StackHintNode(this, Atom.MEAN, dynF, parseCell(neck, false));
-            }
-            else if ( Atom.LOSE.equals(kind) ) {
-              return new StackHintNode(this, Atom.LOSE, dynF, parseCell(neck, false));
-            }
-            else if ( Atom.HUNK.equals(kind) ) {
-              return new StackHintNode(this, Atom.HUNK, dynF, parseCell(neck, false));
-            }
-            else {
-              err("unrecognized dynamic hint: " + Atom.toString(kind));
-              return new DiscardHintNode(dynF, parseCell(neck, tail));
-            }
-          }
-        }
-        case 11: {
-          Cell c = TypesGen.asCell(arg);
-          return EscapeNodeGen.create(
-              parseCell(TypesGen.asCell(c.head), false),
-              parseCell(TypesGen.asCell(c.tail), false),
-              this);
-        }
-        default: {
-          throw new Bail();
-        }
-      }
-    }
-  }
-  
-  private CallTarget compileTarget(FormulaNode program) {
-    JaqueRootNode root  = new JaqueRootNode(program);
-    CallTarget inner    = Truffle.getRuntime().createCallTarget(root);
-    TopRootNode top     = new TopRootNode(inner);
-
-    return Truffle.getRuntime().createCallTarget(top);
   }
   
   private Object wrap(Supplier<Object> doer) {
@@ -544,11 +274,6 @@ public class Context implements Serializable {
     err(buf.toString());
   }
 
-  /* Top-level interpeter entry point */
-  public Object nock(Object subject, Cell formula) {
-    return wrap(() -> compileTarget(parseCell(formula, true)).call(subject));
-  }
-  
   @TruffleBoundary
   public void dumpProfile() {
     for ( Map.Entry<String, Stats> kv : times.entrySet() ) {
@@ -607,7 +332,6 @@ public class Context implements Serializable {
   public Cell softRun(Cell escapeGate, Supplier<Object> fn) {
     Road r = new Road(escapeGate);
     levels.push(r);
-    Object trace, fail;
     try {
       return new Cell(0L, fn.get());
     }
@@ -621,7 +345,6 @@ public class Context implements Serializable {
       throw new Fail(INTR, r.stacks);
     }
     catch (StackOverflowError e) {
-      trace = r.stacks;
       throw new Fail(OVER, r.stacks);
     }
     catch (OutOfMemoryError e) {
@@ -688,21 +411,6 @@ public class Context implements Serializable {
     locations.put(battery, location);
   }
   
-  @TruffleBoundary
-  public CallTarget getKickTarget(KickLabel label, Supplier<Cell> getFormula) {
-    CompilerAsserts.neverPartOfCompilation();
-    CallTarget t = kicks.get(label);
-    if ( null == t ) {
-      Cell formula = getFormula.get();
-      Location reg = locations.get(label.battery);
-      FormulaNode f = parseCell(formula, true);
-      RootNode root = (null == reg) ? new JaqueRootNode(f) : new JaqueRootNode(f, reg.label, label.axis);
-      t = Truffle.getRuntime().createCallTarget(root);
-      kicks.put(label, t);
-    }
-    return t;
-  }
-
   @TruffleBoundary
   public Object hook(Cell cor, String name) {
     Cell bat = Cell.orBail(cor.head);
