@@ -12,6 +12,6 @@ public abstract class EvalOpNode extends BlocNode {
   
   @Specialization
   public CallTarget target(Context context, Cell formula) {
-    return context.evalByCell(formula);
+    return context.evalTarget(formula);
   }
 }

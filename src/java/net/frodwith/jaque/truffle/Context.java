@@ -37,6 +37,7 @@ import net.frodwith.jaque.data.Tape;
 import net.frodwith.jaque.data.Trel;
 import net.frodwith.jaque.truffle.bloc.BlockNode;
 import net.frodwith.jaque.truffle.bloc.BlockRootNode;
+import net.frodwith.jaque.truffle.bloc.TopRootNode;
 import net.frodwith.jaque.truffle.driver.Arm;
 import net.frodwith.jaque.truffle.jet.ImplementationNode;
 
@@ -63,9 +64,11 @@ public class Context implements Serializable {
   
   // these can't be serialized
   public transient Map<Cell, CallTarget> evalBlocks;
+  public transient Map<Cell, CallTarget> topBlocks;
   public transient Caller caller;
 
   // these are per-run, though they could be serialized */
+  public transient Map<Cell,Object> memo; // TODO: use a real caching algorithm for this, like vere
   public transient Map<String,Stats> times;
   public transient Stack<Invocation> calls;
   @CompilationFinal public transient boolean profile;
@@ -85,6 +88,8 @@ public class Context implements Serializable {
     caller = null;
     profile = false;
     evalBlocks = new HashMap<Cell, CallTarget>();
+    topBlocks = new HashMap<Cell, CallTarget>();
+    memo = new HashMap<Cell, Object>();
     times = null;
     calls = new Stack<Invocation>();
     levels = new Stack<Road>();
@@ -214,7 +219,7 @@ public class Context implements Serializable {
   // blok: stack-language with nock fundamental ops
   // bloc: cps-transformed blok, tail calls only, truffle nodes
   @TruffleBoundary
-  public CallTarget evalByCell(Cell label) {
+  public CallTarget evalTarget(Cell label) {
     CompilerAsserts.neverPartOfCompilation();
     CallTarget t = evalBlocks.get(label);
     if ( null == t ) {
@@ -230,15 +235,24 @@ public class Context implements Serializable {
   }
   
   @TruffleBoundary
+  public CallTarget topTarget(Cell label) {
+    CompilerAsserts.neverPartOfCompilation();
+    CallTarget t = topBlocks.get(label);
+    if ( null == t ) {
+      try {
+        t = Truffle.getRuntime().createCallTarget(new TopRootNode(Block.compile(label).cps(this)));
+        topBlocks.put(label, t);
+      }
+      catch ( UnexpectedResultException e ) {
+        throw new Bail();
+      }
+    }
+    return t;
+  }
+  
+  @TruffleBoundary
   public Object nock(Object subject, Cell formula) {
-    try {
-      BlockNode main = Block.compile(formula).cps(this);
-      net.frodwith.jaque.truffle.bloc.TopRootNode root = new net.frodwith.jaque.truffle.bloc.TopRootNode(main);
-      return Truffle.getRuntime().createCallTarget(root).call(subject);
-    }
-    catch ( UnexpectedResultException e ) {
-      throw new Bail();
-    }
+    return topTarget(formula).call(subject);
   }
   
   private Object wrap(Supplier<Object> doer) {
@@ -429,8 +443,13 @@ public class Context implements Serializable {
     }
   }
 
-  public CallTarget targetByCell(Cell expectCell) {
-    // TODO Auto-generated method stub
-    return null;
+  @TruffleBoundary
+  public Object getMemo(Cell key) {
+    return memo.get(key);
+  }
+
+  @TruffleBoundary
+  public void saveMemo(Cell key, Object value) {
+    memo.put(key, value);
   }
 }

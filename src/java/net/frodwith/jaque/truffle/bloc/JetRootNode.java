@@ -8,15 +8,23 @@ import net.frodwith.jaque.truffle.jet.ImplementationNode;
 
 public class JetRootNode extends RootNode {
   private ImplementationNode impl;
+  private String name;
   
-  public JetRootNode(ImplementationNode impl) {
+  public JetRootNode(ImplementationNode impl, String name) {
     this.impl = impl;
+    this.name = name;
     insert(impl);
+  }
+  
+  @Override
+  public String getName() {
+    return name;
   }
 
   public Continuation execute(VirtualFrame frame) {
     @SuppressWarnings("unchecked")
     Stack<Object> s = (Stack<Object>) frame.getArguments()[0];
+    //System.err.println("jet " + name);
     frame.setObject(BlocNode.STACK, s);
     s.push(impl.doJet(frame, s.pop()));
     // Jets never participate in the continuation protocol, even if they take

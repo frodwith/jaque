@@ -189,7 +189,8 @@ public class Block {
             Cell dyn = TypesGen.asCell(c.head);
             Object kind = dyn.head;
             if ( Atom.MEMO.equals(kind) ) {
-              q.add(new Memo(k));
+              q.add(new StartMemo(TypesGen.asCell(c.tail), k));
+              q.add(new FinishMemo(TypesGen.asCell(c.tail)));
             }
             else if ( Atom.FAST.equals(kind) ) {
               q.add(new Dup());

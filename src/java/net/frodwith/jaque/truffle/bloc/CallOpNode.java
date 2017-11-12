@@ -83,7 +83,7 @@ public abstract class CallOpNode extends BlocNode {
   
   protected static CallTarget unjetted(Context context, Cell core, Axis axis) {
     try {
-      return context.evalByCell(TypesGen.expectCell(axis.fragOrBail(core)));
+      return context.evalTarget(TypesGen.expectCell(axis.fragment(core)));
     }
     catch ( UnexpectedResultException e ) {
       throw new Bail();
@@ -102,9 +102,12 @@ public abstract class CallOpNode extends BlocNode {
     }
     try {
       Method cons = klass.getMethod("create", Context.class, DirectCallNode.class);
-      DirectCallNode fallback = DirectCallNode.create(unjetted(context, core, axis));
+      // what I really want is a TopRootNode that takes the subject, otherwise jets
+      // have to participate in the continuation protocol
+      CallTarget top = context.topTarget(TypesGen.expectCell(axis.fragment(core)));
+      DirectCallNode fallback = DirectCallNode.create(top);
       ImplementationNode jet = (ImplementationNode) cons.invoke(null, context, fallback);
-      return Truffle.getRuntime().createCallTarget(new JetRootNode(jet));
+      return Truffle.getRuntime().createCallTarget(new JetRootNode(jet, loc.label));
     }
     catch (NoSuchMethodException e) {
       e.printStackTrace();
@@ -114,6 +117,9 @@ public abstract class CallOpNode extends BlocNode {
     }
     catch (InvocationTargetException e) {
       e.printStackTrace();
+    }
+    catch (UnexpectedResultException e) {
+      throw new Bail();
     }
     return null;
   }
