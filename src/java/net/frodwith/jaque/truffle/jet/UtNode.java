@@ -47,7 +47,7 @@ public abstract class UtNode extends ImplementationNode {
       Cell core       = Cell.expect(s.pop());
       Cell key        = getKey(core);
       Object product  = context.getMemo(key);
-      if ( null != product ) {
+      if ( null == product ) {
         s.push(key);
         s.push(core);
         return Continuation.call(fallback, context.SAVE_MEMO);

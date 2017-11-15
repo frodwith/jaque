@@ -10,7 +10,7 @@
       truffle.driver.Arm
       truffle.driver.NamedArm
       truffle.driver.AxisArm
-      truffle.jet.ImplementationNode)))
+      truffle.jet.Definition)))
 
 (defn pier-path [base & parts]
   (Paths/get (str base) (into-array String parts)))
@@ -19,9 +19,9 @@
 	(let [jets  (edn/read (java.io.PushbackReader. (io/reader file)))
         klass (fn [class-name]
                 (let [k (Class/forName class-name)]
-                  (if (isa? k ImplementationNode)
+                  (if (isa? k Definition)
                     k
-                    (throw (Exception. (str "Invalid jet class" class-name))))))]
+                    (throw (Exception. (str "Invalid jet class " class-name))))))]
     (into-array Arm
       ((fn collect-from-core [pfx cor]
          (let [[n a & c] cor
