@@ -3,8 +3,6 @@ package net.frodwith.jaque.truffle;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -18,6 +16,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.UnsupportedSpecializationException;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
 import net.frodwith.jaque.Bail;
@@ -35,11 +34,11 @@ import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.data.Tank;
 import net.frodwith.jaque.data.Tape;
 import net.frodwith.jaque.data.Trel;
-import net.frodwith.jaque.truffle.bloc.BlockNode;
 import net.frodwith.jaque.truffle.bloc.BlockRootNode;
 import net.frodwith.jaque.truffle.bloc.TopRootNode;
 import net.frodwith.jaque.truffle.driver.Arm;
-import net.frodwith.jaque.truffle.jet.ImplementationNode;
+import net.frodwith.jaque.truffle.jet.Definition;
+import net.frodwith.jaque.truffle.jet.SaveUtMemoRootNode;
 
 public class Context implements Serializable {
   
@@ -65,6 +64,7 @@ public class Context implements Serializable {
   // these can't be serialized
   public transient Map<Cell, CallTarget> evalBlocks;
   public transient Map<Cell, CallTarget> topBlocks;
+  public transient CallTarget SAVE_MEMO;
   public transient Caller caller;
 
   // these are per-run, though they could be serialized */
@@ -89,6 +89,7 @@ public class Context implements Serializable {
     profile = false;
     evalBlocks = new HashMap<Cell, CallTarget>();
     topBlocks = new HashMap<Cell, CallTarget>();
+    SAVE_MEMO = Truffle.getRuntime().createCallTarget(new SaveUtMemoRootNode(this));
     memo = new HashMap<Cell, Object>();
     times = null;
     calls = new Stack<Invocation>();
@@ -259,7 +260,7 @@ public class Context implements Serializable {
     try {
       return doer.get();
     }
-    catch (Bail e) {
+    catch (UnsupportedSpecializationException | Bail e) {
       dumpHoonStack();
       throw e;
     }
@@ -352,7 +353,7 @@ public class Context implements Serializable {
     catch (BlockException e) {
       return new Trel(1L, e.gof, 0L).toCell();
     }
-    catch (Bail e) {
+    catch (UnsupportedSpecializationException | Bail e) {
       return new Cell(2L, r.stacks);
     }
     catch (Interrupt e) {
@@ -405,7 +406,7 @@ public class Context implements Serializable {
   }
 
   @TruffleBoundary
-  public Class<? extends ImplementationNode> getDriver(Location loc, Object axis) {
+  public Class<? extends Definition> getDriver(Location loc, Object axis) {
     String k = loc.label;
     if ( !drivers.containsKey(k) ) {
       return null;

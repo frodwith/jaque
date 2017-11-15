@@ -874,12 +874,21 @@ public class Atom {
     }
   }
   
-  public static int unsignedIntOrBail(Object a) {
-    long al  = longOrBail(a);
+  public static int expectUnsignedInt(Object a) throws UnexpectedResultException {
+    long al  = expectLong(a);
     if ( al != (al & 0x00000000FFFFFFFFL) ) {
-      throw new Bail();
+      throw new UnexpectedResultException(a);
     }
     return (int) al;
+  }
+  
+  public static int unsignedIntOrBail(Object a) {
+    try {
+      return expectUnsignedInt(a);
+    }
+    catch (UnexpectedResultException e ) {
+      throw new Bail();
+    }
   }
   
   public static byte[] forceBytes(Object a, int maxLen) {
@@ -1893,5 +1902,13 @@ public class Atom {
         pos += meg + 1;
       }
     }
+  }
+
+  public static byte expectBloq(Object atom) throws UnexpectedResultException {
+    int i = expectUnsignedInt(atom);
+    if ( i >= 32 ) {
+      throw new UnexpectedResultException(atom);
+    }
+    return (byte) atom;
   }
 }

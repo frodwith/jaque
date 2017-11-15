@@ -14,12 +14,11 @@ public final class BlockNode extends BlocNode {
     this.hasFlow = (null != flow);
   }
   
-  @ExplodeLoop
+  //@ExplodeLoop // should really work
   public Continuation execute(VirtualFrame frame) {
     for ( OpNode node : body ) {
       node.execute(frame);
     }
-    
     return hasFlow ? flow.execute(frame) : Continuation.ret();
   }
 }

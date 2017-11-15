@@ -15,11 +15,13 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
 import net.frodwith.jaque.Bail;
 import net.frodwith.jaque.Location;
+import net.frodwith.jaque.data.Atom;
 import net.frodwith.jaque.data.Axis;
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.data.Noun;
 import net.frodwith.jaque.truffle.Context;
 import net.frodwith.jaque.truffle.TypesGen;
+import net.frodwith.jaque.truffle.jet.Definition;
 import net.frodwith.jaque.truffle.jet.ImplementationNode;
 
 public abstract class CallOpNode extends BlocNode {
@@ -96,31 +98,25 @@ public abstract class CallOpNode extends BlocNode {
     if ( null == loc ) {
       return null;
     }
-    Class<? extends ImplementationNode> klass = context.getDriver(loc, axis.atom);
-    if ( null == klass ) {
-      return null;
+    else {
+      Class<? extends Definition> klass = context.getDriver(loc, axis.atom);
+      if ( null == klass ) {
+        return null;
+      }
+      else {
+        Definition def;
+        try {
+          def = klass.newInstance();
+        }
+        catch (InstantiationException | IllegalAccessException e) {
+          e.printStackTrace();
+          return null;
+        }
+        ImplementationNode impl = def.createNode(context, unjetted(context, core, axis));
+        String name = loc.label + ":" + Atom.toString(axis.atom);
+        JetRootNode root = new JetRootNode(name, impl);
+        return Truffle.getRuntime().createCallTarget(root);
+      }
     }
-    try {
-      Method cons = klass.getMethod("create", Context.class, DirectCallNode.class);
-      // what I really want is a TopRootNode that takes the subject, otherwise jets
-      // have to participate in the continuation protocol
-      CallTarget top = context.topTarget(TypesGen.expectCell(axis.fragment(core)));
-      DirectCallNode fallback = DirectCallNode.create(top);
-      ImplementationNode jet = (ImplementationNode) cons.invoke(null, context, fallback);
-      return Truffle.getRuntime().createCallTarget(new JetRootNode(jet, loc.label));
-    }
-    catch (NoSuchMethodException e) {
-      e.printStackTrace();
-    }
-    catch (IllegalAccessException e) {
-      e.printStackTrace();
-    }
-    catch (InvocationTargetException e) {
-      e.printStackTrace();
-    }
-    catch (UnexpectedResultException e) {
-      throw new Bail();
-    }
-    return null;
   }
 }
