@@ -1,9 +1,9 @@
 package net.frodwith.jaque.data;
 
 import java.io.Serializable;
-import java.util.Stack;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
 import net.frodwith.jaque.Bail;
@@ -40,53 +40,122 @@ public class Cell implements Serializable {
     }
   }
   
-  @TruffleBoundary
-  public static boolean equals(Cell a, Cell b) {
-    if (a == b) {
-      return true;
-    }
-    else if ( 0 != a.mug && 0 != b.mug ) {
-      return equalsMugged(a, b);
-    }
-    else {
-      if ( Noun.equals(a.head, b.head) ) {
-        if ( 0 == a.mug && 0 != b.mug ) {
-          // if we throw away mugs, it violates our fast-path assumption
-          // also it's just a bad idea
-          Cell tmp = b;
-          b = a;
-          a = tmp;
-        }
-        b.head = a.head;
-        if ( Noun.equals(a.tail, b.tail) ) {
-          b.tail = a.tail;
-          b.mug = a.mug;
-          return true;
-        }
-      }
-      return false;
+  private static class EqFrame {
+    public Object a;
+    public Object b;
+    public boolean returning = false;
+    
+    public EqFrame(Object a, Object b) {
+      this.a = a;
+      this.b = b;
     }
   }
 
-  // fast-path: if i am mugged, my head and tail are also mugged
-  @TruffleBoundary
-  public static boolean equalsMugged(Cell a, Cell b) {
-    if ( a == b ) {
-      return true;
-    }
-    else if ( a.mug != b.mug ) {
-      return false;
-    }
-    else {
-      if ( Noun.equalsMugged(a.head, b.head) ) {
-        b.head = a.head;
-        if ( Noun.equalsMugged(a.tail, b.tail) ) {
-          b.tail = a.tail;
-          return true;
+  public static boolean equals(Cell a, Cell b) {
+    Deque<EqFrame> s = new ArrayDeque<EqFrame>();
+    s.push(new EqFrame(a, b));
+    while ( !s.isEmpty() ) {
+      EqFrame frame = s.peek();
+
+      if ( frame.returning ) {
+        Cell ca = TypesGen.asCell(frame.a),
+             cb = TypesGen.asCell(frame.b);
+        cb.head = ca.head;
+        cb.tail = ca.tail;
+        s.pop();
+      }
+      else if ( frame.a == frame.b ) {
+        s.pop();
+      }
+      else if ( TypesGen.isCell(frame.a) ) {
+        if ( TypesGen.isCell(frame.b) ) {
+          Cell ca = TypesGen.asCell(frame.a),
+               cb = TypesGen.asCell(frame.b);
+
+          if ( 0 == ca.mug ) {
+            if ( 0 != cb.mug ) {
+              // swap to avoid losing mugs
+              Cell tmp = ca;
+              frame.a = ca = cb;
+              frame.b = cb = tmp;
+            }
+          }
+          else if ( 0 != cb.mug ) {
+            if ( equalsMugged(ca, cb) ) {
+              s.pop();
+              continue;
+            }
+            else {
+              return false;
+            }
+          }
+
+          frame.returning = true;
+          s.push(new EqFrame(ca.tail, cb.tail));
+          s.push(new EqFrame(ca.head, cb.head));
+        }
+        else {
+          return false;
         }
       }
-      return false;
+      else if ( TypesGen.isCell(frame.b) ) {
+        return false;
+      }
+      else if ( !Atom.equals(frame.a, frame.b) ) {
+        return false;
+      }
+      else {
+        s.pop();
+      }
     }
+    return true;
+  }
+
+  // fast-path: if i am mugged, my head and tail are also mugged
+  public static boolean equalsMugged(Cell a, Cell b) {
+    Deque<EqFrame> s = new ArrayDeque<EqFrame>();
+    s.push(new EqFrame(a, b));
+    while ( !s.isEmpty() ) {
+      EqFrame frame = s.peek();
+
+      if ( frame.returning ) {
+        Cell ca = TypesGen.asCell(frame.a),
+             cb = TypesGen.asCell(frame.b);
+        cb.head = ca.head;
+        cb.tail = ca.tail;
+        s.pop();
+      }
+      else if ( frame.a == frame.b ) {
+        s.pop();
+      }
+      else if ( TypesGen.isCell(frame.a) ) {
+        if ( TypesGen.isCell(frame.b) ) {
+          Cell ca = TypesGen.asCell(frame.a),
+               cb = TypesGen.asCell(frame.b);
+          if ( ca.mug != cb.mug ) {
+            return false;
+          }
+          else {
+            frame.returning = true;
+            s.push(new EqFrame(ca.tail, cb.tail));
+            s.push(new EqFrame(ca.head, cb.head));
+          }
+        }
+        else {
+          return false;
+        }
+      }
+      else if ( TypesGen.isCell(frame.b) ) {
+        return false;
+      }
+      else if ( !Atom.equals(frame.a, frame.b) ) {
+        return false;
+      }
+      else {
+        s.pop();
+      }
+    }
+    return true;
   }
   
   private static Cell shouldMug(Object o) {
@@ -98,16 +167,21 @@ public class Cell implements Serializable {
     }
     return null;
   }
+  
+  private int mugged(Object o) {
+    return TypesGen.isCell(o)
+        ? TypesGen.asCell(o).mug
+        : Atom.mug(o);
+  }
 
-  @TruffleBoundary
   public void calculateMug() {
     if ( 0 == mug ) {
       // recursion here can cause stack overflows for large nouns,
       // so we do an explicit iterative post-order traversal
-      Stack<Cell> s = new Stack<Cell>();
+      Deque<Cell> s = new ArrayDeque<Cell>();
       Object last = null;
       Cell node = this;
-      while ( null != node || !s.empty() ) {
+      while ( null != node || !s.isEmpty() ) {
         if ( null != node ) {
           s.push(node);
           node = shouldMug(node.head);
@@ -120,7 +194,7 @@ public class Cell implements Serializable {
             node = rite;
           }
           else {
-            peek.mug = mug_both(Noun.mug(peek.head), Noun.mug(peek.tail));
+            peek.mug = mug_both(mugged(peek.head), mugged(peek.tail));
             last = s.pop();
           }
         }
