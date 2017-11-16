@@ -1,7 +1,8 @@
 package net.frodwith.jaque.data;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Iterator;
-import java.util.Stack;
 import java.util.function.Function;
 
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -47,11 +48,11 @@ public class List implements Iterable<Object> {
   }
   
   public static Object reel(Function<Object,Object> f, Object seed, Object list) {
-    Stack<Object> s = new Stack<Object>();
+    Deque<Object> s = new ArrayDeque<Object>();
     for ( Object i : new List(list) ) {
       s.push(i);
     }
-    while ( !s.empty() ) {
+    while ( !s.isEmpty() ) {
       seed = f.apply(new Cell(s.pop(), seed));
     }
     return seed;
@@ -65,24 +66,24 @@ public class List implements Iterable<Object> {
   }
   
   public static Object turn(Function<Object,Object> f, Object list) {
-    Stack<Object> s = new Stack<Object>();
+    Deque<Object> s = new ArrayDeque<Object>();
     for ( Object i : new List(list) ) {
       s.push(i);
     }
     Object r = 0L;
-    while ( !s.empty() ) {
+    while ( !s.isEmpty() ) {
       r = new Cell(f.apply(s.pop()), r);
     }
     return r;
   }
 
   public static Object weld(Object a, Object b) {
-    Stack<Object> s = new Stack<Object>();
+    Deque<Object> s = new ArrayDeque<Object>();
     for ( Object i : new List(a) ) {
       s.push(i);
     }
     Object r = b;
-    while ( !s.empty() ) {
+    while ( !s.isEmpty() ) {
       r = new Cell(s.pop(), r);
     }
     return r;

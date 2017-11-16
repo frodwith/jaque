@@ -1,8 +1,9 @@
 package net.frodwith.jaque.truffle.bloc;
 
-import java.util.Stack;
+import java.util.Deque;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+
 import net.frodwith.jaque.data.Cell;
 import net.frodwith.jaque.truffle.Context;
 
@@ -17,7 +18,7 @@ public class FinishMemoNode extends OpNode {
 
   @Override
   public void execute(VirtualFrame frame) {
-    Stack<Object> s = getStack(frame);
+    Deque<Object> s = getStack(frame);
     Object product = s.pop();
     Object subject = s.pop();
     Cell key = new Cell(formula, subject);

@@ -1,6 +1,6 @@
 package net.frodwith.jaque.truffle.bloc;
 
-import java.util.Stack;
+import java.util.Deque;
 
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.FrameDescriptor;
@@ -24,9 +24,9 @@ public abstract class BlocNode extends Node {
   }
 
   @SuppressWarnings("unchecked")
-  public static Stack<Object> getStack(VirtualFrame frame) {
+  public static Deque<Object> getStack(VirtualFrame frame) {
     try {
-      return (Stack<Object>) frame.getObject(STACK);
+      return (Deque<Object>) frame.getObject(STACK);
     }
     catch (FrameSlotTypeException e) {
       throw new RuntimeException("fatal frame slot error");

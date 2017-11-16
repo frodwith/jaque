@@ -8,11 +8,12 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Stack;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -1488,7 +1489,7 @@ public class Atom {
   
   @TruffleBoundary
   public static void raw(Writer out, int[] cur, int radix, int dot) throws IOException {
-    Stack<Character> digits = new Stack<Character>();
+    Deque<Character> digits = new ArrayDeque<Character>();
 
     int len = cur.length,
         size = len,
@@ -1510,7 +1511,7 @@ public class Atom {
       }
     }
     
-    while ( !digits.empty() ) {
+    while ( !digits.isEmpty() ) {
       out.write(digits.pop());
     }
   }

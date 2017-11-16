@@ -1,6 +1,6 @@
 package net.frodwith.jaque.truffle.bloc;
 
-import java.util.Stack;
+import java.util.Deque;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 
@@ -14,7 +14,7 @@ public final class BumpNode extends OpNode {
 
   @Override
   public void execute(VirtualFrame frame) {
-    Stack<Object> s = getStack(frame);
+    Deque<Object> s = getStack(frame);
     s.push(bump.executeBump(frame, s.pop()));
   }
 

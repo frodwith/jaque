@@ -1,8 +1,8 @@
 package net.frodwith.jaque.truffle.bloc;
 
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Stack;
 
 import com.oracle.truffle.api.dsl.UnsupportedSpecializationException;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -31,7 +31,7 @@ public final class FragNode extends OpNode {
 
   @ExplodeLoop
   public void execute(VirtualFrame frame) {
-    Stack<Object> s = getStack(frame);
+    Deque<Object> s = getStack(frame);
     Object r = s.pop();
     try {
       for ( ReadOpNode node : reads ) {

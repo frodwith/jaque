@@ -1,6 +1,6 @@
 package net.frodwith.jaque.truffle.jet;
 
-import java.util.Stack;
+import java.util.Deque;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 
@@ -19,7 +19,7 @@ public class SaveUtMemoRootNode extends RootNode {
   @Override
   public Continuation execute(VirtualFrame frame) {
     @SuppressWarnings("unchecked")
-    Stack<Object> s = (Stack<Object>) frame.getArguments()[0];
+    Deque<Object> s = (Deque<Object>) frame.getArguments()[0];
     Object product = s.pop();
     Cell   key     = Cell.orBail(s.pop());
     context.saveMemo(key, product);

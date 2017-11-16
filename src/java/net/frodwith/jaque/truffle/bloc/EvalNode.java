@@ -1,6 +1,6 @@
 package net.frodwith.jaque.truffle.bloc;
 
-import java.util.Stack;
+import java.util.Deque;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -16,7 +16,7 @@ public final class EvalNode extends FlowNode {
   }
 
   public Continuation execute(VirtualFrame frame) {
-    Stack<Object> s = getStack(frame);
+    Deque<Object> s = getStack(frame);
     Object formula = s.pop();
     CallTarget t = op.executeTarget(frame, context, formula);
     return Continuation.call(t, after);

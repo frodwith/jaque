@@ -3,10 +3,11 @@ package net.frodwith.jaque.truffle;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Stack;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -70,12 +71,12 @@ public class Context implements Serializable {
   // these are per-run, though they could be serialized */
   public transient Map<Cell,Object> memo; // TODO: use a real caching algorithm for this, like vere
   public transient Map<String,Stats> times;
-  public transient Stack<Invocation> calls;
+  public transient Deque<Invocation> calls;
   @CompilationFinal public transient boolean profile;
 
   // this is kind of a hack for soft, and should probably work differently
   // anyways we don't serialize it
-  public transient Stack<Road> levels;
+  public transient Deque<Road> levels;
 
   // durable state
   public final HashMap<Cell, Location> locations;
@@ -92,8 +93,8 @@ public class Context implements Serializable {
     SAVE_MEMO = Truffle.getRuntime().createCallTarget(new SaveUtMemoRootNode(this));
     memo = new HashMap<Cell, Object>();
     times = null;
-    calls = new Stack<Invocation>();
-    levels = new Stack<Road>();
+    calls = new ArrayDeque<Invocation>();
+    levels = new ArrayDeque<Road>();
     levels.push(new Road(null));
     print("running on " + Truffle.getRuntime().getName());
   }

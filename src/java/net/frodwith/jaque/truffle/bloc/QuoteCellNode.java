@@ -1,6 +1,6 @@
 package net.frodwith.jaque.truffle.bloc;
 
-import java.util.Stack;
+import java.util.Deque;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 
@@ -15,7 +15,7 @@ public final class QuoteCellNode extends OpNode {
 
   @Override
   public void execute(VirtualFrame frame) {
-    Stack<Object> s = getStack(frame);
+    Deque<Object> s = getStack(frame);
     s.pop();
     s.push(value);
   }

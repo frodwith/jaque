@@ -1,12 +1,12 @@
 package net.frodwith.jaque.truffle.bloc;
 
-import java.util.Stack;
+import java.util.Deque;
 
-import net.frodwith.jaque.truffle.Context;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 import net.frodwith.jaque.data.Cell;
+import net.frodwith.jaque.truffle.Context;
 
 public class StartMemoNode extends FlowNode {
   public final CallTarget compute;
@@ -21,7 +21,7 @@ public class StartMemoNode extends FlowNode {
 
   @Override
   public Continuation execute(VirtualFrame frame) {
-    Stack<Object> s = getStack(frame);
+    Deque<Object> s = getStack(frame);
     Cell key = new Cell(formula, s.peek());
     Object pro = context.getMemo(key);
     if ( null == pro ) {

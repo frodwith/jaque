@@ -4,8 +4,9 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Stack;
+import java.util.Deque;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 
@@ -100,7 +101,7 @@ public class Noun {
     StringBuilder b = null;
     int i, len = src.length();
     ArrayList<Object> result = new ArrayList<Object>();
-    Stack<ArrayList<Object>> s = new Stack<ArrayList<Object>>();
+    Deque<ArrayList<Object>> s = new ArrayDeque<ArrayList<Object>>();
     s.push(result);
 
     for ( i = 0; i < len; ++i ) {

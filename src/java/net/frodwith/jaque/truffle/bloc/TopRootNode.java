@@ -1,6 +1,7 @@
 package net.frodwith.jaque.truffle.bloc;
 
-import java.util.Stack;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
@@ -16,8 +17,8 @@ public class TopRootNode extends RootNode {
 
   @Override
   public Object execute(VirtualFrame frame) {
-    Stack<Object> data = new Stack<Object>();
-    Stack<Continuation> cont = new Stack<Continuation>();
+    Deque<Object> data = new ArrayDeque<Object>();
+    Deque<Continuation> cont = new ArrayDeque<Continuation>();
     if ( frame.getArguments()[0] == null ) {
       assert(false);
     }
@@ -25,7 +26,7 @@ public class TopRootNode extends RootNode {
     Object[] args = new Object[] { data };
     frame.setObject(BlocNode.STACK, data);
     cont.push(program.execute(frame));
-    while ( !cont.empty() ) {
+    while ( !cont.isEmpty() ) {
       Continuation k = cont.pop();
       if ( null != k.target ) {
         if ( null != k.after ) {

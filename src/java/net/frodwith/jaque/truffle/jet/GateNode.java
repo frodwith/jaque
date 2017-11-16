@@ -1,6 +1,6 @@
 package net.frodwith.jaque.truffle.jet;
 
-import java.util.Stack;
+import java.util.Deque;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -18,7 +18,7 @@ public final class GateNode extends ImplementationNode {
 
   @Override
   public Continuation executeJet(VirtualFrame frame) {
-    Stack<Object> s = getStack(frame);
+    Deque<Object> s = getStack(frame);
     Object subject  = s.pop();
     try {
       Object payload  = Cell.expect(subject).tail;

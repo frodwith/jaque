@@ -1,6 +1,6 @@
 package net.frodwith.jaque.truffle.bloc;
 
-import java.util.Stack;
+import java.util.Deque;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 
@@ -25,7 +25,7 @@ public final class EscNode extends OpNode {
   // fact consume java stack space. This should not be a problem in practice.
   @Override
   public void execute(VirtualFrame frame) {
-    Stack<Object> s = getStack(frame);
+    Deque<Object> s = getStack(frame);
     Object ref = s.pop();
     Object gof = s.pop();
     Object pro = context.softEscape(ref, gof);

@@ -1,6 +1,6 @@
 package net.frodwith.jaque.truffle.jet;
 
-import java.util.Stack;
+import java.util.Deque;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -42,7 +42,7 @@ public abstract class UtNode extends ImplementationNode {
   }
   
   public Continuation executeJet(VirtualFrame frame) {
-    Stack<Object> s = getStack(frame);
+    Deque<Object> s = getStack(frame);
     try {
       Cell core       = Cell.expect(s.pop());
       Cell key        = getKey(core);

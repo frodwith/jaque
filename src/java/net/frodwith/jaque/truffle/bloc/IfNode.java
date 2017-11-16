@@ -1,6 +1,6 @@
 package net.frodwith.jaque.truffle.bloc;
 
-import java.util.Stack;
+import java.util.Deque;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -22,7 +22,7 @@ public class IfNode extends FlowNode {
 
   @Override
   public Continuation execute(VirtualFrame frame) {
-    Stack<Object> s = getStack(frame);
+    Deque<Object> s = getStack(frame);
     try {
       long loob = TypesGen.expectLong(s.pop());
       if ( 1L == loob || 0L == loob ) {

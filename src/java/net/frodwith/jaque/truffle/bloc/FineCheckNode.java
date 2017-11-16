@@ -1,8 +1,8 @@
 package net.frodwith.jaque.truffle.bloc;
 
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Stack;
 
 import com.oracle.truffle.api.dsl.UnsupportedSpecializationException;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -43,7 +43,7 @@ public final class FineCheckNode extends BlocNode {
   @ExplodeLoop
   public boolean executeFine(VirtualFrame frame, Object core) {
     try {
-      Stack<Object> s = getStack(frame);
+      Deque<Object> s = getStack(frame);
       boolean pass = true;
       s.push(core);
       for ( int i = 0; i < frags.length; ++i ) {
