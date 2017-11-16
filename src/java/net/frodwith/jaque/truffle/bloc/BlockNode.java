@@ -1,5 +1,6 @@
 package net.frodwith.jaque.truffle.bloc;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 
@@ -14,8 +15,9 @@ public final class BlockNode extends BlocNode {
     this.hasFlow = (null != flow);
   }
   
-  //@ExplodeLoop // should really work
+  @ExplodeLoop // should really work
   public Continuation execute(VirtualFrame frame) {
+    CompilerAsserts.compilationConstant(body.length);
     for ( OpNode node : body ) {
       node.execute(frame);
     }

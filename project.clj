@@ -7,7 +7,9 @@
                  "-d64" 
                  "-Djvmci.class.path.append=/home/pdriver/graal/graal-core/mxbuild/dists/graal.jar"
                  "-Xbootclasspath/a:/home/pdriver/graal/truffle/mxbuild/dists/truffle-api.jar"
+;                "-Dgraal.TraceTruffleAssumptions=true" 
 ;                "-Dgraal.TraceTruffleCompilation=true" 
+
 ;                "-Dgraal.Dump"
 ;                "-Dcom.sun.management.jmxremote"
 ;                "-Dcom.sun.management.jmxremote.ssl=false"

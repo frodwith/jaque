@@ -3,7 +3,7 @@ package net.frodwith.jaque.truffle.bloc;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 public class BlockRootNode extends RootNode {
-  private BlockNode program;
+  @Child private BlockNode program;
   
   public BlockRootNode(BlockNode program) {
     this.program = program;

@@ -19,9 +19,6 @@ public class TopRootNode extends RootNode {
   public Object execute(VirtualFrame frame) {
     Deque<Object> data = new ArrayDeque<Object>();
     Deque<Continuation> cont = new ArrayDeque<Continuation>();
-    if ( frame.getArguments()[0] == null ) {
-      assert(false);
-    }
     data.push(frame.getArguments()[0]);
     Object[] args = new Object[] { data };
     frame.setObject(BlocNode.STACK, data);
