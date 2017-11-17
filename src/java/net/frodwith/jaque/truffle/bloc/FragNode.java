@@ -33,14 +33,9 @@ public final class FragNode extends OpNode {
   public void execute(VirtualFrame frame) {
     Deque<Object> s = getStack(frame);
     Object r = s.pop();
-    try {
-      for ( ReadOpNode node : reads ) {
-        r = node.executeRead(frame, r);
-      }
-      s.push(r);
+    for ( ReadOpNode node : reads ) {
+      r = node.executeRead(frame, r);
     }
-    catch ( UnsupportedSpecializationException e ) {
-      throw new Bail();
-    }
+    s.push(r);
   }
 }
